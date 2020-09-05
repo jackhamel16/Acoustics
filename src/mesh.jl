@@ -25,6 +25,7 @@ function reshapeMeshArray(array::Array{T,1}, num_cols) where T<:Number
 end
 
 function buildPulseMesh(mesh_filename::String)
+    # Builds a PulseMesh object based the mesh at mesh_filename
     num_coord_dims = 3
     nodes_per_triangle = 3
 
@@ -47,15 +48,3 @@ function buildPulseMesh(mesh_filename::String)
 
     PulseMesh(num_coord_dims, nodes_per_triangle, nodes, elements, centroids)
 end
-
-gmsh.initialize();
-
-mesh_filename = "examples/simple/rectangle_plate.msh"
-
-gmsh.open(mesh_filename)
-
-num_coord_dims = 3
-nodes_per_triangle = 3
-
-nodes = reshapeMeshArray(gmsh.model.mesh.getNodes()[2], num_coord_dims)
-elements = reshapeMeshArray(gmsh.model.mesh.getElements()[3][2], nodes_per_triangle)
