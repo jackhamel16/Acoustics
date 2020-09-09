@@ -1,6 +1,7 @@
 using Test
 
 include("../../src/greens_functions.jl")
+#using ..greens_functions
 
 @testset "greens_functions tests" begin
     @testset "scalar_greens tests" begin
