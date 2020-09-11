@@ -30,6 +30,16 @@ include("../../src/quadrature.jl")
             points = [-1.5 0.5 0.0; 0.0 1.0 2.0]; weights = [1.0, 9.1]
             solution = 26.299999999999997
             @test gaussQuadrature(returnXplusYplusZ, points, weights) == solution
+            # This test will integrate over a triangle using the 7 point rule above
+            f(x,y,z) = 2*x + y
+            nodes = [0.0 0.0 0.0; 0.0 2.0 0.0; 2.0 0.0 0.0]
+            gauss7points_cartesian = Array{Float64, 2}(undef, 7, 3)
+            for point_idx in 1:7
+                gauss7points_cartesian[point_idx,:] = barycentric2Cartesian(nodes, gauss7points[point_idx,:])
+            end
+            println(gauss7points_cartesian)
+            solution = 20/3
+            @test gaussQuadrature(f, gauss7points_cartesian, gauss7weights) == solution
         end
     end
 

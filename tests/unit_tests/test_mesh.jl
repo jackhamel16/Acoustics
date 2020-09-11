@@ -36,7 +36,17 @@ include("../../src/mesh.jl")
     #     @test testPulseMesh.elements == elements_solution
     #     @test testPulseMesh.centroids == centroids_solution
     # end
-    # @testset "barycentric2Cartesian tests" begin
-    #     @test barycentric2Cartesian() == 0
-    # end
+    @testset "barycentric2Cartesian tests" begin
+        nodes = [0.0 0.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0]
+        barycentric_coords = [1.0, 0.0, 0.0]
+        cartesian_coords = [0.0, 0.0, 0.0]
+        @test barycentric2Cartesian(nodes, barycentric_coords) == cartesian_coords
+        barycentric_coords = [0.5, 0.5, 0.0]
+        cartesian_coords = [0.0, 0.5, 0.5]
+        @test barycentric2Cartesian(nodes, barycentric_coords) == cartesian_coords
+        nodes = [0.0 -1.0 1.0; -2.0 0.0 0.0; 2.0 0.0 -0.5]
+        barycentric_coords = [0.6, 0.6, -0.2]
+        cartesian_coords = [-1.6, -0.6, 0.7]
+        @test barycentric2Cartesian(nodes, barycentric_coords) == cartesian_coords
+    end
 end
