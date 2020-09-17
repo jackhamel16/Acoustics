@@ -1,6 +1,7 @@
 using Test
 
 include("../../src/quadrature.jl")
+include("../../src/mesh.jl")
 
 @testset "quadrature tests" begin
     @testset "gaussQuadrature tests" begin

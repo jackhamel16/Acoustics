@@ -33,6 +33,7 @@ function buildPulseMesh(mesh_filename::String)
     gmsh.open(mesh_filename)
     nodes = reshapeMeshArray(gmsh.model.mesh.getNodes()[2], num_coord_dims)
     elements = reshapeMeshArray(gmsh.model.mesh.getElements()[3][2], nodes_per_triangle)
+    gmsh.finalize()
 
     num_elements = size(elements)[1]
     centroids = Array{Float64, 2}(undef, num_elements, num_coord_dims)
