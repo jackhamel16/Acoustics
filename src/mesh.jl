@@ -45,6 +45,13 @@ function buildPulseMesh(mesh_filename::String)
         end
         centroids[element_idx,:] = computeCentroid(vertices)
     end
-
     PulseMesh(num_coord_dims, nodes_per_triangle, nodes, elements, centroids)
+end
+
+function barycentric2Cartesian(nodes::Array{Float64, 2}, barycentric_coords::Array{Float64, 1})
+    cartesian_coords = zeros(3)
+    for node_idx in 1:3
+        cartesian_coords += barycentric_coords[node_idx] * nodes[node_idx,:]
+    end
+    cartesian_coords
 end
