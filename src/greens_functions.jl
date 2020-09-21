@@ -25,6 +25,13 @@ function singularScalarGreens(d::Float64,
                               R_minus::Array{Float64, 1},
                               l_plus::Array{Float64, 1},
                               l_minus::Array{Float64, 1})
+    # Analytical integral over a triangle of 1/R
+    # Source: Potential Integrals for Uniform and Linear Source
+    #         Distributions on Polygonal and Polyhedral Domains
+    #         by Wilton, Rao, Glisson , etc.
+    #             See equation 5
+    # Inputs are the outputs of computeSingularScalarGreensParameters()
+
     integral = 0.0
     for i in 1:3 #i indicates triangle edge index
         integral += dot(P0_hat[i,:], u_hat[i,:]) *
@@ -36,6 +43,7 @@ function singularScalarGreens(d::Float64,
 end
 
 function computeSingularScalarGreensParameters(r_test, nodes)
+    # Computes the input parameters for singularScalarGreens()
     # r_test is the observation point
     # nodes are the three triangle nodes
     r_minus = nodes # beginning points of edges

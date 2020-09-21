@@ -71,9 +71,27 @@ include("../../src/greens_functions.jl")
     @testset "singularScalarGreens convergence tests" begin
         # singularScalarGreens should converge to the solution of integral of
         # 1/R as R goes to infinity
-        r_test = [2.0, 0.0, 1.0]
+        include("../../src/quadrature.jl")
+        include("../../src/mesh.jl")
+        gauss7points_cartesian = Array{Float64, 2}(undef, 7, 3)
+        for point_idx in 1:7
+            gauss7points_cartesian[point_idx,:] = barycentric2Cartesian(nodes, gauss7points[point_idx,:])
+        end
+
+        r_test = [-1.0, -1.0, 10.0]
         nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 1.0]
-        singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
+        for iteration in 1:1
+            one_over_R(r_test, x, y, z) = 1 / norm(r_test - [x, y, z])
+            integrand(x,y,z)=one_over_R(r_test,x,y,z)
+            solution = gaussQuadrature(integrand, gauss7points_cartesian, gauss7weights)
+
+            singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
+            integral_results = singularScalarGreens(singular_scalar_greens_params...)
+            println(singular_scalar_greens_params)
+            println("solution ", solution)
+            println(integral_results)
+
+        end
     end
     end
 end
