@@ -10,7 +10,7 @@ include("../../src/greens_functions.jl")
         @test scalarGreens(-1.5, 2.1+0*im) == exp(-im*2.1*1.5)/(4*pi*1.5)
         @test isinf(scalarGreens(0.0, 100.0+0*im)) == true
     end
-    @testset "singularScalarGreens" begin
+    @testset "singularScalarGreens tests" begin
         d = -2.0
         P0_hat = [1.0 0 0; 0 1.0 0; 0 0 1.0]
         u_hat = [-1.0 0 0; 0 -1.0 0; 0 0 -1.0]
@@ -48,8 +48,8 @@ include("../../src/greens_functions.jl")
             rho_minus[i,:] = r_minus[i,:] - n_hat*dot(n_hat, r_minus[i,:])
             I_hat[i,:] = (rho_plus[i,:]-rho_minus[i,:])/norm(rho_plus[i,:]-rho_minus[i,:])
             u_hat[i,:] = cross(I_hat[i,:], n_hat)
-            l_plus[i] = dot(rho_test-r_plus[i,:], I_hat[i,:])
-            l_minus[i] = dot(rho_test-r_minus[i,:], I_hat[i,:])
+            l_plus[i] = dot(rho_plus[i,:]-rho_test, I_hat[i,:])
+            l_minus[i] = dot(rho_minus[i,:]-rho_test, I_hat[i,:])
             P0[i] = abs(dot(rho_plus[i,:]-rho_test, u_hat[i,:]))
         end
 
@@ -57,16 +57,23 @@ include("../../src/greens_functions.jl")
         @test params[1] == d
         @test params[1] == dot(n_hat, r_test - r_minus[1,:]) # another way to compute d
         for i in 1:3 # i is triangle edge index
-            @test_skip params[2,i,:] == (dot(rho_plus[i,:]-rho_test, u_hat[i,:]) - l_plus[i]*I_hat[i,:]) / P0 # P0_hat
-            @test_skip params[2,i,:] == (dot(rho_minus[i,:]-rho_test, u_hat[i,:]) - l_minus[i]*I_hat[i,:]) / P0  # another way to compute P0_hat for edge 2
-            @test_skip params[3,i,:] == u_hat[i,:]
-            @test_skip params[4,i] == P0[i]
-            @test_skip params[4,i] == abs(dot(rho_minus[i,:]-rho_test, u_hat[i,:])) #another way to compute P0
-            @test_skip params[5,i] == sqrt(P0[i]^2 + d^2) #R0
-            @test_skip params[6,i] == sqrt(P_plus[i]^2 + d^2) #R_plus
-            @test_skip params[7,i] == sqrt(P_minus[i]^2 + d^2) #R_minus
-            @test_skip params[8,i] == l_plus[i]
-            @test_skip params[9,i] == l_minus[i]
+            @test isapprox(params[2][i,:], (rho_plus[i,:] - rho_test - l_plus[i]*I_hat[i,:]) / P0[i]) # P0_hat
+            @test isapprox(params[2][i,:], (rho_minus[i,:] - rho_test - l_minus[i]*I_hat[i,:]) / P0[i])  # another way to compute P0_hat for edge 2
+            @test params[3][i,:] == u_hat[i,:]
+            @test params[4][i] == P0[i]
+            @test params[4][i] == abs(dot(rho_minus[i,:]-rho_test, u_hat[i,:])) #another way to compute P0
+            @test params[5][i] == sqrt(P0[i]^2 + d^2) #R0
+            @test params[6][i] == sqrt(norm(rho_plus[i,:]-rho_test)^2 + d^2) #R_plus
+            @test params[7][i] == sqrt(norm(rho_minus[i,:]-rho_test)^2 + d^2) #R_minus
+            @test params[8][i] == l_plus[i]
+            @test params[9][i] == l_minus[i]
         end
+    @testset "singularScalarGreens convergence tests" begin
+        # singularScalarGreens should converge to the solution of integral of
+        # 1/R as R goes to infinity
+        r_test = [2.0, 0.0, 1.0]
+        nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 1.0]
+        singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
+    end
     end
 end
