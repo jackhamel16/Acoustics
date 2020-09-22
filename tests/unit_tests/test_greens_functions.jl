@@ -11,6 +11,8 @@ include("../../src/greens_functions.jl")
         @test isinf(scalarGreens(0.0, 100.0+0*im)) == true
     end
     @testset "singularScalarGreens tests" begin
+        include("../../src/quadrature.jl")
+        include("../../src/mesh.jl")
         d = -2.0
         P0_hat = [1.0 0 0; 0 1.0 0; 0 0 1.0]
         u_hat = [-1.0 0 0; 0 -1.0 0; 0 0 -1.0]
@@ -23,6 +25,30 @@ include("../../src/greens_functions.jl")
         solution = -2.09660929985
         @test isapprox(singularScalarGreens(d, P0_hat, u_hat, P0, R0, R_plus,
                                             R_minus, l_plus, l_minus), solution)
+
+        # The following two tests compare singularScalarGreens to the result
+        # of integrating 1/R using 7-point Gauss quadrature
+        gauss7points_cartesian = Array{Float64, 2}(undef, 7, 3)
+        nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 0.0]
+        area = 2.0
+        for point_idx in 1:7
+            gauss7points_cartesian[point_idx,:] = barycentric2Cartesian(nodes, gauss7points[point_idx,:])
+        end
+        one_over_R(r_test, x, y, z) = 1 / norm(r_test - [x, y, z])
+
+        r_test = [1000.0, 1.0, 0.0]
+        integrand(x,y,z)=one_over_R(r_test,x,y,z)
+        solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
+        singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
+        integral_results = singularScalarGreens(singular_scalar_greens_params...)
+        @test isapprox(integral_results, solution, rtol=1e-6)
+
+        r_test = [1000.0, 1.0, -50.0]
+        integrand(x,y,z)=one_over_R(r_test,x,y,z)
+        solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
+        singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
+        integral_results = singularScalarGreens(singular_scalar_greens_params...)
+        @test isapprox(integral_results, solution, rtol=1e-4)
     end
     @testset "computeSingularScalarGreensParameters tests" begin
         r_test = [2.0, 0.0, 1.0]
@@ -68,30 +94,5 @@ include("../../src/greens_functions.jl")
             @test params[8][i] == l_plus[i]
             @test params[9][i] == l_minus[i]
         end
-    @testset "singularScalarGreens convergence tests" begin
-        # singularScalarGreens should converge to the solution of integral of
-        # 1/R as R goes to infinity
-        include("../../src/quadrature.jl")
-        include("../../src/mesh.jl")
-        gauss7points_cartesian = Array{Float64, 2}(undef, 7, 3)
-        for point_idx in 1:7
-            gauss7points_cartesian[point_idx,:] = barycentric2Cartesian(nodes, gauss7points[point_idx,:])
-        end
-
-        r_test = [-1.0, -1.0, 10.0]
-        nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 1.0]
-        for iteration in 1:1
-            one_over_R(r_test, x, y, z) = 1 / norm(r_test - [x, y, z])
-            integrand(x,y,z)=one_over_R(r_test,x,y,z)
-            solution = gaussQuadrature(integrand, gauss7points_cartesian, gauss7weights)
-
-            singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
-            integral_results = singularScalarGreens(singular_scalar_greens_params...)
-            println(singular_scalar_greens_params)
-            println("solution ", solution)
-            println(integral_results)
-
-        end
-    end
     end
 end
