@@ -16,12 +16,12 @@ const gauss7weights = [2.25000000000000255351295663786004e-01
                        1.25939180544827139529573400977824e-01
                        1.25939180544827139529573400977824e-01]
 
-function gaussQuadrature(func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})::Float64
+function gaussQuadrature(scale_factor::Float64, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})::Float64
     num_points = length(weights)
     quadrature_sum = 0
     for sum_idx in 1:num_points
         x, y, z = points[sum_idx,:]
         quadrature_sum += weights[sum_idx] * func(x, y, z)
     end
-    quadrature_sum
+    scale_factor * quadrature_sum
 end

@@ -26,12 +26,12 @@ include("../../src/mesh.jl")
         @testset "gaussQuadrature function tests" begin
             returnZero(x,y,z) = 0
             points = [0.0 0.0 0.0]; weights = [1.0]
-            @test gaussQuadrature(returnZero, points, weights) == 0
+            @test gaussQuadrature(1.0, returnZero, points, weights) == 0
 
             returnXplusYplusZ(x,y,z) = x + y + z
             points = [-1.5 0.5 0.0; 0.0 1.0 2.0]; weights = [1.0, 9.1]
             solution = 26.299999999999997
-            @test gaussQuadrature(returnXplusYplusZ, points, weights) == solution
+            @test gaussQuadrature(1.0, returnXplusYplusZ, points, weights) == solution
 
             # This test will integrate over a triangle using the 7 point rule above
             f(x,y,z) = 2*x
@@ -40,9 +40,9 @@ include("../../src/mesh.jl")
             for point_idx in 1:7
                 gauss7points_cartesian[point_idx,:] = barycentric2Cartesian(nodes, gauss7points[point_idx,:])
             end
-            area = 2
-            solution = 8/3/area
-            @test gaussQuadrature(f, gauss7points_cartesian, gauss7weights) == solution
+            area = 2.0
+            solution = 8/3
+            @test gaussQuadrature(area, f, gauss7points_cartesian, gauss7weights) == solution
         end
     end
 
