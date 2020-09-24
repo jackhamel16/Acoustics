@@ -74,8 +74,8 @@ include("../../src/mesh.jl")
             end
             area = 2.0
             solution = 8/3
-            @test gaussQuadrature(area, f, gauss7points_cartesian, gauss7weights) == solution
-            @test gaussQuadrature(area, f, gauss13points_cartesian, gauss13weights) == solution
+            @test isapprox(gaussQuadrature(area, f, gauss7points_cartesian, gauss7weights), solution, rtol=1e-16)
+            @test isapprox(gaussQuadrature(area, f, gauss13points_cartesian, gauss13weights), solution, rtol=1e-15)
         end
     end
 
