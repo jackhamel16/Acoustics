@@ -10,23 +10,16 @@ include("../../src/greens_functions.jl")
         @test scalarGreens(-1.5, 2.1+0*im) == exp(-im*2.1*1.5)/(4*pi*1.5)
         @test isinf(scalarGreens(0.0, 100.0+0*im)) == true
     end
-    @testset "singularScalarGreens tests" begin
+    @testset "scalarGreens tests" begin
+        @test scalarGreensNonSingular(1.0, 0.0+0*im) == 0.0
+        @test scalarGreensNonSingular(1.0, 1.0+0*im) == (exp(-im)-1)/(4*pi)
+        @test scalarGreensNonSingular(-1.5, 2.1+0*im) == (exp(-im*2.1*1.5)-1)/(4*pi*1.5)
+        @test isnan(scalarGreensNonSingular(0.0, 100.0+0*im)) == true
+    end
+    @testset "singularScalarGreensIntegral tests" begin
         include("../../src/quadrature.jl")
         include("../../src/mesh.jl")
-        d = -2.0
-        P0_hat = [1.0 0 0; 0 1.0 0; 0 0 1.0]
-        u_hat = [-1.0 0 0; 0 -1.0 0; 0 0 -1.0]
-        P0 = [2.0, 1.0, 1.5]
-        R0 = [1.2, 1.3, 1.4]
-        R_plus = [3.0, 4.0, 1.0]
-        R_minus = [1.0, 1.5, 2.1]
-        l_plus = [0.5, 0.1, 0.5]
-        l_minus = [0.2, 0.5, 0.2]
-        solution = -2.09660929985
-        @test isapprox(singularScalarGreens(d, P0_hat, u_hat, P0, R0, R_plus,
-                                            R_minus, l_plus, l_minus), solution)
-
-        # The following two tests compare singularScalarGreens to the result
+        # The following two tests compare singularScalarGreensIntegral to the result
         # of integrating 1/R using 7-point Gauss quadrature
         gauss7points_cartesian = Array{Float64, 2}(undef, 7, 3)
         nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 0.0]
@@ -35,22 +28,48 @@ include("../../src/greens_functions.jl")
             gauss7points_cartesian[point_idx,:] = barycentric2Cartesian(nodes, gauss7points[point_idx,:])
         end
         one_over_R(r_test, x, y, z) = 1 / norm(r_test - [x, y, z])
-
+        distance_to_edge_tol = 1e-6
         r_test = [1000.0, 1.0, 0.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
         solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
-        singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
-        integral_results = singularScalarGreens(singular_scalar_greens_params...)
+        integral_results = singularScalarGreensIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-6)
 
-        r_test = [1000.0, 1.0, -50.0]
+        r_test = [0.5, 0.5, -50.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
         solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
-        singular_scalar_greens_params = computeSingularScalarGreensParameters(r_test, nodes)
-        integral_results = singularScalarGreens(singular_scalar_greens_params...)
+        integral_results = singularScalarGreensIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-4)
+
+        # This test is of when the projection of r_test is on one edge extension
+        r_test = [1000.0, 0.0, 0.0]
+        integrand(x,y,z)=one_over_R(r_test,x,y,z)
+        solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
+        integral_results = singularScalarGreensIntegral(r_test, nodes, distance_to_edge_tol)
+        @test isapprox(integral_results, solution, rtol=1e-6)
+
+        # This test is of when the projection of r_test is on one edge
+        r_test = [1.0, 0.0, 1000.0]
+        integrand(x,y,z)=one_over_R(r_test,x,y,z)
+        solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
+        integral_results = singularScalarGreensIntegral(r_test, nodes, distance_to_edge_tol)
+        @test isapprox(integral_results, solution, rtol=1e-6)
+
+        # This test is of when the projection of r_test is on a corner (two edges)
+        r_test = [0.0, 2.0, 1000.0]
+        integrand(x,y,z)=one_over_R(r_test,x,y,z)
+        solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
+        integral_results = singularScalarGreensIntegral(r_test, nodes, distance_to_edge_tol)
+        @test isapprox(integral_results, solution, rtol=1e-6)
+
+        # This test is of when the projection of r_test is really close to an edge
+        r_test = [1e-12, 1.0, 1000.0]
+        integrand(x,y,z)=one_over_R(r_test,x,y,z)
+        solution = gaussQuadrature(area, integrand, gauss7points_cartesian, gauss7weights)
+        integral_results = singularScalarGreensIntegral(r_test, nodes, distance_to_edge_tol)
+        @test isapprox(integral_results, solution, rtol=1e-6)
     end
-    @testset "computeSingularScalarGreensParameters tests" begin
+    @testset "computeSingularScalarGreensIntegralParameters tests" begin
         r_test = [2.0, 0.0, 1.0]
         nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 1.0]
 
@@ -59,7 +78,6 @@ include("../../src/greens_functions.jl")
         n_hat = cross(r_plus[1,:]-r_minus[1,:],r_minus[3,:]-r_plus[3,:])/
                 norm(cross(r_plus[1,:]-r_minus[1,:],r_minus[3,:]-r_plus[3,:]))
         d = dot(n_hat, r_test - r_plus[1,:])
-
         rho_test = r_test - d * n_hat
 
         rho_plus = Array{Float64, 2}(undef, 3, 3)
@@ -79,7 +97,7 @@ include("../../src/greens_functions.jl")
             P0[i] = abs(dot(rho_plus[i,:]-rho_test, u_hat[i,:]))
         end
 
-        params = computeSingularScalarGreensParameters(r_test, nodes)
+        params = computeSingularScalarGreensIntegralParameters(r_test, nodes)
         @test params[1] == d
         @test params[1] == dot(n_hat, r_test - r_minus[1,:]) # another way to compute d
         for i in 1:3 # i is triangle edge index
