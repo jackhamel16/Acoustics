@@ -1,3 +1,7 @@
+using LinearAlgebra
+
+include("mesh.jl")
+
 # The gauss7 rule comes from:
 #    https://www.math.unipd.it/~alvise/SETS_CUBATURE_TRIANGLE/dunavant/set_dunavant_barycentric.m
 #    Note: ordering of the triangle nodes counter-clockwise
@@ -69,7 +73,7 @@ const gauss13weights = [-1.49570044467681767530464753690467e-01
 #                         7.71137608902571491942268266939209e-02
 #                         7.71137608902571491942268266939209e-02]
 
-function gaussQuadrature(scale_factor::Float64, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})::Float64
+function gaussQuadrature(scale_factor::Float64, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})
     num_points = length(weights)
     quadrature_sum = 0
     for sum_idx in 1:num_points
@@ -77,4 +81,14 @@ function gaussQuadrature(scale_factor::Float64, func::Function, points::Array{Fl
         quadrature_sum += weights[sum_idx] * func(x, y, z)
     end
     scale_factor * quadrature_sum
+end
+
+function integrateTriangle(nodes::Array{Float64, 2}, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})
+    num_points = size(points)[1]
+    triangle_area = norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[2,:]))/2
+    quadrature_points = Array{Float64, 2}(undef, num_points, 3)
+    for point_idx in 1:num_points
+        quadrature_points[point_idx,:] = barycentric2Cartesian(nodes, points[point_idx,:])
+    end
+    gaussQuadrature(triangle_area, func, quadrature_points, weights)
 end
