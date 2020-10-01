@@ -50,14 +50,11 @@ end
 function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
                                           r_test::Array{Float64, 1},
                                           nodes::Array{Float64, 2},
-                                          gauss7points::Array{Float64, 2},
-                                          gauss7weights::Array{Float64, 1},
+                                          quadrature_rule::Array{Float64, 2},
                                           distance_to_edge_tol::Float64)
-    non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]), wavenumber)
-    non_singular_integral = integrateTriangle(nodes, non_singular_integrand, gauss7points, gauss7weights)
+    non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test), wavenumber)
+    non_singular_integral = integrateTriangle(nodes, non_singular_integrand, quadrature_rule[:,1:3], quadrature_rule[:,4])
     singular_integral = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
-    println(singular_integral)
-    println(non_singular_integral)
     singular_integral + non_singular_integral
 end
 
