@@ -135,6 +135,63 @@ include("../../src/greens_functions.jl")
         solution = integrateTriangle(nodes, scalar_greens_integrand, gauss79rule[:,1:3], gauss79rule[:,4])
         @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, gauss79rule, distance_to_edge_tol), solution, rtol=1e-15)
 
+        # one edge length away from triangle in xy plane
+        wavenumber = 1/10 +0*im
+        r_test = [-1.0, 0.5, 0.0]
+        nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+        distance_to_edge_tol = 1e-12
+        scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
+        solution = integrateTriangle(nodes, scalar_greens_integrand, gauss7rule[:,1:3], gauss7rule[:,4])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, gauss7rule, distance_to_edge_tol), solution, rtol=1e-4)
+        solution = integrateTriangle(nodes, scalar_greens_integrand, gauss13rule[:,1:3], gauss13rule[:,4])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, gauss13rule, distance_to_edge_tol), solution, rtol=1e-5)
+        solution = integrateTriangle(nodes, scalar_greens_integrand, gauss79rule[:,1:3], gauss79rule[:,4])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, gauss79rule, distance_to_edge_tol), solution, rtol=1e-14)
+
+        # analytical test less than one edge lengths away from triangle
+        mathematica_solution = 0.04149730535944524-im*0.00399171401828898 # skeptically trust to 12 digits
+        wavenumber = 1/10+0*im
+        r_test = [-0.5, 0.5, 0.5]
+        nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.1]
+        distance_to_edge_tol = 1e-12
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+              gauss7rule, distance_to_edge_tol), mathematica_solution, rtol=1e-7)
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+              gauss13rule, distance_to_edge_tol), mathematica_solution, rtol=1e-8)
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+              gauss79rule, distance_to_edge_tol), mathematica_solution, rtol=1e-14)
+
+
+    end
+
+    @testset "scalarGreensSingularIntegral tests" begin
+        wavenumber = 1/10 +0*im
+        r_test = [1/3, 1/3, 0.0]
+        nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+        distance_to_edge_tol = 1e-12
+        solution_to_test_7point = scalarGreensSingularIntegral(wavenumber, r_test,
+                                        nodes, gauss7rule, distance_to_edge_tol)
+        solution_to_test_79point = scalarGreensSingularIntegral(wavenumber, r_test,
+                                        nodes, gauss79rule, distance_to_edge_tol)
+
+        sub_nodes = ([1/3 1/3 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0],
+                     [0.0 0.0 0.0; 1/3 1/3 0.0; 0.0 1.0 0.0],
+                     [0.0 0.0 0.0; 1.0 0.0 0.0; 1/3 1/3 0.0])
+        solution = 0.0
+        for triangle_idx in 1:3
+            solution += scalarGreensNearSingularIntegral(wavenumber, r_test,
+                                                         sub_nodes[triangle_idx],
+                                                         gauss7rule,
+                                                         distance_to_edge_tol)
+        end
+        # Checks against the same algorithm, but done again above with
+        # 79 point quadrature
+        @test isapprox(solution_to_test_7point, solution, rtol=1e-14)
+        #check against mathematic solution (trust to 12 digits with skepticism)
+        # obtained with NIntegrate with AccuracyGoal -> 16, PrecisionGoal -> 12
+        mathematica_solution = 0.19150130866-im*0.003978136822535155
+        @test isapprox(solution_to_test_7point, mathematica_solution, rtol=1e-5)
+        @test isapprox(solution_to_test_79point, mathematica_solution, rtol=1e-7)
     end
 
     @testset "computeScalarGreensSingularityIntegralParameters tests" begin

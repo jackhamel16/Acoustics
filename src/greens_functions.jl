@@ -52,10 +52,32 @@ function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
                                           nodes::Array{Float64, 2},
                                           quadrature_rule::Array{Float64, 2},
                                           distance_to_edge_tol::Float64)
-    non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test), wavenumber)
-    non_singular_integral = integrateTriangle(nodes, non_singular_integrand, quadrature_rule[:,1:3], quadrature_rule[:,4])
-    singular_integral = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
+    non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
+                                                            wavenumber)
+    non_singular_integral = integrateTriangle(nodes, non_singular_integrand,
+                                              quadrature_rule[:,1:3],
+                                              quadrature_rule[:,4])
+    singular_integral = scalarGreensSingularityIntegral(r_test, nodes,
+                                                        distance_to_edge_tol)
     singular_integral + non_singular_integral
+end
+
+function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
+                                      r_test::Array{Float64, 1},
+                                      nodes::Array{Float64, 2},
+                                      quadrature_rule::Array{Float64, 2},
+                                      distance_to_edge_tol::Float64)
+    # Computes the integral of the scalar greens function for self-interactions
+    # i.e. r_test is in the source triangle described by nodes
+    total_integral = 0.0
+    for triangle_idx in 1:3
+        sub_nodes = copy(nodes)
+        sub_nodes[triangle_idx,:] = r_test
+        total_integral += scalarGreensNearSingularIntegral(wavenumber, r_test,
+                                                           sub_nodes, quadrature_rule,
+                                                           distance_to_edge_tol)
+    end
+    total_integral
 end
 
 function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64, 1},
