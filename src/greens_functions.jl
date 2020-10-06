@@ -20,6 +20,40 @@ function scalarGreensNonSingular(R::Float64, k::Complex{Float64})
     (exp(-im*k*abs(R))-1)/(4*pi*abs(R))
 end
 
+function scalarGreensIntegration(wavenumber::Complex{Float64},
+                                 centroid_src::Array{Float64, 1},
+                                 r_test::Array{Float64, 1},
+                                 nodes::Array{Float64, 2},
+                                 quadrature_rule::Array{Float64, 2},
+                                 distance_to_edge_tol::Float64,
+                                 near_singular_tol::Float64,
+                                 is_singular::Bool)
+    # This function encapsulates all possible integration routines for the
+    # scalar Green's function over a source triangle.
+    # distance_to_edge_tol is distance at which the projection of r_test must be
+    #    to an edge or extension to ignore that edge's contribution to the integral
+    # near_singular_tol is the number of max edge lengths away r_test can be
+    #    before doing purely numerical integration
+    max_edge_length = 0.0
+    for edge_idx in 1:3
+        edge_length = norm(nodes[edge_idx,:]-nodes[edge_idx%3+1,:])
+        if edge_length > max_edge_length
+            max_edge_length = edge_length
+        end
+    end
+    if is_singular == true
+        scalarGreensSingularIntegral(wavenumber, r_test, nodes, quadrature_rule,
+                                     distance_to_edge_tol)
+    elseif norm(r_test-centroid_src) > near_singular_tol*max_edge_length
+        scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
+        integrateTriangle(nodes, scalar_greens_integrand, quadrature_rule[:,1:3],
+                          quadrature_rule[:,4])
+    else
+        scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+                                         quadrature_rule, distance_to_edge_tol)
+    end
+end
+
 function scalarGreensSingularityIntegral(r_test::Array{Float64, 1},
                                          nodes::Array{Float64, 2},
                                          epsilon::Float64)
@@ -52,6 +86,9 @@ function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
                                           nodes::Array{Float64, 2},
                                           quadrature_rule::Array{Float64, 2},
                                           distance_to_edge_tol::Float64)
+    # Used when r_test is close to source triangle, but not on it. Uses a
+    # combination of analytical integration for the singular term and numerical
+    # for the rest.
     non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
                                                             wavenumber)
     non_singular_integral = integrateTriangle(nodes, non_singular_integrand,

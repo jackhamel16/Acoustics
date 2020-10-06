@@ -194,6 +194,52 @@ include("../../src/greens_functions.jl")
         @test isapprox(solution_to_test_79point, mathematica_solution, rtol=1e-7)
     end
 
+    @testset "scalarGreensIntegration tests" begin
+        wavenumber = 1/10 + 0*im
+        nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 -1.0 0.0]
+        max_edge_length = sqrt(2)
+        centroid_src = [1/3, -1/3, 0.0]
+        near_singular_tol = 2.0
+        distance_to_edge_tol = 1e-12
+        r_test_far = [0.5, 50.0, 0.0]
+        r_test_near = [1/3, 1.0, 0.0]
+        r_test_singular = [0.25, -0.25, 0.0]
+        scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test_far),
+                                                      wavenumber)
+        solution_far = integrateTriangle(nodes, scalar_greens_integrand,
+                                         gauss7rule[:,1:3], gauss7rule[:,4])
+        solution_near = scalarGreensNearSingularIntegral(wavenumber, r_test_near, nodes,
+                                                         gauss7rule, distance_to_edge_tol)
+        solution_singular = scalarGreensSingularIntegral(wavenumber, r_test_singular,
+                                        nodes, gauss7rule, distance_to_edge_tol)
+        @test isapprox(scalarGreensIntegration(wavenumber, centroid_src,
+                                               r_test_far, nodes, gauss7rule,
+                                               distance_to_edge_tol, near_singular_tol,
+                                               false),
+                       solution_far, rtol=1e-15)
+        low_near_singular_tol = 4/(3*sqrt(2))-0.0001
+        @test false == isapprox(scalarGreensIntegration(wavenumber, centroid_src,
+                                               r_test_near, nodes, gauss7rule,
+                                               distance_to_edge_tol, low_near_singular_tol,
+                                               false),
+                                solution_near, rtol=1e-15)
+        @test isapprox(scalarGreensIntegration(wavenumber, centroid_src,
+                                               r_test_near, nodes, gauss7rule,
+                                               distance_to_edge_tol, near_singular_tol,
+                                               false),
+                       solution_near, rtol=1e-15)
+        @test isapprox(scalarGreensIntegration(wavenumber, centroid_src,
+                                               r_test_singular, nodes, gauss7rule,
+                                               distance_to_edge_tol, near_singular_tol,
+                                               true),
+                       solution_singular, rtol=1e-15)
+        @test false == isapprox(scalarGreensIntegration(wavenumber, centroid_src,
+                                               r_test_singular, nodes, gauss7rule,
+                                               distance_to_edge_tol, near_singular_tol,
+                                               false),
+                       solution_singular, rtol=1e-15)
+    end
+
     @testset "computeScalarGreensSingularityIntegralParameters tests" begin
         r_test = [2.0, 0.0, 1.0]
         nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 1.0]
