@@ -23,9 +23,9 @@ include("../../src/mesh.jl")
         num_elements = 2
         num_coord_dims_solution = 3
         nodes_per_triangle_solution = 3
-        nodes_solution = convert(Array{Float64}, transpose(hcat([0,0,0],[0,1,0],[1,1,0],[1,0,0])))
-        elements_solution = convert(Array{UInt64}, transpose(hcat([2,1,4],[2,4,3])))
-        centroids_solution = convert(Array{Float64}, transpose(hcat([1/3,1/3,0],[2/3,2/3,0])))
+        nodes_solution = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
+        elements_solution = [2 1 4; 2 4 3]
+        centroids_solution = [1/3 1/3 0.0; 2/3 2/3 0.0]
 
         test_mesh_filename = "examples/simple/rectangle_plate.msh"
         testPulseMesh = buildPulseMesh(test_mesh_filename)
