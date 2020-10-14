@@ -3,6 +3,7 @@ using LinearAlgebra
 
 include("../../src/fill.jl")
 include("../../src/quadrature.jl")
+include("../../src/greens_functions.jl")
 
 @testset "fill tests" begin
     @testset "rhsFill tests" begin
@@ -57,6 +58,46 @@ include("../../src/quadrature.jl")
         rhs_solution = [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
         rhs = rhsFill(num_elements, elements, nodes_global, fieldFunc, gauss1rule)
         @test isapprox(rhs, rhs_solution, rtol=1e-15)
+    end
+    @testset "matrixFill tests" begin
+        #first test is for non-singular elements with 1 point rule
+        wavenumber = 1/10+im*0
+        nodes_global = [0.0 0.0 1.5; 1.0 0.0 1.5; 0.0 1.0 1.5;
+                     10.0 0.0 1.5; 11.0 0.0 1.5; 10.0 1.0 1.5]
+        areas = [0.5, 0.5]
+        elements = [1 2 3; 4 5 6]
+        num_elements = 2
+        centroids = [1/3 1/3 1.5; 10.0+1/3 1/3 1.5]
+        r_test = [10.0 + 1/3, 1/3, 1.5]
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        matrix_solution = Array{Complex{Float64}, 2}(undef, num_elements, num_elements)
+        matrix_solution[1,1] = areas[1] * scalarGreensSingularIntegral(wavenumber,
+                                              centroids[1,:],
+                                              nodes_global[1:3,:],
+                                              gauss7rule,
+                                              distance_to_edge_tol)
+        matrix_solution[2,2] = areas[2] * scalarGreensSingularIntegral(wavenumber,
+                                              centroids[2,:],
+                                              nodes_global[4:6,:],
+                                              gauss7rule,
+                                              distance_to_edge_tol)
+        greensFunc(x,y,z)=scalarGreens(norm([x,y,z]-centroids[2,:]), wavenumber)
+        matrix_solution[2,1] = areas[2] * integrateTriangle(nodes_global[1:3,:], greensFunc, gauss7rule[:,1:3], gauss7rule[:,4])
+        greensFunc(x,y,z)=scalarGreens(norm([x,y,z]-centroids[1,:]), wavenumber)
+        matrix_solution[1,2] = areas[1] * integrateTriangle(nodes_global[4:6,:], greensFunc, gauss7rule[:,1:3], gauss7rule[:,4])
 
+        testIntegrand(r_test, nodes, is_singular) = scalarGreensIntegration(wavenumber, centroids[1,:],
+                                                       r_test,
+                                                       nodes,
+                                                       gauss7rule,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        matrix = matrixFill(num_elements, elements, nodes_global, testIntegrand, gauss1rule)
+        @test isapprox(matrix[1,1], matrix_solution[1,1], rtol=1e-15)
+        @test isapprox(matrix[2,1], matrix_solution[2,1], rtol=1e-15)
+        @test isapprox(matrix[2,2], matrix_solution[2,2], rtol=1e-15)
+        @test isapprox(matrix[1,2], matrix_solution[1,2], rtol=1e-15)
     end
 end
