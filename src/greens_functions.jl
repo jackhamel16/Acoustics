@@ -1,5 +1,7 @@
 using LinearAlgebra
 
+include("mesh.jl")
+include("quadrature.jl")
 # struct ScalarGreensSingularityIntegralParams
 #     d::Float64,
 #     P0_hat::Array{Float64, 2}
@@ -21,7 +23,6 @@ function scalarGreensNonSingular(R::Float64, k::Complex{Float64})
 end
 
 function scalarGreensIntegration(wavenumber::Complex{Float64},
-                                 centroid_src::Array{Float64, 1},
                                  r_test::Array{Float64, 1},
                                  nodes::Array{Float64, 2},
                                  quadrature_rule::Array{Float64, 2},
@@ -41,6 +42,7 @@ function scalarGreensIntegration(wavenumber::Complex{Float64},
             max_edge_length = edge_length
         end
     end
+    centroid_src = barycentric2Cartesian(nodes, [1/3, 1/3, 1/3])
     if is_singular == true
         scalarGreensSingularIntegral(wavenumber, r_test, nodes, quadrature_rule,
                                      distance_to_edge_tol)
