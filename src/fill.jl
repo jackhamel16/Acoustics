@@ -3,6 +3,8 @@ using LinearAlgebra
 include("quadrature.jl")
 
 function getTriangleNodes(element_idx::Int64, elements::Array{Int64, 2}, nodes::Array{Float64, 2})
+    # Gets nodes of triangle specified by element_idx
+    # (does not have dedicated unit test right now)
     triangle_nodes = Array{Float64, 2}(undef, 3, 3)
     for node_idx_local in 1:3
         node_idx_global = elements[element_idx, node_idx_local]
