@@ -2,17 +2,6 @@ using LinearAlgebra
 
 include("mesh.jl")
 include("quadrature.jl")
-# struct ScalarGreensSingularityIntegralParams
-#     d::Float64,
-#     P0_hat::Array{Float64, 2}
-#     u_hat::Array{Float64, 2}
-#     P0::Array{Float64, 1}
-#     R0::Array{Float64, 1}
-#     R_plus::Array{Float64, 1}
-#     R_minus::Array{Float64, 1}
-#     l_plus::Array{Float64, 1}
-#     l_minus::Array{Float64, 1}
-# end
 
 function scalarGreens(R::Float64, k::Complex{Float64})
     exp(-im*k*abs(R))/(4*pi*abs(R))
@@ -56,69 +45,6 @@ function scalarGreensIntegration(wavenumber::Complex{Float64},
     end
 end
 
-function scalarGreensSingularityIntegral(r_test::Array{Float64, 1},
-                                         nodes::Array{Float64, 2},
-                                         epsilon::Float64)
-    # Analytical integral over a triangle of 1/R
-    # Source: Potential Integrals for Uniform and Linear Source
-    #         Distributions on Polygonal and Polyhedral Domains
-    #         by Wilton, Rao, Glisson , etc.
-    #             See equation 5
-    # Inputs are the outputs of computeScalarGreensSingularityIntegralParameters()
-    # r_test is a 3 element array describing test points
-    # nodes is a 3 x 3 array with each row a node of the source triangle
-    # epsilon is the ignore contribution tolerance of distance of r_test projection to an edge
-    d, P0_hat, u_hat, P0, R0, R_plus, R_minus, l_plus, l_minus =
-        computeScalarGreensSingularityIntegralParameters(r_test, nodes)
-    integral = 0.0
-    for i in 1:3 #i indicates triangle edge index
-        if P0[i] < epsilon # Indicates projection of r_test is on edge i or its
-            continue  # extension which makes this contribution zero so skip it
-        end
-        integral += dot(P0_hat[i,:], u_hat[i,:]) *
-                    (P0[i] * log((R_plus[i]+l_plus[i])/(R_minus[i]+l_minus[i]))-
-                     abs(d) * (atan(P0[i]*l_plus[i], R0[i]^2+abs(d)*R_plus[i]) -
-                               atan(P0[i]*l_minus[i], R0[i]^2+abs(d)*R_minus[i])))
-    end
-    integral / (4*pi)
-end
-
-function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
-                                          r_test::Array{Float64, 1},
-                                          nodes::Array{Float64, 2},
-                                          quadrature_rule::Array{Float64, 2},
-                                          distance_to_edge_tol::Float64)
-    # Used when r_test is close to source triangle, but not on it. Uses a
-    # combination of analytical integration for the singular term and numerical
-    # for the rest.
-    non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
-                                                            wavenumber)
-    non_singular_integral = integrateTriangle(nodes, non_singular_integrand,
-                                              quadrature_rule[:,1:3],
-                                              quadrature_rule[:,4])
-    singular_integral = scalarGreensSingularityIntegral(r_test, nodes,
-                                                        distance_to_edge_tol)
-    singular_integral + non_singular_integral
-end
-
-function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
-                                      r_test::Array{Float64, 1},
-                                      nodes::Array{Float64, 2},
-                                      quadrature_rule::Array{Float64, 2},
-                                      distance_to_edge_tol::Float64)
-    # Computes the integral of the scalar greens function for self-interactions
-    # i.e. r_test is in the source triangle described by nodes
-    total_integral = 0.0
-    for triangle_idx in 1:3
-        sub_nodes = copy(nodes)
-        sub_nodes[triangle_idx,:] = r_test
-        total_integral += scalarGreensNearSingularIntegral(wavenumber, r_test,
-                                                           sub_nodes, quadrature_rule,
-                                                           distance_to_edge_tol)
-    end
-    total_integral
-end
-
 function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64, 1},
                                                           nodes::Array{Float64, 2})
     # Computes the input parameters for scalarGreensSingularityIntegral()
@@ -158,4 +84,80 @@ function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64,
         R_minus[i] = sqrt(norm(rho_minus[i,:]-rho)^2 + d^2)
     end
     (d, P0_hat, u_hat, P0, R0, R_plus, R_minus, l_plus, l_minus)
+end
+
+function scalarGreensSingularityIntegral(r_test::Array{Float64, 1},
+                                         nodes::Array{Float64, 2},
+                                         epsilon::Float64)
+    # Analytical integral over a triangle of 1/R
+    # Source: Potential Integrals for Uniform and Linear Source
+    #         Distributions on Polygonal and Polyhedral Domains
+    #         by Wilton, Rao, Glisson , etc.
+    #             See equation 5
+    # Inputs are the outputs of computeScalarGreensSingularityIntegralParameters()
+    # r_test is a 3 element array describing test points
+    # nodes is a 3 x 3 array with each row a node of the source triangle
+    # epsilon is the ignore contribution tolerance of distance of r_test projection to an edge
+    d, P0_hat, u_hat, P0, R0, R_plus, R_minus, l_plus, l_minus =
+        computeScalarGreensSingularityIntegralParameters(r_test, nodes)
+    integral = 0.0
+    for i in 1:3 #i indicates triangle edge index
+        if P0[i] < epsilon # Indicates projection of r_test is on edge i or its
+            continue  # extension which makes this contribution zero so skip it
+        end
+        integral += dot(P0_hat[i,:], u_hat[i,:]) *
+                    (P0[i] * log((R_plus[i]+l_plus[i])/(R_minus[i]+l_minus[i]))-
+                     abs(d) * (atan(P0[i]*l_plus[i], R0[i]^2+abs(d)*R_plus[i]) -
+                               atan(P0[i]*l_minus[i], R0[i]^2+abs(d)*R_minus[i])))
+    end
+    integral / (4*pi)
+end
+
+function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
+                                          r_test::Array{Float64, 1},
+                                          nodes::Array{Float64, 2},
+                                          quadrature_rule::Array{Float64, 2},
+                                          distance_to_edge_tol::Float64)
+    # Used when r_test is close to source triangle, but not on it. Uses a
+    # combination of analytical integration for the singular term and numerical
+    # for the rest.
+    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
+                                             r_test::Array{Float64, 1},
+                                             nodes::Array{Float64, 2},
+                                             quadrature_rule::Array{Float64, 2})
+    singular_integral = scalarGreensSingularityIntegral(r_test, nodes,
+                                                        distance_to_edge_tol)
+    singular_integral + non_singular_integral
+end
+
+function scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
+                                         r_test::Array{Float64, 1},
+                                         nodes::Array{Float64, 2},
+                                         quadrature_rule::Array{Float64, 2})
+    # Performs numerical integration of scalar Green's function with
+    # singularity removed
+    non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
+                                                            wavenumber)
+    integrateTriangle(nodes, non_singular_integrand, quadrature_rule[:,1:3],
+                      quadrature_rule[:,4])
+end
+
+function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
+                                      r_test::Array{Float64, 1},
+                                      nodes::Array{Float64, 2},
+                                      quadrature_rule::Array{Float64, 2},
+                                      distance_to_edge_tol::Float64)
+    # Computes the integral of the scalar greens function for self-interactions
+    # i.e. r_test is in the source triangle described by nodes
+    total_integral = scalarGreensSingularityIntegral(r_test, nodes,
+                                                     distance_to_edge_tol)
+    for triangle_idx in 1:3
+        sub_nodes = copy(nodes)
+        sub_nodes[triangle_idx,:] = r_test
+        total_integral += scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
+                                                 r_test::Array{Float64, 1},
+                                                 sub_nodes::Array{Float64, 2},
+                                                 quadrature_rule::Array{Float64, 2})
+    end
+    total_integral
 end
