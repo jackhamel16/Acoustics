@@ -28,6 +28,7 @@ function matrixFill(num_elements::Int64, elements::Array{Int64, 2}, nodes::Array
             test_nodes = getTriangleNodes(test_idx, elements, nodes)
             src_nodes = getTriangleNodes(src_idx, elements, nodes)
             testIntegrandXYZ(x,y,z) = testIntegrand([x,y,z], src_nodes, is_singular)
+            println("indices: ",test_idx, src_idx)
             z_matrix[test_idx, src_idx] = integrateTriangle(test_nodes, testIntegrandXYZ, quadrature_rule[:,1:3], quadrature_rule[:,4])
         end
     end

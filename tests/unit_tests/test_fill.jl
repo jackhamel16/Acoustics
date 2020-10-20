@@ -99,5 +99,62 @@ include("../../src/greens_functions.jl")
                 @test isapprox(matrix[test_idx, src_idx], matrix_solution[test_idx, src_idx], rtol=1e-15)
             end
         end
+
+        #first test is for 3 triangles with 7 point rule
+        wavenumber = 1/10+im*0
+        nodes_global = [0.0 0.0 1.5; 1.0 0.0 1.5; 0.0 1.0 1.5;
+                        10.0 0.0 1.5; 11.0 0.0 1.5; 10.0 1.0 1.5;
+                        1.0 1.0 0.0]
+        areas = [0.5, 0.5, 1.1726039399558574]
+        elements = [1 2 3; 4 5 6; 2 7 3]
+        num_elements = 3
+        centroids = [1/3 1/3 1.5; 10.0+1/3 1/3 1.5; 2/3 2/3 1.0]
+        r_test = [10.0 + 1/3, 1/3, 1.5]
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 2.0
+        matrix_solution = Array{Complex{Float64}, 2}(undef, num_elements, num_elements)
+        integrand11(x,y,z) = scalarGreensSingularIntegral(wavenumber,
+                                              [x,y,z], #r_test
+                                              nodes_global[1:3,:],
+                                              gauss7rule,
+                                              distance_to_edge_tol)
+        scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
+        # The integrand below should evaluate to be purely numerical
+        integrand12(x,y,z) = scalarGreensIntegration(wavenumber,
+                                         [x,y,z], #r_test
+                                         nodes_global[4:6,:],
+                                         gauss7rule,
+                                         distance_to_edge_tol,
+                                         near_singular_tol,
+                                         false) #is_singular
+        tri3_nodes = convert(Array{Float64,2},transpose(hcat(nodes_global[2,:],nodes_global[7,:],nodes_global[3,:])))
+        integrand13(x,y,z) = scalarGreensNearSingularIntegral(wavenumber,
+                                                  [x,y,z], #r_test
+                                                  tri3_nodes,
+                                                  gauss7rule,
+                                                  distance_to_edge_tol)
+        matrix_solution[1,1] = integrateTriangle(nodes_global[1:3,:],
+                                                 integrand11,
+                                                 gauss7rule[:,1:3],
+                                                 gauss7rule[:,4])
+        matrix_solution[1,2] = integrateTriangle(nodes_global[1:3,:],
+                                                 integrand12,
+                                                 gauss7rule[:,1:3],
+                                                 gauss7rule[:,4])
+        matrix_solution[1,3] = integrateTriangle(nodes_global[1:3,:],
+                                                 integrand13,
+                                                 gauss7rule[:,1:3],
+                                                 gauss7rule[:,4])
+        testIntegrand(r_test, nodes, is_singular) = scalarGreensIntegration(wavenumber,
+                                                       r_test,
+                                                       nodes,
+                                                       gauss7rule,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        matrix = matrixFill(num_elements, elements, nodes_global, testIntegrand, gauss7rule)
+        @test isapprox(matrix[1,1], matrix_solution[1,1], rtol=1e-15)
+        @test isapprox(matrix[1,2], matrix_solution[1,2], rtol=1e-15)
+        @test isapprox(matrix[1,3], matrix_solution[1,3], rtol=1e-15)
     end
 end
