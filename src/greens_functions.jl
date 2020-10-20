@@ -135,7 +135,7 @@ function scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
                                          nodes::Array{Float64, 2},
                                          quadrature_rule::Array{Float64, 2})
     # Performs numerical integration of scalar Green's function with
-    # singularity removed
+    # singularity removed (this doesnt have a dedicated unit test)
     non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
                                                             wavenumber)
     integrateTriangle(nodes, non_singular_integrand, quadrature_rule[:,1:3],
