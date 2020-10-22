@@ -17,6 +17,7 @@ include("../../src/mesh.jl")
     end
     @testset "reshapeMeshArray tests" begin
         @test reshapeMeshArray([1,2,3,4,5,6], 2) == [i*2+j for i in 0:2, j in 1:2]
+        @test typeof(reshapeMeshArray([1,2,3,4,5,6], 2, Float64)) == Array{Float64, 2}
         @test typeof(reshapeMeshArray([1.,2.,3.,4.,5.,6.], 3)) == typeof([i*3.0+j for i in 0:1, j in 1:3])
     end
     @testset "buildPulseMesh tests" begin
@@ -30,6 +31,7 @@ include("../../src/mesh.jl")
         test_mesh_filename = "examples/simple/rectangle_plate.msh"
         testPulseMesh = buildPulseMesh(test_mesh_filename)
 
+        @test testPulseMesh.num_elements == num_elements
         @test testPulseMesh.num_coord_dims == num_coord_dims_solution
         @test testPulseMesh.nodes_per_triangle == nodes_per_triangle_solution
         @test testPulseMesh.nodes == nodes_solution

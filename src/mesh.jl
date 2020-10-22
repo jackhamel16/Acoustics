@@ -2,10 +2,11 @@ include("../packages/gmsh.jl")
 # using ..gmsh
 
 struct PulseMesh
-    num_coord_dims::Integer
-    nodes_per_triangle::Integer
+    num_elements::Int64
+    num_coord_dims::Int64
+    nodes_per_triangle::Int64
     nodes::Array{Float64, 2}
-    elements::Array{Integer, 2}
+    elements::Array{Int64, 2}
     centroids::Array{Float64, 2}
 end
 
@@ -17,11 +18,11 @@ function computeCentroid(vertices::Array{Float64,2})
      (vertices[1,3]+vertices[2,3]+vertices[3,3])/3]
 end
 
-function reshapeMeshArray(array::Array{T,1}, num_cols) where T<:Number
+function reshapeMeshArray(array::Array{T,1}, num_cols, type=T) where T<:Number
     # reshapes 1D array to 2D with each row corresponding to an elements
     # array is the Array to be reshaped
     # num_cols is number of columns to have in the reshaped array
-    convert(Array{T}, transpose(reshape(array, (num_cols, Integer(length(array)/num_cols)))))
+    convert(Array{type}, transpose(reshape(array, (num_cols, Integer(length(array)/num_cols)))))
 end
 
 function buildPulseMesh(mesh_filename::String)
@@ -46,7 +47,7 @@ function buildPulseMesh(mesh_filename::String)
         end
         centroids[element_idx,:] = computeCentroid(vertices)
     end
-    PulseMesh(num_coord_dims, nodes_per_triangle, nodes, elements, centroids)
+    PulseMesh(num_elements, num_coord_dims, nodes_per_triangle, nodes, elements, centroids)
 end
 
 function barycentric2Cartesian(nodes::Array{Float64, 2}, barycentric_coords::Array{Float64, 1})
