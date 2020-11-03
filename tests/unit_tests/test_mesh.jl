@@ -37,6 +37,13 @@ include("../../src/mesh.jl")
         @test testPulseMesh.nodes == nodes_solution
         @test testPulseMesh.elements == elements_solution
         @test testPulseMesh.centroids == centroids_solution
+
+        elements_solution2 =  [4 1 2; 4 2 5; 5 2 6; 2 3 6;
+                               7 4 8; 8 4 5; 8 5 6; 8 6 9]
+        test_mesh_filename2 = "examples/simple/rectangle_plate_8elements_symmetric.msh"
+        testPulseMesh2 = buildPulseMesh(test_mesh_filename2)
+
+        @test testPulseMesh2.elements == elements_solution2
     end
     @testset "barycentric2Cartesian tests" begin
         nodes = [0.0 0.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0]
