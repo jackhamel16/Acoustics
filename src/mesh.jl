@@ -38,7 +38,6 @@ function buildPulseMesh(mesh_filename::String)
     triangle_elements_idx = findall(x->x==2, element_types)[1]
     num_nodes = size(node_tags)[1]
     num_elements = size(element_tags[triangle_elements_idx])[1]
-    # nodes = reshapeMeshArray(node_xyzs, num_coord_dims)
     nodes = Array{Float64, 2}(undef, num_nodes, num_coord_dims)
     for node_idx in 1:num_nodes
         tag_idx = node_tags[node_idx]
