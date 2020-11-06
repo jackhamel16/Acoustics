@@ -32,9 +32,8 @@ function buildPulseMesh(mesh_filename::String)
 
     gmsh.initialize();
     gmsh.open(mesh_filename)
-    nodes = reshapeMeshArray(gmsh.model.mesh.getNodes()[2], num_coord_dims)
-    elements_idx = size(gmsh.model.mesh.getElements()[3])[1] #if 2, first array are line elements, if 1 they are triangles
-    elements = reshapeMeshArray(gmsh.model.mesh.getElements()[3][elements_idx], nodes_per_triangle)
+    node_tags, node_xyzs = gmsh.model.mesh.getNodes(-1,-1)
+    element_types, element_tags, element_nodes = gmsh.model.mesh.getElements(-1,-1)
     gmsh.finalize()
     triangle_elements_idx = findall(x->x==2, element_types)[1]
     num_nodes = size(node_tags)[1]
