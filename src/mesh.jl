@@ -32,12 +32,21 @@ function buildPulseMesh(mesh_filename::String)
 
     gmsh.initialize();
     gmsh.open(mesh_filename)
-    nodes = reshapeMeshArray(gmsh.model.mesh.getNodes()[2], num_coord_dims)
-    elements_idx = size(gmsh.model.mesh.getElements()[3])[1] #if 2, first array are line elements, if 1 they are triangles
-    elements = reshapeMeshArray(gmsh.model.mesh.getElements()[3][elements_idx], nodes_per_triangle)
+    node_tags, node_xyzs = gmsh.model.mesh.getNodes(-1,-1)
+    element_types, element_tags, element_nodes = gmsh.model.mesh.getElements(-1,-1)
     gmsh.finalize()
+    triangle_elements_idx = findall(x->x==2, element_types)[1]
+    num_nodes = size(node_tags)[1]
+    num_elements = size(element_tags[triangle_elements_idx])[1]
+    # nodes = reshapeMeshArray(node_xyzs, num_coord_dims)
+    nodes = Array{Float64, 2}(undef, num_nodes, num_coord_dims)
+    for node_idx in 1:num_nodes
+        tag_idx = node_tags[node_idx]
+        xyz_idx = (node_idx-1)*num_coord_dims + 1
+        nodes[tag_idx, :] = node_xyzs[xyz_idx:xyz_idx+nodes_per_triangle-1]
+    end
+    elements = reshapeMeshArray(element_nodes[triangle_elements_idx], num_coord_dims)
 
-    num_elements = size(elements)[1]
     centroids = Array{Float64, 2}(undef, num_elements, num_coord_dims)
     for element_idx in 1:num_elements
         vertices = Array{Float64,2}(undef, 3, 3)
