@@ -6,7 +6,7 @@ include("../src/solve.jl")
     @testset "Symmetry tests" begin
         mesh_filename = "examples/simple/rectangle_plate_8elements_symmetric.msh"
         excitation_amplitude = 1.0
-        wavenumber = 1/20+0*im
+        wavenumber = 2*pi/20+0*im
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss1rule
         distance_to_edge_tol = 1e-12
@@ -45,7 +45,7 @@ include("../src/solve.jl")
         @test isapprox(sources[1], sources[5], rtol=1e-14)
         @test isapprox(sources[2], sources[6], rtol=1e-14)
         @test isapprox(sources[7], sources[3], rtol=1e-15)
-        @test isapprox(sources[8], sources[4], rtol=1e-15)
+        @test isapprox(sources[8], sources[4], rtol=1e-14)
         # test that some are not equal
         @test false == isapprox(sources[5], sources[6], rtol=1e-8)
         @test false == isapprox(sources[2], sources[4], rtol=1e-8)
