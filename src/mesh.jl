@@ -35,16 +35,16 @@ function buildPulseMesh(mesh_filename::String)
     node_tags, node_xyzs = gmsh.model.mesh.getNodes(-1,-1)
     element_types, element_tags, element_nodes = gmsh.model.mesh.getElements(-1,-1)
     gmsh.finalize()
-    triangle_elements_idx = findall(x->x==2, element_types)[1]
+    triangles_idx = findall(x->x==2, element_types)[1]
     num_nodes = size(node_tags)[1]
-    num_elements = size(element_tags[triangle_elements_idx])[1]
+    num_elements = size(element_tags[triangles_idx])[1]
     nodes = Array{Float64, 2}(undef, num_nodes, num_coord_dims)
     for node_idx in 1:num_nodes
         tag_idx = node_tags[node_idx]
         xyz_idx = (node_idx-1)*num_coord_dims + 1
         nodes[tag_idx, :] = node_xyzs[xyz_idx:xyz_idx+nodes_per_triangle-1]
     end
-    elements = reshapeMeshArray(element_nodes[triangle_elements_idx], num_coord_dims)
+    elements = reshapeMeshArray(element_nodes[triangles_idx], num_coord_dims)
 
     centroids = Array{Float64, 2}(undef, num_elements, num_coord_dims)
     for element_idx in 1:num_elements
@@ -65,4 +65,31 @@ function barycentric2Cartesian(nodes::Array{Float64, 2}, barycentric_coords::Arr
         cartesian_coords += barycentric_coords[node_idx] * nodes[node_idx,:]
     end
     cartesian_coords
+end
+
+function exportSourcesGmsh(mesh_filename::String,
+                           output_filename::String,
+                           sources::Array{Float64, 1})
+    gmsh.initialize();
+    gmsh.open(mesh_filename);
+    models = gmsh.model.list();
+    model_name = models[1];
+    (element_types, element_tags, node_tags) = gmsh.model.mesh.getElements(-1,-1);
+    triangles_idx = findall(x->x==2, element_types)[1]
+    TriangleTags = element_tags[triangles_idx];
+
+    gmsh.write(string(output_filename,".pos"));  # export mesh
+
+    step_identifier = 1
+    time_identifier = 1
+    num_components = 1
+    view_name = "mesh scalar sources"
+
+    tag_view = gmsh.view.add(view_name);
+    gmsh.view.addHomogeneousModelData(tag_view, step_identifier, model_name,
+                                      "ElementData", TriangleTags, sources,
+                                      time_identifier, num_components)
+
+    write, append = false, true
+    gmsh.view.write(tag_view, string(output_filename,".pos"), write);
 end
