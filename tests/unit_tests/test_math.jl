@@ -39,4 +39,36 @@ include("../../src/math.jl")
         @test isapprox(sphericalBesselj(1.0, x), j1, rtol=1e-14)
         @test isapprox(sphericalBesselj(3.0, x), j3, rtol=1e-10)
     end
+    @testset "sphericalBessely tests" begin
+        x = 0.5
+        y0 = -cos(x)/x
+        y1 = -cos(x)/x^2-sin(x)/x
+        y3 = (-15/x^3+6/x)*cos(x)/x - (15/x^2-1)*sin(x)/x
+
+        @test isapprox(sphericalBessely(0.0, x), y0, rtol=1e-15)
+        @test isapprox(sphericalBessely(1.0, x), y1, rtol=1e-14)
+        @test isapprox(sphericalBessely(3.0, x), y3, rtol=1e-10)
+    end
+    @testset "sphericalHankel2 tests" begin
+        x = 0.5
+        h20 = sin(x)/x - im * -cos(x)/x
+        h21 = sin(x)/x^2-cos(x)/x - im * (-cos(x)/x^2-sin(x)/x)
+        h23 = (15/x^3-6/x)*sin(x)/x - (15/x^2-1)*cos(x)/x -
+              im * ((-15/x^3+6/x)*cos(x)/x - (15/x^2-1)*sin(x)/x)
+
+        @test isapprox(sphericalHankel2(0.0, x), h20, rtol=1e-15)
+        @test isapprox(sphericalHankel2(1.0, x), h21, rtol=1e-15)
+        @test isapprox(sphericalHankel2(3.0, x), h23, rtol=1e-15)
+    end
+    @testset "sphericalHankel1 tests" begin
+        x = 0.5
+        h10 = sin(x)/x + im * -cos(x)/x
+        h11 = sin(x)/x^2-cos(x)/x + im * (-cos(x)/x^2-sin(x)/x)
+        h13 = (15/x^3-6/x)*sin(x)/x - (15/x^2-1)*cos(x)/x +
+              im * ((-15/x^3+6/x)*cos(x)/x - (15/x^2-1)*sin(x)/x)
+
+        @test isapprox(sphericalHankel1(0.0, x), h10, rtol=1e-15)
+        @test isapprox(sphericalHankel1(1.0, x), h11, rtol=1e-15)
+        @test isapprox(sphericalHankel1(3.0, x), h13, rtol=1e-15)
+    end
 end

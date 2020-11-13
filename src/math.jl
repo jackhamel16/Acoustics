@@ -34,3 +34,15 @@ end
 function sphericalBesselj(n::Real, x::Float64)
     return(sqrt(pi / (2 * x)) * besselj(n+0.5, x))
 end
+
+function sphericalBessely(n::Real, x::Float64)
+    return(sqrt(pi / (2 * x)) * bessely(n+0.5, x))
+end
+
+function sphericalHankel2(n::Real, x::Float64)
+    return(sphericalBesselj(n, x) - im * sphericalBessely(n, x))
+end
+
+function sphericalHankel1(n::Real, x::Float64)
+    return(sphericalBesselj(n, x) + im * sphericalBessely(n, x))
+end
