@@ -13,7 +13,7 @@ function sphericalWave(amplitude::Float64,
                        m::Int64)
     r = sqrt(sum(position.^2))
     theta, phi = acos(position[3] / r), atan(position[2], position[1])
-    Ylm, dYlm_dtheta, dYlm_dphi, l_ind, m_ind = computeSpherHarms(theta, phi, l)
-    lm_idx = l + m + l^2
+    Ylm, dYlm_dtheta, dYlm_dphi, l_ind, m_ind = sphericalHarmonics(theta, phi, l)
+    lm_idx = l + m + l^2 + 1
     return(amplitude * Ylm[lm_idx] * sphericalBesselj(l, wavenumber*r))
 end

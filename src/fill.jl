@@ -17,7 +17,7 @@ function rhsFill(num_elements::Int64, elements::Array{Int64, 2}, nodes::Array{Fl
     rhs = Array{Complex{Float64}, 1}(undef, num_elements)
     for element_idx in 1:num_elements
         triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
-        rhs[element_idx] = integrateTriangle(triangle_nodes, fieldFunc, quadrature_rule[:,1:3], quadrature_rule[:,4])
+        rhs[element_idx] = -1 * integrateTriangle(triangle_nodes, fieldFunc, quadrature_rule[:,1:3], quadrature_rule[:,4])
     end
     rhs
 end

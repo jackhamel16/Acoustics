@@ -248,7 +248,7 @@ include("../../src/greens_functions.jl")
         n_hat = cross(r_plus[1,:]-r_minus[1,:],r_minus[3,:]-r_plus[3,:])/
                 norm(cross(r_plus[1,:]-r_minus[1,:],r_minus[3,:]-r_plus[3,:]))
         d = dot(n_hat, r_test - r_plus[1,:])
-        rho_test = r_test - d * n_hat
+        rho_test = r_test - n_hat * dot(r_test, n_hat)
 
         rho_plus = Array{Float64, 2}(undef, 3, 3)
         rho_minus = Array{Float64, 2}(undef, 3, 3)

@@ -28,6 +28,16 @@ include("../../src/math.jl")
     end
     @testset "sphericalWave tests" begin
         near_zero = 1e-32 # sphericalBesselj is "singular" at x=0 though in the limit as x-> is non-singular
+        r, theta, phi = 1.1, pi/3, pi/4
+        position = [r*sin(theta)*cos(phi), r*sin(theta)*sin(phi), r*cos(theta)]
+        wavenumber = 2*pi/10
+        amplitude = 2.0
+        l, m = 0, 0
+
+        sol = amplitude * sphericalHarmonics(theta, phi, l)[1][1] * sphericalBesselj(l, wavenumber * r)
+        sph_wave_test = sphericalWave(amplitude, wavenumber, position, l, m)
+        @test isapprox(sph_wave_test, sol, rtol=1e-15)
+
         r, theta, phi = near_zero, pi/2, 0.0
         position = [r*sin(theta)*cos(phi), r*sin(theta)*sin(phi), r*cos(theta)]
         wavenumber = 1.0
@@ -44,17 +54,17 @@ include("../../src/math.jl")
         amplitude = 2.0
         l, m = 3, -1
 
-        sol = amplitude * computeSpherHarms(theta, phi, l)[1][11] * sphericalBesselj(l, wavenumber * r)
+        sol = amplitude * sphericalHarmonics(theta, phi, l)[1][12] * sphericalBesselj(l, wavenumber * r)
         sph_wave_test = sphericalWave(amplitude, wavenumber, position, l, m)
         @test isapprox(sph_wave_test, sol, rtol=1e-15)
 
-        r, theta, phi = 20.0, -pi/3, 0.0
+        r, theta, phi = 20.0, pi/3, -pi/4
         position = [r*sin(theta)*cos(phi), r*sin(theta)*sin(phi), r*cos(theta)]
         wavenumber = 2*pi/100
         amplitude = -0.62
         l, m = 2, 0
 
-        sol = amplitude * computeSpherHarms(theta, phi, l)[1][6] * sphericalBesselj(l, wavenumber * r)
+        sol = amplitude * sphericalHarmonics(theta, phi, l)[1][7] * sphericalBesselj(l, wavenumber * r)
         sph_wave_test = sphericalWave(amplitude, wavenumber, position, l, m)
         @test isapprox(sph_wave_test, sol, rtol=1e-15)
     end

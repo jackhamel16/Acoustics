@@ -5,23 +5,47 @@ include("../../src/math.jl")
 
 @testset "math tests" begin
     @testset "sphericalWave tests" begin
+        lmax = 0
+        l = [0]
+        m = [0]
+        Plm_idxs = [1]
+        theta = pi/4
+        phi = -pi/16
+
+        leg_polys, d_leg_polys = sf_legendre_deriv_array(GSL_SF_LEGENDRE_SPHARM, lmax, cos(theta))
+        Plm = leg_polys[Plm_idxs]
+        d_Plm = d_leg_polys[Plm_idxs]
+        phase_factors = [1]
+        exponentials = exp.(im.*m*phi)
+        sph_harms_sol = phase_factors .* Plm .* exponentials
+        dtheta_sph_harms_sol = -sin(theta) .* phase_factors .* d_Plm .* exponentials
+        dphi_sph_harms_sol = 1im .* m .* phase_factors .* Plm .* exponentials
+
+        sph_harms_test = sphericalHarmonics(theta, phi, lmax)
+
+        @test isapprox(sph_harms_test[1], sph_harms_sol, rtol=1e-15)
+        @test isapprox(sph_harms_test[2], dtheta_sph_harms_sol, rtol=1e-15)
+        @test isapprox(sph_harms_test[3], dphi_sph_harms_sol, rtol=1e-15)
+        @test isapprox(sph_harms_test[4], l, rtol=1e-15)
+        @test isapprox(sph_harms_test[5], m, rtol=1e-15)
+
         lmax = 1
-        l = [1, 1, 1]
-        m = [-1, 0, 1]
-        Plm_idxs = [3, 2, 3]
+        l = [0, 1, 1, 1]
+        m = [0, -1, 0, 1]
+        Plm_idxs = [1, 3, 2, 3]
         theta = pi/4
         phi = pi/8
 
         leg_polys, d_leg_polys = sf_legendre_deriv_array(GSL_SF_LEGENDRE_SPHARM, lmax, cos(theta))
         Plm = leg_polys[Plm_idxs]
         d_Plm = d_leg_polys[Plm_idxs]
-        phase_factors = [1, 1, -1]
+        phase_factors = [1, 1, 1, -1]
         exponentials = exp.(im.*m*phi)
         sph_harms_sol = phase_factors .* Plm .* exponentials
         dtheta_sph_harms_sol = -sin(theta) .* phase_factors .* d_Plm .* exponentials
         dphi_sph_harms_sol = 1im .* m .* phase_factors .* Plm .* exponentials
 
-        sph_harms_test = Ylm_val(theta, phi, lmax)
+        sph_harms_test = sphericalHarmonics(theta, phi, lmax)
 
         @test isapprox(sph_harms_test[1], sph_harms_sol, rtol=1e-15)
         @test isapprox(sph_harms_test[2], dtheta_sph_harms_sol, rtol=1e-15)

@@ -57,7 +57,7 @@ function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64,
     normal = normal_non_unit / norm(normal_non_unit)
 
     d = dot(normal, r_test - r_plus[1,:])
-    rho = r_test - d*normal
+    rho = r_test - normal * dot(r_test, normal)
 
     l_plus = Array{Float64, 1}(undef, 3) # distance from point at P0 to rho_plus
     l_minus = Array{Float64, 1}(undef, 3) # distance from point at P0 to rho_minus
@@ -100,6 +100,7 @@ function scalarGreensSingularityIntegral(r_test::Array{Float64, 1},
     # epsilon is the ignore contribution tolerance of distance of r_test projection to an edge
     d, P0_hat, u_hat, P0, R0, R_plus, R_minus, l_plus, l_minus =
         computeScalarGreensSingularityIntegralParameters(r_test, nodes)
+
     integral = 0.0
     for i in 1:3 #i indicates triangle edge index
         if P0[i] < epsilon # Indicates projection of r_test is on edge i or its

@@ -1,5 +1,4 @@
 include("../packages/gmsh.jl")
-# using ..gmsh
 
 struct PulseMesh
     num_elements::Int64
@@ -48,13 +47,8 @@ function buildPulseMesh(mesh_filename::String)
 
     centroids = Array{Float64, 2}(undef, num_elements, num_coord_dims)
     for element_idx in 1:num_elements
-        vertices = Array{Float64,2}(undef, 3, 3)
-        for loop_node_idx in 1:nodes_per_triangle
-            local_node_idx = elements[element_idx, loop_node_idx]
-            node_coords = nodes[local_node_idx, :]
-            vertices[loop_node_idx,:] = node_coords
-        end
-        centroids[element_idx,:] = computeCentroid(vertices)
+        element_vertices = nodes[elements[element_idx,:],:]
+        centroids[element_idx,:] = computeCentroid(element_vertices)
     end
     PulseMesh(num_elements, num_coord_dims, nodes_per_triangle, nodes, elements, centroids)
 end

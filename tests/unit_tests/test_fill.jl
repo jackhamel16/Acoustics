@@ -17,11 +17,11 @@ include("../../src/greens_functions.jl")
         num_elements = 1
         fieldFunc(x,y,z) = planeWave(wavevector, [x,y,z])
         # simple 1 integration point test 1 triangle
-        rhs_solution = area * planeWave(wavevector, r_test)
+        rhs_solution = -1 * area * planeWave(wavevector, r_test)
         rhs = rhsFill(num_elements, elements, nodes_global, fieldFunc, gauss1rule)
         @test isapprox(rhs[1], rhs_solution, rtol=1e-15)
         # 7 point integration test 1 triangle
-        rhs_solution = integrateTriangle(nodes_global, fieldFunc, gauss7rule[:,1:3], gauss7rule[:,4])
+        rhs_solution = -1 * integrateTriangle(nodes_global, fieldFunc, gauss7rule[:,1:3], gauss7rule[:,4])
         rhs = rhsFill(num_elements, elements, nodes_global, fieldFunc, gauss7rule)
         @test isapprox(rhs[1], rhs_solution, rtol=1e-15)
 
@@ -33,7 +33,7 @@ include("../../src/greens_functions.jl")
         num_elements = 2
         fieldFunc(x,y,z) = planeWave(wavevector, [x,y,z])
         centroids = [1/3 1/3 1.5; 2/3 2/3 1.5]
-        rhs_solution = [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
+        rhs_solution = -1 .* [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
         rhs = rhsFill(num_elements, elements, nodes_global, fieldFunc, gauss1rule)
         @test isapprox(rhs, rhs_solution, rtol=1e-15)
 
@@ -44,7 +44,7 @@ include("../../src/greens_functions.jl")
         num_elements = 2
         fieldFunc(x,y,z) = planeWave(wavevector, [x,y,z])
         centroids = [1/3 1/3 1.5; 2/3 2/3 1+1/3]
-        rhs_solution = [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
+        rhs_solution = -1 .* [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
         rhs = rhsFill(num_elements, elements, nodes_global, fieldFunc, gauss1rule)
         @test isapprox(rhs, rhs_solution, rtol=1e-15)
 
@@ -55,7 +55,7 @@ include("../../src/greens_functions.jl")
         num_elements = 2
         fieldFunc(x,y,z) = planeWave(wavevector, [x,y,z])
         centroids = [1/3 1/3 1.5; 2/3 2/3 1+1/3]
-        rhs_solution = [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
+        rhs_solution = -1 .* [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
         rhs = rhsFill(num_elements, elements, nodes_global, fieldFunc, gauss1rule)
         @test isapprox(rhs, rhs_solution, rtol=1e-15)
     end
