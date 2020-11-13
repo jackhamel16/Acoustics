@@ -2,6 +2,7 @@ using Test
 using GSL
 
 include("../../src/excitation.jl")
+include("../../src/math.jl")
 
 @testset "excitation tests" begin
     @testset "planeWave tests" begin
@@ -26,28 +27,32 @@ include("../../src/excitation.jl")
         @test isapprox(planeWave(amplitude, wavevector, position), solution, rtol=1e-15)
     end
     @testset "sphericalWave tests" begin
-        lmax = 1
-        l = [1, 1, 1]
-        m = [-1, 0, 1]
-        Plm_idxs = [3, 2, 3]
-        theta = pi/4
-        phi = pi/8
+        near_zero = 1e-32 # sphericalBesselj is "singular" at x=0 though in the limit as x-> is non-singular
+        position = [near_zero, pi/2, 0.0]
+        wavenumber = 1.0
+        amplitude = 1.0
+        l, m = 1, 0
 
-        leg_polys, d_leg_polys = sf_legendre_deriv_array(GSL_SF_LEGENDRE_SPHARM, lmax, cos(theta))
-        Plm = leg_polys[Plm_idxs]
-        d_Plm = d_leg_polys[Plm_idxs]
-        phase_factors = [1, 1, -1]
-        exponentials = exp.(im.*m*phi)
-        sph_harms_sol = phase_factors .* Plm .* exponentials
-        dtheta_sph_harms_sol = -sin(theta) .* phase_factors .* d_Plm .* exponentials
-        dphi_sph_harms_sol = 1im .* m .* phase_factors .* Plm .* exponentials
+        sol = 0.0+0.0*im
+        sph_wave_test = sphericalWave(amplitude, wavenumber, position, l, m)
+        @test isapprox(sph_wave_test, sol, atol=1e-14)
 
-        sph_harms_test = Ylm_val(theta, phi, lmax)
+        position = [1.1, pi/3, pi/4]
+        wavenumber = 2*pi/10
+        amplitude = 2.0
+        l, m = 3, -1
 
-        @test isapprox(sph_harms_test[1], sph_harms_sol, rtol=1e-15)
-        @test isapprox(sph_harms_test[2], dtheta_sph_harms_sol, rtol=1e-15)
-        @test isapprox(sph_harms_test[3], dphi_sph_harms_sol, rtol=1e-15)
-        @test isapprox(sph_harms_test[4], l, rtol=1e-15)
-        @test isapprox(sph_harms_test[5], m, rtol=1e-15)
+        sol = amplitude * computeSpherHarms(position[2], position[3], l)[1][11] * sphericalBesselj(l, wavenumber * position[1])
+        sph_wave_test = sphericalWave(amplitude, wavenumber, position, l, m)
+        @test isapprox(sph_wave_test, sol, rtol=1e-15)
+
+        position = [20.0, -pi/3, 0.0]
+        wavenumber = 2*pi/100
+        amplitude = -0.62
+        l, m = 2, 0
+
+        sol = amplitude * computeSpherHarms(position[2], position[3], l)[1][6] * sphericalBesselj(l, wavenumber * position[1])
+        sph_wave_test = sphericalWave(amplitude, wavenumber, position, l, m)
+        @test isapprox(sph_wave_test, sol, rtol=1e-15)
     end
 end
