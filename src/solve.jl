@@ -11,6 +11,7 @@ function solve(mesh_filename::String,
                near_singular_tol::Float64)
 
     pulse_mesh = buildPulseMesh(mesh_filename)
+    println("Filling RHS...")
     rhs = rhsFill(pulse_mesh.num_elements, pulse_mesh.elements, pulse_mesh.nodes, excitation, test_quadrature_rule)
     testIntegrand(r_test, nodes, is_singular) = scalarGreensIntegration(wavenumber,
                                                    r_test,
@@ -19,7 +20,9 @@ function solve(mesh_filename::String,
                                                    distance_to_edge_tol,
                                                    near_singular_tol,
                                                    is_singular)
+    println("Filling Matrix...")
     z_matrix = matrixFill(pulse_mesh.num_elements, pulse_mesh.elements, pulse_mesh.nodes, testIntegrand, test_quadrature_rule)
+    println("Inverting Matrix...")
     source_vec = z_matrix \ rhs
     source_vec
 end
