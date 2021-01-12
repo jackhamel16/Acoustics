@@ -4,7 +4,7 @@ include("../src/solve.jl")
 
 @testset "Tests with a flat rectangular plate" begin
     @testset "Symmetry tests" begin
-        mesh_filename = "examples/simple/rectangle_plate_8elements_symmetric.msh"
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
         excitation_amplitude = 1.0
         wavenumber = 2*pi/20+0*im
         src_quadrature_rule = gauss7rule

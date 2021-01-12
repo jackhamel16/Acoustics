@@ -1,6 +1,5 @@
 Point(1) = {0, 0, 0, 1};
 Point(2) = {0, 1, 0, 1};
-//Translate {1, 0, 0} { Point{1}; Point{2};}
 Line(1) = {2, 1};
 Extrude {1, 0, 0} {
   Curve{1};Layers{1}; 
