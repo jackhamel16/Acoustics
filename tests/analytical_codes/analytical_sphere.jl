@@ -1,0 +1,89 @@
+using DataFrames
+using GLM
+using Plots
+
+include("../../src/excitation.jl")
+# include("../../src/math.jl")
+# include("../../src/mesh.jl")
+include("../../src/solve.jl")
+
+function computeAnalyticalSolution(wavenumber, radius, mesh_filename)
+    pulse_mesh = buildPulseMesh(mesh_filename)
+    sources_analytical = Array{Complex{Float64}, 1}(undef, pulse_mesh.num_elements)
+    for element_idx in 1:pulse_mesh.num_elements
+        position = pulse_mesh.centroids[element_idx,:]
+        r = sqrt(sum(position.^2))
+        theta, phi = acos(position[3] / r), atan(position[2], position[1])
+        sources_analytical[element_idx] = -1im * wavenumber * sphericalHarmonics(theta, phi, l)[1][1] / ((wavenumber*radius)^2 * sphericalHankel2(l, real(wavenumber)*radius))
+    end
+    sources_analytical
+end
+
+excitation_amplitude = 1.0
+lambda = 10.0
+wavenumber = 2*pi / lambda + 0*im
+src_quadrature_rule = gauss7rule
+test_quadrature_rule = gauss1rule
+distance_to_edge_tol = 1e-12
+near_singular_tol = 1.0
+#set up sphere
+radius = 1.0
+l, m = 0, 0
+
+num_elements = [1266, 3788, 8010, 19034]
+l2errors = Array{Float64, 1}(undef, 0)
+
+sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
+for run_idx in 1:length(num_elements)
+    println("Running ", num_elements[run_idx], " Unknowns")
+    mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
+
+    @time sources = solve(mesh_filename,
+                    sphericalWaveExcitation,
+                    wavenumber,
+                    src_quadrature_rule,
+                    test_quadrature_rule,
+                    distance_to_edge_tol,
+                    near_singular_tol)
+
+    sources_analytical = computeAnalyticalSolution(wavenumber, radius, mesh_filename)
+
+    append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
+end
+
+# Fit line to log of data
+error_data = DataFrame(X=log.(sqrt.(num_elements)), Y=log.(l2errors))
+linreg_output = lm(@formula(Y ~ X), error_data)
+
+intercept = coef(linreg_output)[1]
+slope = coef(linreg_output)[2]
+error_fit(n) = exp(intercept + slope*log(n))
+
+n = [i for i in 1000:100:20000]
+predicted_errors = error_fit.(sqrt.(n))
+
+Plots.scatter(sqrt.(num_elements), l2errors, label="", xaxis=:log, yaxis=:log, size=(800,600))
+plot!(sqrt.(n), predicted_errors, title="1m Sphere vs Analytical Solution", label="", xlabel="sqrt(N), N is number of unknowns", ylabel="l2-Error")
+savefig("sphere_convergence_results")
+println("Convergence rate = ", slope)
+
+#Check if convergence rate is correct
+expected_convergence_rate = -1.3544181067865462 # using all four meshes, 7 pnt src and 1 pnt test quadrature
+convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
+tolerance = 1e-6
+if convergence_error > tolerance
+    println("TEST FAILED:")
+    println("Convergence rate not within ", tolerance, " of expected rate of ", expected_convergence_rate)
+else
+    println("TEST PASSED")
+end
+
+#output data
+output_file = open("sphere_convergence_data.txt", "w")
+output_data = hcat(num_elements, l2errors)
+println(output_file, "Convergence rate = ", slope)
+println(output_file, "[num unknowns, l2-error]")
+for run_idx in 1:length(num_elements)
+    println(output_file, output_data[run_idx,:])
+end
+close(output_file)
