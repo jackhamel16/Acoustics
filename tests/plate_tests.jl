@@ -1,6 +1,6 @@
 using Test
 
-include("../src/solve.jl")
+include("../src/includes.jl")
 
 @testset "Tests with a flat rectangular plate" begin
     @testset "Symmetry tests" begin

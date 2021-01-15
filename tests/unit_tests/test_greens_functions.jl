@@ -1,6 +1,9 @@
 using Test
 using LinearAlgebra
 
+include("../../src/quadrature.jl")
+include("../../src/mesh.jl")
+
 include("../../src/greens_functions.jl")
 
 @testset "greens_functions tests" begin

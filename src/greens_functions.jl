@@ -1,7 +1,6 @@
-using LinearAlgebra
+# dependencies: mesh.jl quadrature.jl
 
-include("mesh.jl")
-include("quadrature.jl")
+using LinearAlgebra
 
 function scalarGreens(R::Float64, k::Complex{Float64})
     exp(-im*k*abs(R))/(4*pi*abs(R))

@@ -1,8 +1,9 @@
 using Test
 using GSL
 
-include("../../src/excitation.jl")
 include("../../src/math.jl")
+
+include("../../src/excitation.jl")
 
 @testset "excitation tests" begin
     @testset "planeWave tests" begin

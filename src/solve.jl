@@ -1,6 +1,4 @@
-include("fill.jl")
-include("greens_functions.jl")
-include("mesh.jl")
+# dependencies: fill.jl greens_functions.jl mesh.jl
 
 function solve(mesh_filename::String,
                excitation::Function,

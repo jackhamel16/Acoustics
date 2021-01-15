@@ -1,6 +1,6 @@
-using LinearAlgebra
+# dependencies: quadrature.jl
 
-include("quadrature.jl")
+using LinearAlgebra
 
 function getTriangleNodes(element_idx::Int64, elements::Array{Int64, 2}, nodes::Array{Float64, 2})
     # Gets nodes of triangle specified by element_idx

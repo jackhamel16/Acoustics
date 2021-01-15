@@ -1,6 +1,6 @@
-using LinearAlgebra
+# dependencies: mesh.jl
 
-include("mesh.jl")
+using LinearAlgebra
 
 # The gauss7 rule comes from:
 #    https://www.math.unipd.it/~alvise/SETS_CUBATURE_TRIANGLE/dunavant/set_dunavant_barycentric.m

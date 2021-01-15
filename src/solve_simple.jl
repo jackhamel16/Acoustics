@@ -1,5 +1,6 @@
 include("fill.jl")
-include("greens_functions.jl")
+# include("greens_functions.jl")
+using .GreensFunctions
 include("mesh.jl")
 
 function solveSimple(mesh_filename::String,
