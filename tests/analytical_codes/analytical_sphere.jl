@@ -2,10 +2,7 @@ using DataFrames
 using GLM
 using Plots
 
-include("../../src/excitation.jl")
-# include("../../src/math.jl")
-# include("../../src/mesh.jl")
-include("../../src/solve.jl")
+include("../../src/includes.jl")
 
 function computeAnalyticalSolution(wavenumber, radius, mesh_filename)
     pulse_mesh = buildPulseMesh(mesh_filename)

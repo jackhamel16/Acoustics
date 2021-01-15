@@ -1,13 +1,6 @@
-include("excitation.jl")
-include("mesh.jl")
-include("solve.jl")
-
-include("solve_simple.jl")
-
+include("includes.jl")
 
 excitation_amplitude = 1.0
-# wavenumber = 32*pi/5+0*im
-# wavevector = [wavenumber/sqrt(2), 0.0, wavenumber/sqrt(2)]
 lambda=1
 wavenumber = 2*pi/lambda + 0*im
 wavevector = [wavenumber, 0.0, 0.0]
@@ -27,9 +20,6 @@ sources = solve(mesh_filename,
                 test_quadrature_rule,
                 distance_to_edge_tol,
                 near_singular_tol)
-sources = solveSimple(mesh_filename,
-            planeWaveExcitation,
-            wavenumber)
 
 real_filename = "sources_real"
 imag_filename = "sources_imag"

@@ -1,8 +1,11 @@
 using Test
 using LinearAlgebra
 
-include("../../src/fill.jl")
+include("../../src/mesh.jl")
 include("../../src/quadrature.jl")
+
+include("../../src/fill.jl")
+
 include("../../src/greens_functions.jl")
 
 @testset "fill tests" begin

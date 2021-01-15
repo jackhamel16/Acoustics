@@ -1,4 +1,4 @@
-include("math.jl")
+# dependencies: math.jl
 
 function planeWave(amplitude::Float64,
                    wavevector::Array{Complex{Float64}, 1},
