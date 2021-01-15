@@ -105,11 +105,12 @@ const gauss79rule = [3.33333333333333314829616256247391e-01 3.333333333333333148
                      9.29756171556852972770457199658267e-01 1.05477192941400010894881233980414e-02 5.96961091490069983844790613147779e-02 3.57390938594998736066443711933971e-03
                      1.05477192941400010894881233980414e-02 5.96961091490069983844790613147779e-02 9.29756171556852972770457199658267e-01 3.57390938594998736066443711933971e-03
                      1.05477192941400010894881233980414e-02 9.29756171556852972770457199658267e-01 5.96961091490069983844790613147779e-02 3.57390938594998736066443711933971e-03]
-function gaussQuadrature(scale_factor::Float64, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})
+# function gaussQuadrature(scale_factor::Float64, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})
+function gaussQuadrature(scale_factor, func::Function, points::Array{T, 2}, weights::Array{T, 1})::T where T
     num_points = length(weights)
     quadrature_sum = 0
     for sum_idx in 1:num_points
-        x, y, z = points[sum_idx,:]
+        @views x, y, z = points[sum_idx,:]
         quadrature_sum += weights[sum_idx] * func(x, y, z)
     end
     scale_factor * quadrature_sum
