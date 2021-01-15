@@ -22,21 +22,15 @@ include("../../src/mesh.jl")
     end
     @testset "buildPulseMesh tests" begin
         num_elements = 2
-        num_coord_dims_solution = 3
-        nodes_per_triangle_solution = 3
         nodes_solution = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
         elements_solution = [2 1 4; 2 4 3]
-        centroids_solution = [1/3 1/3 0.0; 2/3 2/3 0.0]
 
         test_mesh_filename = "examples/test/rectangle_plate.msh"
         test_pulse_mesh = buildPulseMesh(test_mesh_filename)
 
         @test test_pulse_mesh.num_elements == num_elements
-        @test test_pulse_mesh.num_coord_dims == num_coord_dims_solution
-        @test test_pulse_mesh.nodes_per_triangle == nodes_per_triangle_solution
         @test test_pulse_mesh.nodes == nodes_solution
         @test test_pulse_mesh.elements == elements_solution
-        @test test_pulse_mesh.centroids == centroids_solution
 
         elements_solution2 =  [4 1 2; 4 2 5; 5 2 6; 2 3 6;
                                7 4 8; 8 4 5; 8 5 6; 8 6 9]
