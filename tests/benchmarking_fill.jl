@@ -26,7 +26,7 @@ pulse_mesh = buildPulseMesh(mesh_filename)
 r_test = [10.0, -1.0, 0.0]
 nodes = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
 
-testIntegrand(r_test, nodes, is_singular)::Complex{Float64} = scalarGreensIntegration(wavenumber,
+testIntegrand(r_test, nodes, is_singular) = scalarGreensIntegration(wavenumber,
                                                r_test,
                                                nodes,
                                                src_quadrature_rule,
