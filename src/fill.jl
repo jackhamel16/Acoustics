@@ -8,7 +8,7 @@ function getTriangleNodes(element_idx::Int64, elements::Array{Int64, 2}, nodes::
     triangle_nodes = Array{Float64, 2}(undef, 3, 3)
     for node_idx_local in 1:3
         node_idx_global = elements[element_idx, node_idx_local]
-        triangle_nodes[node_idx_local,:] = nodes[node_idx_global,:]
+        @views triangle_nodes[node_idx_local,:] = nodes[node_idx_global,:]
     end
     triangle_nodes
 end
