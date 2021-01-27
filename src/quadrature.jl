@@ -105,10 +105,9 @@ const gauss79rule = [3.33333333333333314829616256247391e-01 3.333333333333333148
                      9.29756171556852972770457199658267e-01 1.05477192941400010894881233980414e-02 5.96961091490069983844790613147779e-02 3.57390938594998736066443711933971e-03
                      1.05477192941400010894881233980414e-02 5.96961091490069983844790613147779e-02 9.29756171556852972770457199658267e-01 3.57390938594998736066443711933971e-03
                      1.05477192941400010894881233980414e-02 9.29756171556852972770457199658267e-01 5.96961091490069983844790613147779e-02 3.57390938594998736066443711933971e-03]
-# function gaussQuadrature(scale_factor::Float64, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})
-function gaussQuadrature(scale_factor, func::Function, points::Array{T, 2}, weights::Array{T, 1})::T where T
+function gaussQuadrature(scale_factor, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})
     num_points = length(weights)
-    quadrature_sum = 0
+    quadrature_sum = 0.0
     for sum_idx in 1:num_points
         @views x, y, z = points[sum_idx,:]
         quadrature_sum += weights[sum_idx] * func(x, y, z)
@@ -118,10 +117,10 @@ end
 
 function integrateTriangle(nodes::Array{Float64, 2}, func::Function, points::Array{Float64, 2}, weights::Array{Float64, 1})
     num_points = size(points)[1]
-    triangle_area = norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[2,:]))/2
+    triangle_area = norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[2,:]))/2.0
     quadrature_points = Array{Float64, 2}(undef, num_points, 3)
     for point_idx in 1:num_points
-        quadrature_points[point_idx,:] = barycentric2Cartesian(nodes, points[point_idx,:])
+        @views quadrature_points[point_idx,:] = barycentric2Cartesian(nodes, points[point_idx,:])
     end
     gaussQuadrature(triangle_area, func, quadrature_points, weights)
 end
