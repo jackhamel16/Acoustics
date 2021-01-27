@@ -39,9 +39,19 @@ function smoothing_max_slow(x)
     return -sum(x.*exp.(x))/sum(exp.(x))
 end
 
-function smoothing_max_fast(x::Array{T})::T where T
+function smoothing_max_fast2(x::Array{T})::T where T
     num::T = 0
     den::T = 0
+    @simd for i = 1:length(x)
+        expx = exp(x[i])
+        @inbounds num += x[i] * expx
+        @inbounds den += expx
+    end
+    return num/den
+end
+function smoothing_max_fast2(x::Array{Float64})
+    num::Float64 = 0
+    den::Float64 = 0
     @simd for i = 1:length(x)
         expx = exp(x[i])
         @inbounds num += x[i] * expx
@@ -68,4 +78,10 @@ n = 10000
 x = randn(n)
 y = randn(n)
 
-# @benchmark slow_innerprod(x, y)
+function array3(fillval, N)
+   fill(fillval, ntuple(d->3, N))
+end
+
+function array3(fillval, ::Val{N}) where N
+   fill(fillval, ntuple(d->3, Val(N)))
+end
