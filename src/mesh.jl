@@ -45,7 +45,7 @@ function buildPulseMesh(mesh_filename::String)
     PulseMesh(num_elements, nodes, elements)
 end
 
-function barycentric2Cartesian(nodes::Array{Float64, 2}, barycentric_coords::Array{Float64, 1})
+function barycentric2Cartesian(nodes::Array{Float64, 2}, barycentric_coords::AbstractArray{Float64, 1})
     cartesian_coords = zeros(3)
     for node_idx in 1:3
         cartesian_coords += barycentric_coords[node_idx] * nodes[node_idx,:]

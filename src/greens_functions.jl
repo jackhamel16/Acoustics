@@ -52,10 +52,10 @@ function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64,
     r_minus = nodes # beginning points of edges
     r_plus = circshift(nodes, (-1,0)) # ending points of edges
 
-    normal_non_unit = cross(r_plus[1,:]-r_minus[1,:], r_minus[3,:]-r_plus[3,:])
+    @views normal_non_unit = cross(r_plus[1,:]-r_minus[1,:], r_minus[3,:]-r_plus[3,:])
     normal = normal_non_unit / norm(normal_non_unit)
 
-    d = dot(normal, r_test - r_plus[1,:])
+    @views d = dot(normal, r_test - r_plus[1,:])
     rho = r_test - normal * dot(r_test, normal)
 
     l_plus = Array{Float64, 1}(undef, 3) # distance from point at P0 to rho_plus
@@ -70,17 +70,17 @@ function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64,
     u_hat = Array{Float64, 2}(undef, 3, 3) # unit vector orthogonal to edge in triangle plane
     P0_hat = Array{Float64, 2}(undef, 3, 3) # unit vectors of P0
     for i in 1:3 # i represents triangle edge index
-        rho_plus[i,:] = r_plus[i,:] - normal*dot(r_plus[i,:],normal)
-        rho_minus[i,:] = r_minus[i,:] - normal*dot(r_minus[i,:],normal)
-        I_hat[i,:] = (rho_plus[i,:] - rho_minus[i,:]) / norm(rho_plus[i,:] - rho_minus[i,:])
-        u_hat[i,:] = cross(I_hat[i,:], normal)
-        l_plus[i] = dot(rho_plus[i,:]-rho, I_hat[i,:])
-        l_minus[i] = dot(rho_minus[i,:]-rho, I_hat[i,:])
-        P0[i] = abs(dot(rho_plus[i,:] - rho, u_hat[i,:]))
-        P0_hat[i,:] = (rho_plus[i,:]-rho-l_plus[i]*I_hat[i,:]) / P0[i]
+        @views rho_plus[i,:] = r_plus[i,:] - normal*dot(r_plus[i,:],normal)
+        @views rho_minus[i,:] = r_minus[i,:] - normal*dot(r_minus[i,:],normal)
+        @views I_hat[i,:] = (rho_plus[i,:] - rho_minus[i,:]) / norm(rho_plus[i,:] - rho_minus[i,:])
+        @views u_hat[i,:] = cross(I_hat[i,:], normal)
+        @views l_plus[i] = dot(rho_plus[i,:]-rho, I_hat[i,:])
+        @views l_minus[i] = dot(rho_minus[i,:]-rho, I_hat[i,:])
+        @views P0[i] = abs(dot(rho_plus[i,:] - rho, u_hat[i,:]))
+        @views P0_hat[i,:] = (rho_plus[i,:]-rho-l_plus[i]*I_hat[i,:]) / P0[i]
         R0[i] = sqrt(P0[i]^2 + d^2)
-        R_plus[i] = sqrt(norm(rho_plus[i,:]-rho)^2 + d^2)
-        R_minus[i] = sqrt(norm(rho_minus[i,:]-rho)^2 + d^2)
+        @views R_plus[i] = sqrt(norm(rho_plus[i,:]-rho)^2 + d^2)
+        @views R_minus[i] = sqrt(norm(rho_minus[i,:]-rho)^2 + d^2)
     end
     (d, P0_hat, u_hat, P0, R0, R_plus, R_minus, l_plus, l_minus)
 end
@@ -121,10 +121,7 @@ function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
     # Used when r_test is close to source triangle, but not on it. Uses a
     # combination of analytical integration for the singular term and numerical
     # for the rest.
-    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
-                                             r_test::Array{Float64, 1},
-                                             nodes::Array{Float64, 2},
-                                             quadrature_rule::Array{Float64, 2})
+    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber, r_test, nodes, quadrature_rule)
     singular_integral = scalarGreensSingularityIntegral(r_test, nodes,
                                                         distance_to_edge_tol)
     singular_integral + non_singular_integral
@@ -136,7 +133,7 @@ function scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
                                          quadrature_rule::Array{Float64, 2})
     # Performs numerical integration of scalar Green's function with
     # singularity removed (this doesnt have a dedicated unit test)
-    non_singular_integrand(x,y,z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
+    non_singular_integrand(x, y, z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
                                                             wavenumber)
     integrateTriangle(nodes, non_singular_integrand, quadrature_rule[:,1:3],
                       quadrature_rule[:,4])
