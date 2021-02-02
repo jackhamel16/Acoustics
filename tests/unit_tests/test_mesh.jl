@@ -1,8 +1,25 @@
 using Test
 
 include("../../src/mesh.jl")
+include("../../src/quadrature.jl")
 
 @testset "mesh tests" begin
+    @testset "calculateQuadraturePoints tests" begin
+        nodes = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
+        elements = [2 1 4; 2 4 3]
+        area_quadrature_points = convert(Array{Float64, 2}, transpose([1/3 1/3 1/3]))
+        quadrature_points_solution = Array{Float64, 3}(undef, 2, 1, 3)
+        quadrature_points_solution[1, :, :] = [1/3 1/3 0.0]
+        quadrature_points_solution[2, :, :] = [2/3 2/3 0.0]
+
+        quadrature_points = calculateQuadraturePoints(nodes, elements, area_quadrature_points)
+        @test isapprox(quadrature_points, quadrature_points_solution, rtol=1e-15)
+
+        nodes = [-1.0 2.0 3.0; 0.0 2.0 3.0; 1.0 2.0 0.0]
+        elements = [1 2 3]
+        area_quadrature_points = gauss7rule[1:3, :]
+        
+    end
     @testset "computeCentroid tests" begin
         zero_vertices = zeros(3,3)
         @test computeCentroid(zero_vertices) == [0.,0.,0.]
@@ -24,24 +41,32 @@ include("../../src/mesh.jl")
         num_elements = 2
         nodes_solution = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
         elements_solution = [2 1 4; 2 4 3]
+        src_quadrature_points_solution = Array{Float64, 3}(undef, 2, 1, 3)
+        src_quadrature_points_solution[1, :, :] = [1/3 1/3 0.0]
+        src_quadrature_points_solution[2, :, :] = [2/3 2/3 0.0]
 
         test_mesh_filename = "examples/test/rectangle_plate.msh"
-        test_pulse_mesh = buildPulseMesh(test_mesh_filename)
+        test_pulse_mesh = buildPulseMesh(test_mesh_filename, gauss1rule, gauss1rule)
 
         @test test_pulse_mesh.num_elements == num_elements
         @test test_pulse_mesh.nodes == nodes_solution
         @test test_pulse_mesh.elements == elements_solution
+        @test_skip test_pulse_mesh.src_quadrature_points == src_quadrature_points_solution
+        @test test_pulse_mesh.src_quadrature_weights == zeros(1)
+        @test test_pulse_mesh.test_quadrature_points == zeros((1,1,1))
+        @test test_pulse_mesh.test_quadrature_weights == zeros(1)
 
         elements_solution2 =  [4 1 2; 4 2 5; 5 2 6; 2 3 6;
                                7 4 8; 8 4 5; 8 5 6; 8 6 9]
+
         test_mesh_filename2 = "examples/test/rectangle_plate_8elements_symmetric.msh"
-        test_pulse_mesh2 = buildPulseMesh(test_mesh_filename2)
+        test_pulse_mesh2 = buildPulseMesh(test_mesh_filename2, gauss1rule, gauss1rule)
 
         @test test_pulse_mesh2.elements == elements_solution2
 
         # Testing locations of nodes and nodes comprising elements of a sphere
         test_mesh_filename3 = "examples/test/sphere_1m.msh"
-        test_pulse_mesh3 = buildPulseMesh(test_mesh_filename3)
+        test_pulse_mesh3 = buildPulseMesh(test_mesh_filename3, gauss1rule, gauss1rule)
         nodes_solution = [6.123031769111886e-17 -1.499660721822137e-32 1
                             6.123031769111886e-17 -1.499660721822137e-32 -1
                             0.3090169943749472 -7.568483495013084e-17 -0.9510565162951536

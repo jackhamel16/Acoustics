@@ -1,9 +1,27 @@
+using Parameters
+
 include("../packages/gmsh.jl")
 
-struct PulseMesh
+@with_kw struct PulseMesh
     num_elements::Int64
     nodes::Array{Float64, 2}
     elements::Array{Int64, 2}
+    src_quadrature_points::Array{Float64, 3}
+    src_quadrature_weights::Array{Float64, 1}
+    test_quadrature_points::Array{Float64, 3}
+    test_quadrature_weights::Array{Float64, 1}
+end
+
+function calculateQuadraturePoints(nodes::AbstractArray{Float64, 2}, elements::AbstractArray{Int64, 2}, area_quadrature_points::AbstractArray{Float64, 2})
+    num_elements = size(elements)[1]
+    num_points = size(area_quadrature_points)[2]
+    quadrature_points = Array{Float64, 3}(undef, num_elements, num_points, 3)
+    for element_idx in 1:num_elements
+        ele_nodes = nodes[elements[element_idx,:], :]
+        quadrature_points[element_idx, 1, :] = barycentric2Cartesian(ele_nodes, area_quadrature_points[:, 1])
+    end
+    quadrature_points
+    # return Array{Float64, 3}(undef, size(elements)[1], size(area_quadrature_points)[2], 3)
 end
 
 function computeCentroid(vertices::Array{Float64,2})
@@ -21,7 +39,7 @@ function reshapeMeshArray(array::Array{T,1}, num_cols, type=T) where T<:Number
     convert(Array{type}, transpose(reshape(array, (num_cols, Integer(length(array)/num_cols)))))
 end
 
-function buildPulseMesh(mesh_filename::String)
+function buildPulseMesh(mesh_filename::String, src_quadrature_rule::Array{Float64, 2}, test_quadrature_rule::Array{Float64, 2})
     # Builds a PulseMesh object based the mesh at mesh_filename
     num_coord_dims = 3
     nodes_per_triangle = 3
@@ -42,7 +60,7 @@ function buildPulseMesh(mesh_filename::String)
     end
     elements = reshapeMeshArray(element_nodes[triangles_idx], num_coord_dims)
 
-    PulseMesh(num_elements, nodes, elements)
+    PulseMesh(num_elements, nodes, elements, zeros((1,1,1)), zeros(1), zeros((1,1,1)), zeros(1))
 end
 
 function barycentric2Cartesian(nodes::Array{Float64, 2}, barycentric_coords::AbstractArray{Float64, 1})
