@@ -7,18 +7,34 @@ include("../../src/quadrature.jl")
     @testset "calculateQuadraturePoints tests" begin
         nodes = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
         elements = [2 1 4; 2 4 3]
-        area_quadrature_points = convert(Array{Float64, 2}, transpose([1/3 1/3 1/3]))
-        quadrature_points_solution = Array{Float64, 3}(undef, 2, 1, 3)
-        quadrature_points_solution[1, :, :] = [1/3 1/3 0.0]
-        quadrature_points_solution[2, :, :] = [2/3 2/3 0.0]
+        # area_quadrature_points = convert(Array{Float64, 2}, transpose([1/3 1/3 1/3]))
+        area_quadrature_points = [1/3 1/3 1/3]
+        dimensions_solution = (2,)
+        sub_dimensions_solution = (3, 1)
+        quadrature_points_solution = Array{Array{Float64, 2}}(undef, 2)
+        quadrature_points_solution[1] = transpose([1/3 1/3 0.0])
+        quadrature_points_solution[2] = transpose([2/3 2/3 0.0])
 
         quadrature_points = calculateQuadraturePoints(nodes, elements, area_quadrature_points)
+        @test size(quadrature_points) == dimensions_solution
+        @test size(quadrature_points[1]) == sub_dimensions_solution
+        @test size(quadrature_points[2]) == sub_dimensions_solution
         @test isapprox(quadrature_points, quadrature_points_solution, rtol=1e-15)
 
-        nodes = [-1.0 2.0 3.0; 0.0 2.0 3.0; 1.0 2.0 0.0]
+        nodes = [-1.0 2.0 3.0; 0.0 2.0 3.0; 1.0 0.0 0.0]
         elements = [1 2 3]
-        area_quadrature_points = gauss7rule[1:3, :]
-        
+        area_quadrature_points = gauss7rule[:, 1:3]
+        dimensions_solution = (1,)
+        sub_dimensions_solution = (3, 7)
+        pnt2_solution = [-0.41042619231530003, 1.8805682564204, 2.8208523846306]
+        pnt7_solution = [-0.696140478029632, 1.797426985353088, 2.696140478029632]
+
+        quadrature_points = calculateQuadraturePoints(nodes, elements, area_quadrature_points)
+        @test size(quadrature_points) == dimensions_solution
+        @test size(quadrature_points[1]) == sub_dimensions_solution
+        @test isapprox(quadrature_points[1][:, 2], pnt2_solution, rtol=1e-14)
+        @test isapprox(quadrature_points[1][:, 7], pnt7_solution, rtol=1e-14)
+
     end
     @testset "computeCentroid tests" begin
         zero_vertices = zeros(3,3)
@@ -41,28 +57,63 @@ include("../../src/quadrature.jl")
         num_elements = 2
         nodes_solution = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
         elements_solution = [2 1 4; 2 4 3]
-        src_quadrature_points_solution = Array{Float64, 3}(undef, 2, 1, 3)
-        src_quadrature_points_solution[1, :, :] = [1/3 1/3 0.0]
-        src_quadrature_points_solution[2, :, :] = [2/3 2/3 0.0]
+        quadrature_points_solution = Array{Array{Float64, 2}}(undef, 2) #for test and src
+        quadrature_points_solution[1] = transpose([1/3 1/3 0.0])
+        quadrature_points_solution[2] = transpose([2/3 2/3 0.0])
+        quadrature_weights_solution = ones(1)
 
         test_mesh_filename = "examples/test/rectangle_plate.msh"
         test_pulse_mesh = buildPulseMesh(test_mesh_filename, gauss1rule, gauss1rule)
 
-        @test test_pulse_mesh.num_elements == num_elements
-        @test test_pulse_mesh.nodes == nodes_solution
-        @test test_pulse_mesh.elements == elements_solution
-        @test_skip test_pulse_mesh.src_quadrature_points == src_quadrature_points_solution
-        @test test_pulse_mesh.src_quadrature_weights == zeros(1)
-        @test test_pulse_mesh.test_quadrature_points == zeros((1,1,1))
-        @test test_pulse_mesh.test_quadrature_weights == zeros(1)
+        @unpack num_elements,
+                nodes,
+                elements,
+                src_quadrature_points,
+                src_quadrature_weights,
+                test_quadrature_points,
+                test_quadrature_weights = test_pulse_mesh
+        @test num_elements == num_elements
+        @test nodes == nodes_solution
+        @test elements == elements_solution
+        @test src_quadrature_points == quadrature_points_solution
+        @test src_quadrature_weights == quadrature_weights_solution
+        @test test_quadrature_points == quadrature_points_solution
+        @test test_quadrature_weights == quadrature_weights_solution
 
+        num_elements_solution = 8
         elements_solution2 =  [4 1 2; 4 2 5; 5 2 6; 2 3 6;
                                7 4 8; 8 4 5; 8 5 6; 8 6 9]
+        src_points_dimensions_solution = (8,)
+        test_points_dimensions_solution = (8,)
+        src_points_sub_dimensions_solution = (3, 7)
+        test_points_sub_dimensions_solution = (3, 1)
+        src_weights_dimensions_solution = (7,)
+        test_weights_dimensions_solution = (1,)
+        ele4_pnt5_src_solution = [0.9493567463382719, 0.398713492676544, 0.0]
+        ele8_pnt1_test_solution = [0.8333333333333333, 0.8333333333333333, 0.0]
 
         test_mesh_filename2 = "examples/test/rectangle_plate_8elements_symmetric.msh"
-        test_pulse_mesh2 = buildPulseMesh(test_mesh_filename2, gauss1rule, gauss1rule)
+        test_pulse_mesh2 = buildPulseMesh(test_mesh_filename2, gauss7rule, gauss1rule)
 
-        @test test_pulse_mesh2.elements == elements_solution2
+        @unpack num_elements,
+                elements,
+                src_quadrature_points,
+                src_quadrature_weights,
+                test_quadrature_points,
+                test_quadrature_weights = test_pulse_mesh2
+        @test num_elements == num_elements_solution
+        @test elements == elements_solution2
+        @test size(src_quadrature_points) == src_points_dimensions_solution
+        @test size(src_quadrature_points[1]) == src_points_sub_dimensions_solution
+        @test size(src_quadrature_points[7]) == src_points_sub_dimensions_solution
+        @test size(src_quadrature_weights) == src_weights_dimensions_solution
+        @test isapprox(src_quadrature_points[4][:, 5], ele4_pnt5_src_solution, rtol=1e-14)
+        @test isapprox(src_quadrature_weights, gauss7rule[:, 4], rtol=1e-14)
+        @test size(test_quadrature_points) == test_points_dimensions_solution
+        @test size(test_quadrature_points[1]) == test_points_sub_dimensions_solution
+        @test size(test_quadrature_weights) == test_weights_dimensions_solution
+        @test isapprox(test_quadrature_points[8][:, 1], ele8_pnt1_test_solution, rtol=1e-14)
+        @test isapprox(test_quadrature_weights, gauss1rule[:, 4], rtol=1e-14)
 
         # Testing locations of nodes and nodes comprising elements of a sphere
         test_mesh_filename3 = "examples/test/sphere_1m.msh"
@@ -544,8 +595,9 @@ include("../../src/quadrature.jl")
                                 327 11 13 1
                                 328 13 145 1]
 
-        @test isapprox(test_pulse_mesh3.nodes, nodes_solution, rtol=1e-14)
-        @test isapprox(test_pulse_mesh3.elements, elements_solution[:,2:4], rtol=1e-14)
+        @unpack nodes, elements = test_pulse_mesh3
+        @test isapprox(nodes, nodes_solution, rtol=1e-14)
+        @test isapprox(elements, elements_solution[:,2:4], rtol=1e-14)
     end
     @testset "barycentric2Cartesian tests" begin
         nodes = [0.0 0.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0]

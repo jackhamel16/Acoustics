@@ -6,22 +6,29 @@ include("../packages/gmsh.jl")
     num_elements::Int64
     nodes::Array{Float64, 2}
     elements::Array{Int64, 2}
-    src_quadrature_points::Array{Float64, 3}
+    src_quadrature_points::Array{Array{Float64, 2}}
     src_quadrature_weights::Array{Float64, 1}
-    test_quadrature_points::Array{Float64, 3}
+    test_quadrature_points::Array{Array{Float64, 2}}
     test_quadrature_weights::Array{Float64, 1}
 end
 
 function calculateQuadraturePoints(nodes::AbstractArray{Float64, 2}, elements::AbstractArray{Int64, 2}, area_quadrature_points::AbstractArray{Float64, 2})
+    # Computes the quadrature points on a triangle described by elements and nodes
+    # from the triangle area coordinates of the quadrature points
+    # nodes in an array of global nodes
+    # array of node labels of all elements
     num_elements = size(elements)[1]
-    num_points = size(area_quadrature_points)[2]
-    quadrature_points = Array{Float64, 3}(undef, num_elements, num_points, 3)
+    num_points = size(area_quadrature_points)[1]
+    quadrature_points = Array{Array{Float64, 2}}(undef, num_elements)
+    quadrature_points_one_element = Array{Float64, 2}(undef, 3, num_points)
     for element_idx in 1:num_elements
         ele_nodes = nodes[elements[element_idx,:], :]
-        quadrature_points[element_idx, 1, :] = barycentric2Cartesian(ele_nodes, area_quadrature_points[:, 1])
+        for pnt_idx in 1:num_points
+            quadrature_points_one_element[:, pnt_idx] = barycentric2Cartesian(ele_nodes, area_quadrature_points[pnt_idx, :])
+        end
+        quadrature_points[element_idx] = copy(quadrature_points_one_element)
     end
     quadrature_points
-    # return Array{Float64, 3}(undef, size(elements)[1], size(area_quadrature_points)[2], 3)
 end
 
 function computeCentroid(vertices::Array{Float64,2})
@@ -58,9 +65,11 @@ function buildPulseMesh(mesh_filename::String, src_quadrature_rule::Array{Float6
         xyz_idx = (node_idx-1)*num_coord_dims + 1
         nodes[tag_idx, :] = node_xyzs[xyz_idx:xyz_idx+nodes_per_triangle-1]
     end
-    elements = reshapeMeshArray(element_nodes[triangles_idx], num_coord_dims)
+    elements = reshapeMeshArray(element_nodes[triangles_idx], num_coord_dims, Int64)
 
-    PulseMesh(num_elements, nodes, elements, zeros((1,1,1)), zeros(1), zeros((1,1,1)), zeros(1))
+    PulseMesh(num_elements, nodes, elements,
+              calculateQuadraturePoints(nodes, elements, src_quadrature_rule[:, 1:3]), src_quadrature_rule[:, 4],
+              calculateQuadraturePoints(nodes, elements, test_quadrature_rule[:, 1:3]), test_quadrature_rule[:, 4])
 end
 
 function barycentric2Cartesian(nodes::Array{Float64, 2}, barycentric_coords::AbstractArray{Float64, 1})
