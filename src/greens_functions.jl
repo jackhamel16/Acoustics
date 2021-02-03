@@ -13,7 +13,8 @@ end
 function scalarGreensIntegration(wavenumber::Complex{Float64},
                                  r_test::Array{Float64, 1},
                                  nodes::Array{Float64, 2},
-                                 quadrature_rule::Array{Float64, 2},
+                                 quadrature_points::AbstractArray{Float64, 2},
+                                 quadrature_weights::AbstractArray{Float64, 1},
                                  distance_to_edge_tol::Float64,
                                  near_singular_tol::Float64,
                                  is_singular::Bool)
@@ -32,15 +33,15 @@ function scalarGreensIntegration(wavenumber::Complex{Float64},
     end
     centroid_src = barycentric2Cartesian(nodes, [1/3, 1/3, 1/3])
     if is_singular == true
-        scalarGreensSingularIntegral(wavenumber, r_test, nodes, quadrature_rule,
+        scalarGreensSingularIntegral(wavenumber, r_test, nodes, quadrature_points, quadrature_weights,
                                      distance_to_edge_tol)
     elseif norm(r_test-centroid_src) > near_singular_tol*max_edge_length
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
-        integrateTriangle(nodes, scalar_greens_integrand, quadrature_rule[:,1:3],
-                          quadrature_rule[:,4])
+        integrateTriangle(nodes, scalar_greens_integrand, quadrature_points,
+                          quadrature_weights)
     else
         scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
-                                         quadrature_rule, distance_to_edge_tol)
+                                         quadrature_points, quadrature_weights, distance_to_edge_tol)
     end
 end
 
@@ -116,12 +117,13 @@ end
 function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
                                           r_test::Array{Float64, 1},
                                           nodes::Array{Float64, 2},
-                                          quadrature_rule::Array{Float64, 2},
+                                          quadrature_points::AbstractArray{Float64, 2},
+                                          quadrature_weights::AbstractArray{Float64, 1},
                                           distance_to_edge_tol::Float64)
     # Used when r_test is close to source triangle, but not on it. Uses a
     # combination of analytical integration for the singular term and numerical
     # for the rest.
-    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber, r_test, nodes, quadrature_rule)
+    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber, r_test, nodes, quadrature_points, quadrature_weights)
     singular_integral = scalarGreensSingularityIntegral(r_test, nodes,
                                                         distance_to_edge_tol)
     singular_integral + non_singular_integral
@@ -130,19 +132,21 @@ end
 function scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
                                          r_test::Array{Float64, 1},
                                          nodes::Array{Float64, 2},
-                                         quadrature_rule::Array{Float64, 2})
+                                         quadrature_points::AbstractArray{Float64, 2},
+                                         quadrature_weights::AbstractArray{Float64, 1})
     # Performs numerical integration of scalar Green's function with
     # singularity removed (this doesnt have a dedicated unit test)
     non_singular_integrand(x, y, z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
                                                             wavenumber)
-    integrateTriangle(nodes, non_singular_integrand, quadrature_rule[:,1:3],
-                      quadrature_rule[:,4])
+    integrateTriangle(nodes, non_singular_integrand, quadrature_points,
+                      quadrature_weights)
 end
 
 function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
                                       r_test::Array{Float64, 1},
                                       nodes::Array{Float64, 2},
-                                      quadrature_rule::Array{Float64, 2},
+                                      area_quadrature_points::AbstractArray{Float64, 2},
+                                      quadrature_weights::AbstractArray{Float64, 1},
                                       distance_to_edge_tol::Float64)
     # Computes the integral of the scalar greens function for self-interactions
     # i.e. r_test is in the source triangle described by nodes
@@ -151,10 +155,11 @@ function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
     for triangle_idx in 1:3
         sub_nodes = copy(nodes)
         sub_nodes[triangle_idx,:] = r_test
-        total_integral += scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
-                                                 r_test::Array{Float64, 1},
-                                                 sub_nodes::Array{Float64, 2},
-                                                 quadrature_rule::Array{Float64, 2})
+        total_integral += scalarGreensNonSingularIntegral(wavenumber,
+                                                 r_test,
+                                                 sub_nodes,
+                                                 barycentric2Cartesian(sub_nodes, area_quadrature_points),
+                                                 quadrature_weights)
     end
     total_integral
 end

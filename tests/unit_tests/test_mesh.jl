@@ -7,8 +7,8 @@ include("../../src/quadrature.jl")
     @testset "calculateQuadraturePoints tests" begin
         nodes = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
         elements = [2 1 4; 2 4 3]
-        # area_quadrature_points = convert(Array{Float64, 2}, transpose([1/3 1/3 1/3]))
-        area_quadrature_points = [1/3 1/3 1/3]
+        area_quadrature_points = convert(Array{Float64, 2}, transpose([1/3 1/3 1/3]))
+        # area_quadrature_points = [1/3 1/3 1/3]
         dimensions_solution = (2,)
         sub_dimensions_solution = (3, 1)
         quadrature_points_solution = Array{Array{Float64, 2}}(undef, 2)
@@ -23,7 +23,7 @@ include("../../src/quadrature.jl")
 
         nodes = [-1.0 2.0 3.0; 0.0 2.0 3.0; 1.0 0.0 0.0]
         elements = [1 2 3]
-        area_quadrature_points = gauss7rule[:, 1:3]
+        area_quadrature_points = gauss7rule[1:3, :]
         dimensions_solution = (1,)
         sub_dimensions_solution = (3, 7)
         pnt2_solution = [-0.41042619231530003, 1.8805682564204, 2.8208523846306]
@@ -108,12 +108,12 @@ include("../../src/quadrature.jl")
         @test size(src_quadrature_points[7]) == src_points_sub_dimensions_solution
         @test size(src_quadrature_weights) == src_weights_dimensions_solution
         @test isapprox(src_quadrature_points[4][:, 5], ele4_pnt5_src_solution, rtol=1e-14)
-        @test isapprox(src_quadrature_weights, gauss7rule[:, 4], rtol=1e-14)
+        @test isapprox(src_quadrature_weights, gauss7rule[4, :], rtol=1e-14)
         @test size(test_quadrature_points) == test_points_dimensions_solution
         @test size(test_quadrature_points[1]) == test_points_sub_dimensions_solution
         @test size(test_quadrature_weights) == test_weights_dimensions_solution
         @test isapprox(test_quadrature_points[8][:, 1], ele8_pnt1_test_solution, rtol=1e-14)
-        @test isapprox(test_quadrature_weights, gauss1rule[:, 4], rtol=1e-14)
+        @test isapprox(test_quadrature_weights, gauss1rule[4, :], rtol=1e-14)
 
         # Testing locations of nodes and nodes comprising elements of a sphere
         test_mesh_filename3 = "examples/test/sphere_1m.msh"
