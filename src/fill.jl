@@ -1,17 +1,6 @@
-# dependencies: quadrature.jl
+# dependencies: mesh.jl quadrature.jl
 
 using LinearAlgebra
-
-function getTriangleNodes(element_idx::Int64, elements::Array{Int64, 2}, nodes::Array{Float64, 2})
-    # Gets nodes of triangle specified by element_idx
-    # (does not have dedicated unit test right now)
-    triangle_nodes = Array{Float64, 2}(undef, 3, 3)
-    for node_idx_local in 1:3
-        node_idx_global = elements[element_idx, node_idx_local]
-        @views triangle_nodes[node_idx_local,:] = nodes[node_idx_global,:]
-    end
-    triangle_nodes
-end
 
 function rhsFill(num_elements::Int64, elements::Array{Int64, 2}, nodes::Array{Float64, 2}, fieldFunc::Function, quadrature_rule::Array{Float64, 2})
     rhs = Array{Complex{Float64}, 1}(undef, num_elements)
@@ -23,6 +12,11 @@ function rhsFill(num_elements::Int64, elements::Array{Int64, 2}, nodes::Array{Fl
 end
 
 function matrixFill(num_elements::Int64, elements::Array{Int64, 2}, nodes::Array{Float64, 2}, testIntegrand::Function, quadrature_rule::Array{Float64, 2})
+    # @unpack num_elements,
+    #         elements,
+    #         nodes,
+    #         test_quadrature_points,
+    #         test_quadrature_weights = pulse_mesh
     z_matrix = Array{Complex{Float64}, 2}(undef, num_elements, num_elements)
     for src_idx in 1:num_elements
         for test_idx in 1:num_elements
