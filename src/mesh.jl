@@ -81,9 +81,15 @@ end
     end
     elements = reshapeMeshArray(element_nodes[triangles_idx], num_coord_dims, Int64)
 
-    PulseMesh(num_elements, nodes, elements, src_quadrature_rule, test_quadrature_rule,
-              calculateQuadraturePoints(nodes, elements, src_quadrature_rule[1:3, :]), src_quadrature_rule[4, :],
-              calculateQuadraturePoints(nodes, elements, test_quadrature_rule[1:3, :]), test_quadrature_rule[4, :])
+    PulseMesh(num_elements,
+              nodes,
+              elements,
+              src_quadrature_rule,
+              test_quadrature_rule,
+              calculateQuadraturePoints(nodes, elements, src_quadrature_rule[1:3,:]),
+              src_quadrature_rule[4, :],
+              calculateQuadraturePoints(nodes, elements, test_quadrature_rule[1:3,:]),
+              test_quadrature_rule[4, :])
 end
 
 @views function barycentric2Cartesian(nodes::AbstractArray{Float64, 2}, barycentric_coords::AbstractArray{Float64, 1})
