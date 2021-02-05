@@ -54,6 +54,27 @@ include("../../src/quadrature.jl")
         @test typeof(reshapeMeshArray([1.,2.,3.,4.,5.,6.], 3)) == typeof([i*3.0+j for i in 0:1, j in 1:3])
     end
     @testset "buildPulseMesh tests" begin
+        default = PulseMesh()
+        @unpack num_elements,
+                nodes,
+                elements,
+                src_quadrature_rule,
+                test_quadrature_rule,
+                src_quadrature_points,
+                src_quadrature_weights,
+                test_quadrature_points,
+                test_quadrature_weights = default
+        @test num_elements == 0
+        @test typeof(num_elements) == Int64
+        @test nodes == Array{Float64, 2}(undef, 0, 0)
+        @test elements == Array{Int64, 2}(undef, 0, 0)
+        @test src_quadrature_rule == Array{Float64, 2}(undef, 0, 0)
+        @test test_quadrature_rule == Array{Float64, 2}(undef, 0, 0)
+        @test src_quadrature_points == Array{Array{Float64, 2}}(undef, 0)
+        @test src_quadrature_weights == Array{Float64, 1}(undef, 0)
+        @test test_quadrature_points == Array{Array{Float64, 2}}(undef, 0)
+        @test test_quadrature_weights == Array{Float64, 1}(undef, 0)
+
         num_elements = 2
         nodes_solution = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
         elements_solution = [2 1 4; 2 4 3]
@@ -68,6 +89,8 @@ include("../../src/quadrature.jl")
         @unpack num_elements,
                 nodes,
                 elements,
+                src_quadrature_rule,
+                test_quadrature_rule,
                 src_quadrature_points,
                 src_quadrature_weights,
                 test_quadrature_points,
@@ -75,6 +98,8 @@ include("../../src/quadrature.jl")
         @test num_elements == num_elements
         @test nodes == nodes_solution
         @test elements == elements_solution
+        @test src_quadrature_rule == gauss1rule
+        @test test_quadrature_rule == gauss1rule
         @test src_quadrature_points == quadrature_points_solution
         @test src_quadrature_weights == quadrature_weights_solution
         @test test_quadrature_points == quadrature_points_solution
@@ -97,12 +122,16 @@ include("../../src/quadrature.jl")
 
         @unpack num_elements,
                 elements,
+                src_quadrature_rule,
+                test_quadrature_rule,
                 src_quadrature_points,
                 src_quadrature_weights,
                 test_quadrature_points,
                 test_quadrature_weights = test_pulse_mesh2
         @test num_elements == num_elements_solution
         @test elements == elements_solution2
+        @test src_quadrature_rule == gauss7rule
+        @test test_quadrature_rule == gauss1rule
         @test size(src_quadrature_points) == src_points_dimensions_solution
         @test size(src_quadrature_points[1]) == src_points_sub_dimensions_solution
         @test size(src_quadrature_points[7]) == src_points_sub_dimensions_solution

@@ -10,11 +10,10 @@ function scalarGreensNonSingular(R::Float64, k::Complex{Float64})
     (exp(-im*k*abs(R))-1)/(4*pi*abs(R))
 end
 
-function scalarGreensIntegration(wavenumber::Complex{Float64},
+@views function scalarGreensIntegration(pulse_mesh::PulseMesh,
+                                 element_idx::Int64,
+                                 wavenumber::Complex{Float64},
                                  r_test::Array{Float64, 1},
-                                 nodes::Array{Float64, 2},
-                                 quadrature_points::AbstractArray{Float64, 2},
-                                 quadrature_weights::AbstractArray{Float64, 1},
                                  distance_to_edge_tol::Float64,
                                  near_singular_tol::Float64,
                                  is_singular::Bool)
@@ -24,28 +23,34 @@ function scalarGreensIntegration(wavenumber::Complex{Float64},
     #    to an edge or extension to ignore that edge's contribution to the integral
     # near_singular_tol is the number of max edge lengths away r_test can be
     #    before doing purely numerical integration
+    @unpack nodes,
+            elements,
+            src_quadrature_rule,
+            src_quadrature_points,
+            src_quadrature_weights = pulse_mesh
+    triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
     max_edge_length = 0.0
     for edge_idx in 1:3
-        edge_length = norm(nodes[edge_idx,:]-nodes[edge_idx%3+1,:])
+        edge_length = norm(triangle_nodes[edge_idx,:]-triangle_nodes[edge_idx%3+1,:])
         if edge_length > max_edge_length
             max_edge_length = edge_length
         end
     end
-    centroid_src = barycentric2Cartesian(nodes, [1/3, 1/3, 1/3])
+    centroid_src = barycentric2Cartesian(triangle_nodes, [1/3, 1/3, 1/3])
     if is_singular == true
-        scalarGreensSingularIntegral(wavenumber, r_test, nodes, quadrature_points, quadrature_weights,
+        scalarGreensSingularIntegral(wavenumber, r_test, triangle_nodes, src_quadrature_rule[1:3,:], src_quadrature_weights,
                                      distance_to_edge_tol)
     elseif norm(r_test-centroid_src) > near_singular_tol*max_edge_length
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
-        integrateTriangle(nodes, scalar_greens_integrand, quadrature_points,
-                          quadrature_weights)
+        integrateTriangle(triangle_nodes, scalar_greens_integrand, src_quadrature_points[element_idx],
+                          src_quadrature_weights)
     else
-        scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
-                                         quadrature_points, quadrature_weights, distance_to_edge_tol)
+        scalarGreensNearSingularIntegral(wavenumber, r_test, triangle_nodes,
+                                         src_quadrature_points[element_idx], src_quadrature_weights, distance_to_edge_tol)
     end
 end
 
-function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64, 1},
+@views function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64, 1},
                                                           nodes::Array{Float64, 2})
     # Computes the input parameters for scalarGreensSingularityIntegral()
     # r_test is the observation point
@@ -53,10 +58,10 @@ function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64,
     r_minus = nodes # beginning points of edges
     r_plus = circshift(nodes, (-1,0)) # ending points of edges
 
-    @views normal_non_unit = cross(r_plus[1,:]-r_minus[1,:], r_minus[3,:]-r_plus[3,:])
+    normal_non_unit = cross(r_plus[1,:]-r_minus[1,:], r_minus[3,:]-r_plus[3,:])
     normal = normal_non_unit / norm(normal_non_unit)
 
-    @views d = dot(normal, r_test - r_plus[1,:])
+    d = dot(normal, r_test - r_plus[1,:])
     rho = r_test - normal * dot(r_test, normal)
 
     l_plus = Array{Float64, 1}(undef, 3) # distance from point at P0 to rho_plus
@@ -71,17 +76,17 @@ function computeScalarGreensSingularityIntegralParameters(r_test::Array{Float64,
     u_hat = Array{Float64, 2}(undef, 3, 3) # unit vector orthogonal to edge in triangle plane
     P0_hat = Array{Float64, 2}(undef, 3, 3) # unit vectors of P0
     for i in 1:3 # i represents triangle edge index
-        @views rho_plus[i,:] = r_plus[i,:] - normal*dot(r_plus[i,:],normal)
-        @views rho_minus[i,:] = r_minus[i,:] - normal*dot(r_minus[i,:],normal)
-        @views I_hat[i,:] = (rho_plus[i,:] - rho_minus[i,:]) / norm(rho_plus[i,:] - rho_minus[i,:])
-        @views u_hat[i,:] = cross(I_hat[i,:], normal)
-        @views l_plus[i] = dot(rho_plus[i,:]-rho, I_hat[i,:])
-        @views l_minus[i] = dot(rho_minus[i,:]-rho, I_hat[i,:])
-        @views P0[i] = abs(dot(rho_plus[i,:] - rho, u_hat[i,:]))
-        @views P0_hat[i,:] = (rho_plus[i,:]-rho-l_plus[i]*I_hat[i,:]) / P0[i]
+        rho_plus[i,:] = r_plus[i,:] - normal*dot(r_plus[i,:],normal)
+        rho_minus[i,:] = r_minus[i,:] - normal*dot(r_minus[i,:],normal)
+        I_hat[i,:] = (rho_plus[i,:] - rho_minus[i,:]) / norm(rho_plus[i,:] - rho_minus[i,:])
+        u_hat[i,:] = cross(I_hat[i,:], normal)
+        l_plus[i] = dot(rho_plus[i,:]-rho, I_hat[i,:])
+        l_minus[i] = dot(rho_minus[i,:]-rho, I_hat[i,:])
+        P0[i] = abs(dot(rho_plus[i,:] - rho, u_hat[i,:]))
+        P0_hat[i,:] = (rho_plus[i,:]-rho-l_plus[i]*I_hat[i,:]) / P0[i]
         R0[i] = sqrt(P0[i]^2 + d^2)
-        @views R_plus[i] = sqrt(norm(rho_plus[i,:]-rho)^2 + d^2)
-        @views R_minus[i] = sqrt(norm(rho_minus[i,:]-rho)^2 + d^2)
+        R_plus[i] = sqrt(norm(rho_plus[i,:]-rho)^2 + d^2)
+        R_minus[i] = sqrt(norm(rho_minus[i,:]-rho)^2 + d^2)
     end
     (d, P0_hat, u_hat, P0, R0, R_plus, R_minus, l_plus, l_minus)
 end
@@ -142,23 +147,26 @@ function scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
                       quadrature_weights)
 end
 
-function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
-                                      r_test::Array{Float64, 1},
-                                      nodes::Array{Float64, 2},
-                                      area_quadrature_points::AbstractArray{Float64, 2},
-                                      quadrature_weights::AbstractArray{Float64, 1},
-                                      distance_to_edge_tol::Float64)
+@views function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
+                                             r_test::Array{Float64, 1},
+                                             nodes::Array{Float64, 2},
+                                             area_quadrature_points::AbstractArray{Float64, 2},
+                                             quadrature_weights::AbstractArray{Float64, 1},
+                                             distance_to_edge_tol::Float64)
     # Computes the integral of the scalar greens function for self-interactions
     # i.e. r_test is in the source triangle described by nodes
     total_integral = scalarGreensSingularityIntegral(r_test, nodes,
                                                      distance_to_edge_tol)
+    sub_nodes = Array{Float64, 2}(undef, 4, 3)
+    sub_nodes[1:3,:] = nodes
+    sub_nodes[4,:] = r_test
+    sub_elements = [4 2 3; 1 4 3; 1 2 4]
+    quadrature_points = calculateQuadraturePoints(sub_nodes, sub_elements, area_quadrature_points)
     for triangle_idx in 1:3
-        sub_nodes = copy(nodes)
-        sub_nodes[triangle_idx,:] = r_test
         total_integral += scalarGreensNonSingularIntegral(wavenumber,
                                                  r_test,
-                                                 sub_nodes,
-                                                 barycentric2Cartesian(sub_nodes, area_quadrature_points),
+                                                 getTriangleNodes(triangle_idx, sub_elements, sub_nodes),
+                                                 quadrature_points[triangle_idx],
                                                  quadrature_weights)
     end
     total_integral

@@ -3,13 +3,15 @@ using Parameters
 include("../packages/gmsh.jl")
 
 @with_kw struct PulseMesh
-    num_elements::Int64
-    nodes::AbstractArray{Float64, 2}
-    elements::AbstractArray{Int64, 2}
-    src_quadrature_points::AbstractArray{Array{Float64, 2}}
-    src_quadrature_weights::AbstractArray{Float64, 1}
-    test_quadrature_points::AbstractArray{Array{Float64, 2}}
-    test_quadrature_weights::AbstractArray{Float64, 1}
+    num_elements::Int64 = 0
+    nodes::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+    elements::AbstractArray{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
+    src_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+    test_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+    src_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
+    src_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
+    test_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
+    test_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
 end
 
 @views function calculateQuadraturePoints(nodes::AbstractArray{Float64, 2}, elements::AbstractArray{Int64, 2}, area_quadrature_points::AbstractArray{Float64, 2})
@@ -79,7 +81,7 @@ end
     end
     elements = reshapeMeshArray(element_nodes[triangles_idx], num_coord_dims, Int64)
 
-    PulseMesh(num_elements, nodes, elements,
+    PulseMesh(num_elements, nodes, elements, src_quadrature_rule, test_quadrature_rule,
               calculateQuadraturePoints(nodes, elements, src_quadrature_rule[1:3, :]), src_quadrature_rule[4, :],
               calculateQuadraturePoints(nodes, elements, test_quadrature_rule[1:3, :]), test_quadrature_rule[4, :])
 end
