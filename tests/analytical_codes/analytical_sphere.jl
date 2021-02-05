@@ -5,7 +5,7 @@ using Plots
 include("../../src/includes.jl")
 
 function computeAnalyticalSolution(wavenumber, radius, mesh_filename)
-    pulse_mesh = buildPulseMesh(mesh_filename)
+    pulse_mesh = buildPulseMesh(mesh_filename, gauss1rule, gauss1rule)
     sources_analytical = Array{Complex{Float64}, 1}(undef, pulse_mesh.num_elements)
     for element_idx in 1:pulse_mesh.num_elements
         position = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[element_idx,:],:])
