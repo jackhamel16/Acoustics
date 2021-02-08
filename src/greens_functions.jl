@@ -10,6 +10,36 @@ function scalarGreensNonSingular(R::Float64, k::Complex{Float64})
     (exp(-im*k*abs(R))-1)/(4*pi*abs(R))
 end
 
+function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Complex{Float64}, nhat::AbstractArray{Float64, 1})
+    R = norm(R_vec)
+    grad_G = [-R_vec[1]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[1]*exp(-im*k*R)/(4*pi*R^2),
+              -R_vec[2]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[2]*exp(-im*k*R)/(4*pi*R^2),
+              -R_vec[3]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[3]*exp(-im*k*R)/(4*pi*R^2)]
+    dot(nhat, grad_G)
+end
+
+@views function scalarGreensNormalDerivativeIntegration(pulse_mesh::PulseMesh,
+                                 element_idx::Int64,
+                                 wavenumber::Complex{Float64},
+                                 r_test::Array{Float64, 1},
+                                 is_singular::Bool)
+    @unpack nodes,
+            elements,
+            areas,
+            normals,
+            src_quadrature_rule,
+            src_quadrature_points,
+            src_quadrature_weights = pulse_mesh
+    triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+    if is_singular == true
+        return(0.5) # principal value of integral for r=r'
+    else
+        scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, normals[element_idx,:])
+        return(integrateTriangle(triangle_nodes, scalar_greens_nd_integrand,
+                                 src_quadrature_points[element_idx], src_quadrature_weights))
+    end
+end
+
 @views function scalarGreensIntegration(pulse_mesh::PulseMesh,
                                  element_idx::Int64,
                                  wavenumber::Complex{Float64},
@@ -38,7 +68,8 @@ end
     end
     centroid_src = barycentric2Cartesian(triangle_nodes, [1/3, 1/3, 1/3])
     if is_singular == true
-        scalarGreensSingularIntegral(wavenumber, r_test, triangle_nodes, src_quadrature_rule[1:3,:], src_quadrature_weights,
+        scalarGreensSingularIntegral(wavenumber, r_test, triangle_nodes,
+                                     src_quadrature_rule[1:3,:], src_quadrature_weights,
                                      distance_to_edge_tol)
     elseif norm(r_test-centroid_src) > near_singular_tol*max_edge_length
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
@@ -46,7 +77,8 @@ end
                           src_quadrature_weights)
     else
         scalarGreensNearSingularIntegral(wavenumber, r_test, triangle_nodes,
-                                         src_quadrature_points[element_idx], src_quadrature_weights, distance_to_edge_tol)
+                                         src_quadrature_points[element_idx],
+                                         src_quadrature_weights, distance_to_edge_tol)
     end
 end
 
@@ -128,7 +160,8 @@ function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
     # Used when r_test is close to source triangle, but not on it. Uses a
     # combination of analytical integration for the singular term and numerical
     # for the rest.
-    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber, r_test, nodes, quadrature_points, quadrature_weights)
+    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber, r_test, nodes,
+                                                            quadrature_points, quadrature_weights)
     singular_integral = scalarGreensSingularityIntegral(r_test, nodes,
                                                         distance_to_edge_tol)
     singular_integral + non_singular_integral

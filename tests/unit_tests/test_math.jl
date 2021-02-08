@@ -4,6 +4,15 @@ using GSL
 include("../../src/math.jl")
 
 @testset "math tests" begin
+    @testset "convertSpherical2Cartesian tests" begin
+        @test isapprox(convertSpherical2Cartesian([0, 0, 0]), [0.0, 0.0, 0.0], rtol=1e-14)
+        @test isapprox(convertSpherical2Cartesian([1, 0, 0]), [0.0, 0.0, 1.0], rtol=1e-14)
+        @test isapprox(convertSpherical2Cartesian([1, pi/2, 0]), [1.0, 0.0, 0.0], rtol=1e-14)
+        @test isapprox(convertSpherical2Cartesian([2, pi/2, pi/4]), [sqrt(2), sqrt(2), 0.0], rtol=1e-14)
+        @test isapprox(convertSpherical2Cartesian([2, 3*pi/4, pi/2]), [0.0, sqrt(2), -sqrt(2)], rtol=1e-14)
+        @test isapprox(convertSpherical2Cartesian([2, 3*pi/4, 3*pi/2]), [0.0, -sqrt(2), -sqrt(2)], rtol=1e-14)
+        @test isapprox(convertSpherical2Cartesian([2, -5*pi/4, -pi/2]), [0.0, -sqrt(2), -sqrt(2)], rtol=1e-14)
+    end
     @testset "sphericalWave tests" begin
         lmax = 0
         l = [0]

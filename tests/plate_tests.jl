@@ -3,7 +3,7 @@ using Test
 include("../src/includes.jl")
 
 @testset "Tests with a flat rectangular plate" begin
-    @testset "Symmetry tests" begin
+    @testset "solveSoftIE Symmetry tests" begin
         mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
         excitation_amplitude = 1.0
         wavenumber = 2*pi/20+0*im
@@ -14,7 +14,7 @@ include("../src/includes.jl")
 
         wavevector1 = [0.0, 0.0, wavenumber]
         planewaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector1, [x_test,y_test,z_test])
-        sources = solve(mesh_filename,
+        sources = solveSoftIE(mesh_filename,
                         planewaveExcitation,
                         wavenumber,
                         src_quadrature_rule,
@@ -35,7 +35,7 @@ include("../src/includes.jl")
 
         wavevector2 = [wavenumber, 0.0, 0.0]
         planewaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector2, [x_test,y_test,z_test])
-        sources = solve(mesh_filename,
+        sources = solveSoftIE(mesh_filename,
                         planewaveExcitation,
                         wavenumber,
                         src_quadrature_rule,
@@ -49,6 +49,5 @@ include("../src/includes.jl")
         # test that some are not equal
         @test false == isapprox(sources[5], sources[6], rtol=1e-8)
         @test false == isapprox(sources[2], sources[4], rtol=1e-8)
-
     end
 end

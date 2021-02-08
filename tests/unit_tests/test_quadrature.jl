@@ -142,9 +142,12 @@ include("../../src/quadrature.jl")
             quadrature_points7 = calculateQuadraturePoints(nodes, elements, gauss7rule[1:3,:])
             quadrature_points13 = calculateQuadraturePoints(nodes, elements, gauss13rule[1:3,:])
             quadrature_points79 = calculateQuadraturePoints(nodes, elements, gauss79rule[1:3,:])
-            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points7[1], gauss7rule[4,:]), solution, rtol=5.6e-5)
-            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points13[1], gauss13rule[4,:]), solution, rtol=5.6e-5)
-            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points79[1], gauss79rule[4,:]), solution, rtol=5.6e-5)
+            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points7[1],
+                                             gauss7rule[4,:]), solution, rtol=5.6e-5)
+            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points13[1],
+                                             gauss13rule[4,:]), solution, rtol=5.6e-5)
+            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points79[1],
+                                             gauss79rule[4,:]), solution, rtol=5.6e-5)
         end
     end
 

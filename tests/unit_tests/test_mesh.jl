@@ -58,6 +58,8 @@ include("../../src/quadrature.jl")
         @unpack num_elements,
                 nodes,
                 elements,
+                areas,
+                normals,
                 src_quadrature_rule,
                 test_quadrature_rule,
                 src_quadrature_points,
@@ -68,6 +70,8 @@ include("../../src/quadrature.jl")
         @test typeof(num_elements) == Int64
         @test nodes == Array{Float64, 2}(undef, 0, 0)
         @test elements == Array{Int64, 2}(undef, 0, 0)
+        @test areas == Array{Float64, 1}(undef, 0)
+        @test normals == Array{Float64, 2}(undef, 0, 0)
         @test src_quadrature_rule == Array{Float64, 2}(undef, 0, 0)
         @test test_quadrature_rule == Array{Float64, 2}(undef, 0, 0)
         @test src_quadrature_points == Array{Array{Float64, 2}}(undef, 0)
@@ -78,6 +82,8 @@ include("../../src/quadrature.jl")
         num_elements = 2
         nodes_solution = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
         elements_solution = [2 1 4; 2 4 3]
+        areas_solution = [0.5, 0.5]
+        normals_solution = [0.0 0.0 1.0; 0.0 0.0 1.0]
         quadrature_points_solution = Array{Array{Float64, 2}}(undef, 2) #for test and src
         quadrature_points_solution[1] = transpose([1/3 1/3 0.0])
         quadrature_points_solution[2] = transpose([2/3 2/3 0.0])
@@ -89,6 +95,8 @@ include("../../src/quadrature.jl")
         @unpack num_elements,
                 nodes,
                 elements,
+                areas,
+                normals,
                 src_quadrature_rule,
                 test_quadrature_rule,
                 src_quadrature_points,
@@ -98,6 +106,8 @@ include("../../src/quadrature.jl")
         @test num_elements == num_elements
         @test nodes == nodes_solution
         @test elements == elements_solution
+        @test areas == areas_solution
+        @test normals == normals_solution
         @test src_quadrature_rule == gauss1rule
         @test test_quadrature_rule == gauss1rule
         @test src_quadrature_points == quadrature_points_solution
@@ -108,6 +118,8 @@ include("../../src/quadrature.jl")
         num_elements_solution = 8
         elements_solution2 =  [4 1 2; 4 2 5; 5 2 6; 2 3 6;
                                7 4 8; 8 4 5; 8 5 6; 8 6 9]
+        areas_solution = ones(8) .* 1/8
+        normal_solution = [0.0, 0.0, 1.0]
         src_points_dimensions_solution = (8,)
         test_points_dimensions_solution = (8,)
         src_points_sub_dimensions_solution = (3, 7)
@@ -122,6 +134,8 @@ include("../../src/quadrature.jl")
 
         @unpack num_elements,
                 elements,
+                areas,
+                normals,
                 src_quadrature_rule,
                 test_quadrature_rule,
                 src_quadrature_points,
@@ -130,6 +144,9 @@ include("../../src/quadrature.jl")
                 test_quadrature_weights = test_pulse_mesh2
         @test num_elements == num_elements_solution
         @test elements == elements_solution2
+        @test isapprox(areas, areas_solution, rtol=1e-14)
+        @test isapprox(normals[1,:], normal_solution, rtol=1e-14)
+        @test isapprox(normals[6,:], normal_solution, rtol=1e-14)
         @test src_quadrature_rule == gauss7rule
         @test test_quadrature_rule == gauss1rule
         @test size(src_quadrature_points) == src_points_dimensions_solution
@@ -624,9 +641,13 @@ include("../../src/quadrature.jl")
                                 327 11 13 1
                                 328 13 145 1]
 
-        @unpack nodes, elements = test_pulse_mesh3
+        @unpack nodes, elements, areas, normals = test_pulse_mesh3
+        ele40_area = 0.04434334702266062
+        ele40_normal = [0.36376444994595375, 0.9280894948998307, 0.07953184527027324]
         @test isapprox(nodes, nodes_solution, rtol=1e-14)
         @test isapprox(elements, elements_solution[:,2:4], rtol=1e-14)
+        @test isapprox(areas[40], ele40_area, rtol=1e-14)
+        @test isapprox(normals[40,:], ele40_normal, rtol=1e-14)
     end
     @testset "barycentric2Cartesian tests" begin
         nodes = [0.0 0.0 0.0; 0.0 1.0 1.0; 1.0 0.0 1.0]
