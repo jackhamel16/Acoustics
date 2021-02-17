@@ -6,6 +6,8 @@ include("../packages/gmsh.jl")
     num_elements::Int64 = 0
     nodes::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
     elements::AbstractArray{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
+    areas::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
+    normals::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
     src_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
     test_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
     src_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
@@ -14,7 +16,9 @@ include("../packages/gmsh.jl")
     test_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
 end
 
-@views function calculateQuadraturePoints(nodes::AbstractArray{Float64, 2}, elements::AbstractArray{Int64, 2}, area_quadrature_points::AbstractArray{Float64, 2})
+@views function calculateQuadraturePoints(nodes::AbstractArray{Float64, 2},
+                                          elements::AbstractArray{Int64, 2},
+                                          area_quadrature_points::AbstractArray{Float64, 2})
     # Computes the quadrature points on a triangle described by elements and nodes
     # from the triangle area coordinates of the quadrature points
     # nodes in an array of global nodes
@@ -26,7 +30,8 @@ end
     for element_idx in 1:num_elements
         ele_nodes = getTriangleNodes(element_idx, elements, nodes)
         for pnt_idx in 1:num_points
-            quadrature_points_one_element[:, pnt_idx] = barycentric2Cartesian(ele_nodes, area_quadrature_points[:, pnt_idx])
+            quadrature_points_one_element[:, pnt_idx] = barycentric2Cartesian(ele_nodes,
+                                                                    area_quadrature_points[:, pnt_idx])
         end
         quadrature_points[element_idx] = copy(quadrature_points_one_element)
     end
@@ -41,26 +46,28 @@ function computeCentroid(vertices::Array{Float64,2})
      (vertices[1,3]+vertices[2,3]+vertices[3,3])/3]
 end
 
-function getTriangleNodes(element_idx::Int64, elements::Array{Int64, 2}, nodes::Array{Float64, 2})
+@views function getTriangleNodes(element_idx::Int64, elements::Array{Int64, 2}, nodes::Array{Float64, 2})
     # Gets nodes of triangle specified by element_idx
     # (does not have dedicated unit test right now)
     # This function is much faster than fancy indexing e.g nodes[elements[element_idx,:],:]
     triangle_nodes = Array{Float64, 2}(undef, 3, 3)
     for node_idx_local in 1:3
         node_idx_global = elements[element_idx, node_idx_local]
-        @views triangle_nodes[node_idx_local,:] = nodes[node_idx_global,:]
+        triangle_nodes[node_idx_local,:] = nodes[node_idx_global,:]
     end
     triangle_nodes
 end
 
-function reshapeMeshArray(array::Array{T,1}, num_cols, type=T) where T<:Number
+@views function reshapeMeshArray(array::Array{T,1}, num_cols, type=T) where T<:Number
     # reshapes 1D array to 2D with each row corresponding to an elements
     # array is the Array to be reshaped
     # num_cols is number of columns to have in the reshaped array
     convert(Array{type}, transpose(reshape(array, (num_cols, Integer(length(array)/num_cols)))))
 end
 
-@views function buildPulseMesh(mesh_filename::String, src_quadrature_rule::AbstractArray{Float64, 2}, test_quadrature_rule::AbstractArray{Float64, 2})
+@views function buildPulseMesh(mesh_filename::String,
+                               src_quadrature_rule::AbstractArray{Float64, 2},
+                               test_quadrature_rule::AbstractArray{Float64, 2})
     # Builds a PulseMesh object based the mesh at mesh_filename
     num_coord_dims = 3
     nodes_per_triangle = 3
@@ -81,9 +88,21 @@ end
     end
     elements = reshapeMeshArray(element_nodes[triangles_idx], num_coord_dims, Int64)
 
+    areas = Array{Float64, 1}(undef, num_elements)
+    normals = Array{Float64, 2}(undef, num_elements, 3)
+    for ele_idx in 1:num_elements
+        ele_nodes = getTriangleNodes(ele_idx, elements, nodes)
+        normal_non_unit = cross(ele_nodes[2,:]-ele_nodes[1,:], ele_nodes[3,:]-ele_nodes[1,:])
+        area2 = norm(normal_non_unit)
+        areas[ele_idx] = 0.5 * area2
+        normals[ele_idx,:] = normal_non_unit ./ area2
+    end
+
     PulseMesh(num_elements,
               nodes,
               elements,
+              areas,
+              normals,
               src_quadrature_rule,
               test_quadrature_rule,
               calculateQuadraturePoints(nodes, elements, src_quadrature_rule[1:3,:]),
@@ -92,7 +111,8 @@ end
               test_quadrature_rule[4, :])
 end
 
-@views function barycentric2Cartesian(nodes::AbstractArray{Float64, 2}, barycentric_coords::AbstractArray{Float64, 1})
+@views function barycentric2Cartesian(nodes::AbstractArray{Float64, 2},
+                                      barycentric_coords::AbstractArray{Float64, 1})
     cartesian_coords = zeros(3)
     for node_idx in 1:3
         cartesian_coords += barycentric_coords[node_idx] * nodes[node_idx,:]

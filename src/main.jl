@@ -11,9 +11,19 @@ near_singular_tol = 1.0
 
 mesh_filename = "examples/simple/circular_plate_1m.msh"
 planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
+planeWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = planeWaveNormalDerivative(excitation_amplitude, wavevector, [x_test,y_test,z_test], normal)
 # l, m = 0, 0
 # sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
-sources = solve(mesh_filename,
+# sources = solveSoftCFIE(mesh_filename,
+#                 planeWaveExcitation,
+#                 planeWaveExcitationNormalDeriv,
+#                 wavenumber,
+#                 src_quadrature_rule,
+#                 test_quadrature_rule,
+#                 distance_to_edge_tol,
+#                 near_singular_tol)
+
+sources = solveSoftIE(mesh_filename,
                 planeWaveExcitation,
                 wavenumber,
                 src_quadrature_rule,
