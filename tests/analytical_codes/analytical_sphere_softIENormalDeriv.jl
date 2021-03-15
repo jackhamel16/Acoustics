@@ -3,18 +3,7 @@ using GLM
 using Plots
 
 include("../../src/includes.jl")
-
-function computeAnalyticalSolution(wavenumber, radius, mesh_filename)
-    pulse_mesh = buildPulseMesh(mesh_filename, gauss1rule, gauss1rule)
-    sources_analytical = Array{Complex{Float64}, 1}(undef, pulse_mesh.num_elements)
-    for element_idx in 1:pulse_mesh.num_elements
-        position = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[element_idx,:],:])
-        r = sqrt(sum(position.^2))
-        theta, phi = acos(position[3] / r), atan(position[2], position[1])
-        sources_analytical[element_idx] = -1im * wavenumber * sphericalHarmonics(theta, phi, l)[1][1] / ((wavenumber*radius)^2 * sphericalHankel2(l, real(wavenumber)*radius))
-    end
-    sources_analytical
-end
+include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
 lambda = 10.0
@@ -30,14 +19,12 @@ l, m = 0, 0
 num_elements = [1266, 3788, 8010, 19034]
 l2errors = Array{Float64, 1}(undef, 0)
 
-sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
 sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
     mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
 
     @time sources = solveSoftIENormalDeriv(mesh_filename,
-                    sphericalWaveExcitation,
                     sphericalWaveExcitationNormalDeriv,
                     wavenumber,
                     src_quadrature_rule,
@@ -72,7 +59,7 @@ savefig("sphere_convergence_results_softIENormalDeriv")
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-1.1579399752858406, -1.1200508751294938, -1.0940611094829429] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-1.1579399752858406, -1.1200508751294938, -1.0940611094829429] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test, 10 lambda
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6

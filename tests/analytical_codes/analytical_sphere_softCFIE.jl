@@ -3,18 +3,7 @@ using GLM
 using Plots
 
 include("../../src/includes.jl")
-
-function computeAnalyticalSolution(wavenumber, radius, mesh_filename)
-    pulse_mesh = buildPulseMesh(mesh_filename, gauss1rule, gauss1rule)
-    sources_analytical = Array{Complex{Float64}, 1}(undef, pulse_mesh.num_elements)
-    for element_idx in 1:pulse_mesh.num_elements
-        position = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[element_idx,:],:])
-        r = sqrt(sum(position.^2))
-        theta, phi = acos(position[3] / r), atan(position[2], position[1])
-        sources_analytical[element_idx] = -1im * wavenumber * sphericalHarmonics(theta, phi, l)[1][1] / ((wavenumber*radius)^2 * sphericalHankel2(l, real(wavenumber)*radius))
-    end
-    sources_analytical
-end
+include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
 lambda = 10.0
@@ -23,7 +12,7 @@ src_quadrature_rule = gauss7rule
 test_quadrature_rule = gauss1rule
 distance_to_edge_tol = 1e-12
 near_singular_tol = 1.0
-nd_scale_factor = 1.0#0.024054148218802054 #for lambda=0.1
+softIE_weight = 0.5
 #set up sphere
 radius = 1.0
 l, m = 0, 0
@@ -45,7 +34,7 @@ for run_idx in 1:length(num_elements)
                     test_quadrature_rule,
                     distance_to_edge_tol,
                     near_singular_tol,
-                    nd_scale_factor)
+                    softIE_weight)
 
     real_filename = string("sources_real_softCFIE_sphere",num_elements[run_idx])
     imag_filename = string("sources_imag_softCFIE_sphere",num_elements[run_idx])
@@ -76,7 +65,7 @@ savefig("sphere_convergence_results_softCFIE")
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-1.872545977313921, -1.8348259322698615, -1.7335885846703387] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-1.7740063461319375, -1.7491223638945013, 0] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6
