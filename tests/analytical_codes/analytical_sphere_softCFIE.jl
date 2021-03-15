@@ -17,7 +17,7 @@ softIE_weight = 0.5
 radius = 1.0
 l, m = 0, 0
 
-num_elements = [1266, 3788]#, 8010, 19034]
+num_elements = [1266, 3788, 8010, 19034]
 l2errors = Array{Float64, 1}(undef, 0)
 
 sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
@@ -65,7 +65,7 @@ savefig("sphere_convergence_results_softCFIE")
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-1.9023545748624873, -1.8348259322698615, -1.7335885846703387] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-1.7740063461319375, -1.7491223638945013, 0] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6

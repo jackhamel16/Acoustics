@@ -96,7 +96,7 @@ function solveSoftCFIE(mesh_filename::String,
 
     avg_z_nd = sum(abs.(z_matrix_nd))./length(z_matrix_nd)
     avg_z = sum(abs.(z_matrix))./length(z_matrix)
-    nd_scale_factor = avg_z / avg_z_nd
+    nd_scale_factor = im*avg_z / avg_z_nd
     z_matrix = softIE_weight * z_matrix + (1-softIE_weight) * nd_scale_factor * z_matrix_nd
 
     println("Filling RHS...")

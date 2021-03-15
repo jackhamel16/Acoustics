@@ -25,18 +25,18 @@ sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWa
 #                 distance_to_edge_tol,
 #                 near_singular_tol,
 #                 nd_scale_factor)
-# sources = solveSoftIE(mesh_filename,
-#                 sphericalWaveExcitation,
-#                 wavenumber,
-#                 src_quadrature_rule,
-#                 test_quadrature_rule,
-#                 distance_to_edge_tol,
-#                 near_singular_tol)
-sources = solveSoftIENormalDeriv(mesh_filename,
-                sphericalWaveExcitationNormalDeriv,
+sources = solveSoftIE(mesh_filename,
+                sphericalWaveExcitation,
                 wavenumber,
                 src_quadrature_rule,
-                test_quadrature_rule)
+                test_quadrature_rule,
+                distance_to_edge_tol,
+                near_singular_tol)
+# sources = solveSoftIENormalDeriv(mesh_filename,
+#                 sphericalWaveExcitationNormalDeriv,
+#                 wavenumber,
+#                 src_quadrature_rule,
+#                 test_quadrature_rule)
 
 real_filename = "sources_real"
 imag_filename = "sources_imag"
