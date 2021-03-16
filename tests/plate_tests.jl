@@ -11,14 +11,13 @@ include("../src/includes.jl")
         test_quadrature_rule = gauss1rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
         wavevector1 = [0.0, 0.0, wavenumber]
         planewaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector1, [x_test,y_test,z_test])
-        sources = solveSoftIE(mesh_filename,
+        sources = solveSoftIE(pulse_mesh,
                         planewaveExcitation,
                         wavenumber,
-                        src_quadrature_rule,
-                        test_quadrature_rule,
                         distance_to_edge_tol,
                         near_singular_tol)
         # Test the 4 corner elements have same source
@@ -35,11 +34,9 @@ include("../src/includes.jl")
 
         wavevector2 = [wavenumber, 0.0, 0.0]
         planewaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector2, [x_test,y_test,z_test])
-        sources = solveSoftIE(mesh_filename,
+        sources = solveSoftIE(pulse_mesh,
                         planewaveExcitation,
                         wavenumber,
-                        src_quadrature_rule,
-                        test_quadrature_rule,
                         distance_to_edge_tol,
                         near_singular_tol)
         @test isapprox(sources[1], sources[5], rtol=1e-14)

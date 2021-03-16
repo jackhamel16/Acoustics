@@ -1,15 +1,12 @@
 # dependencies: fill.jl greens_functions.jl mesh.jl
 
-function solveSoftIE(mesh_filename::String,
+function solveSoftIE(pulse_mesh::PulseMesh,
                      excitation::Function,
                      wavenumber::Complex{Float64},
-                     src_quadrature_rule::AbstractArray{Float64, 2},
-                     test_quadrature_rule::AbstractArray{Float64, 2},
                      distance_to_edge_tol::Float64,
                      near_singular_tol::Float64,
-                     return_z=false)
+                     return_z_rhs=false)
 
-    pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
     @unpack num_elements = pulse_mesh
     println("Filling RHS...")
     rhs = zeros(ComplexF64, num_elements)
@@ -25,21 +22,18 @@ function solveSoftIE(mesh_filename::String,
     matrixFill(pulse_mesh, testIntegrand, z_matrix)
     println("Inverting Matrix...")
     source_vec = z_matrix \ rhs
-    if return_z == false
+    if return_z_rhs == false
         return(source_vec)
     else
-        return(source_vec, z_matrix)
+        return(source_vec, z_matrix, rhs)
     end
 end
 
-function solveSoftIENormalDeriv(mesh_filename::String,
+function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
                                 excitation_normal_derivative::Function,
                                 wavenumber::Complex{Float64},
-                                src_quadrature_rule::AbstractArray{Float64, 2},
-                                test_quadrature_rule::AbstractArray{Float64, 2},
                                 return_z=false)
 
-    pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
     @unpack num_elements = pulse_mesh
     println("Filling RHS...")
     rhs = zeros(ComplexF64, num_elements)
@@ -62,18 +56,15 @@ function solveSoftIENormalDeriv(mesh_filename::String,
     end
 end
 
-function solveSoftCFIE(mesh_filename::String,
+function solveSoftCFIE(pulse_mesh::PulseMesh,
                        excitation::Function,
                        excitation_normal_derivative::Function,
                        wavenumber::Complex{Float64},
-                       src_quadrature_rule::AbstractArray{Float64, 2},
-                       test_quadrature_rule::AbstractArray{Float64, 2},
                        distance_to_edge_tol::Float64,
                        near_singular_tol::Float64,
                        softIE_weight::Float64,
                        return_z=false)
 
-    pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
     @unpack num_elements = pulse_mesh
     testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh,
                                                         src_idx,

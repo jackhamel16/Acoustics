@@ -23,12 +23,11 @@ sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWa
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
     mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
+    pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
-    @time sources = solveSoftIENormalDeriv(mesh_filename,
+    @time sources = solveSoftIENormalDeriv(pulse_mesh,
                     sphericalWaveExcitationNormalDeriv,
-                    wavenumber,
-                    src_quadrature_rule,
-                    test_quadrature_rule)
+                    wavenumber)
 
     real_filename = string("sources_real_softIENormalDeriv_sphere",num_elements[run_idx])
     imag_filename = string("sources_imag_softIENormalDeriv_sphere",num_elements[run_idx])
