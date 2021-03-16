@@ -44,7 +44,7 @@ include("../src/includes.jl")
                         near_singular_tol)
         @test isapprox(sources[1], sources[5], rtol=1e-14)
         @test isapprox(sources[2], sources[6], rtol=1e-14)
-        @test isapprox(sources[7], sources[3], rtol=1e-15)
+        @test isapprox(sources[7], sources[3], rtol=1e-14)
         @test isapprox(sources[8], sources[4], rtol=1e-14)
         # test that some are not equal
         @test false == isapprox(sources[5], sources[6], rtol=1e-8)
