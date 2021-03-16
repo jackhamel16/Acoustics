@@ -9,7 +9,7 @@ include("../../src/includes.jl")
         # num_harmonics = 4 #max_l^2 + 2*max_l + 1
         # solution_S = [1 0 0 0; 0 0 0 -1; 0 0 1 0; 0 -1 0 0] + im*5*ones(4,4)
         max_l = 1
-        lambda=50.0
+        lambda=20.0
         wavenumber = 2*pi/lambda + 0*im
         excitation_amplitude = 1.0
         num_harmonics = 4
@@ -45,7 +45,8 @@ include("../../src/includes.jl")
         @test Array{ComplexF64, 2} == typeof(test_S)
         @test (num_harmonics, num_harmonics) == size(test_S)
         @test isapprox(solution_S, test_S, rtol=1e-14)
-        @test isapprox(test_S, adjoint(test_S), rtol=1e-4)
+        @test isapprox(test_S, transpose(test_S), rtol=1e-7)
+        @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=1e-4)
     end # calculateScatteringMatrix tests
     @testset "calculateVMatrix tests" begin
         max_l = 1
