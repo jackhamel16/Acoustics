@@ -38,13 +38,18 @@ include("../../src/includes.jl")
         J_solution = zeros(ComplexF64, pulse_mesh.num_elements, num_harmonics)
         l, m = 0, 0
         for harmonic_idx=1:num_harmonics
-            sphericalWaveExcitation(x_test, y_test, z_test) = 2*wavenumber*sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
+            sphericalWaveExcitation(x_test, y_test, z_test) = 2*wavenumber*
+                                                              sphericalWave(excitation_amplitude,
+                                                                            real(wavenumber),
+                                                                            [x_test,y_test,z_test],
+                                                                            l,
+                                                                            m)
             sources, z, rhs = solveSoftIE(pulse_mesh,
-                              sphericalWaveExcitation,
-                              wavenumber,
-                              distance_to_edge_tol,
-                              near_singular_tol,
-                              true)
+                                          sphericalWaveExcitation,
+                                          wavenumber,
+                                          distance_to_edge_tol,
+                                          near_singular_tol,
+                                          true)
             V_solution[harmonic_idx, :] = rhs
             J_solution[:, harmonic_idx] = sources
             if m < l
@@ -62,7 +67,7 @@ include("../../src/includes.jl")
         @test isapprox(solution_S, test_S, rtol=1e-14)
         @test isapprox(test_S, transpose(test_S), rtol=1e-7)
         @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.5e-4)
-        @test isapprox(round.(abs.(test_S)), no_coupling_matrix, rtol = 1e-14)
+        @test isapprox(abs.(test_S), no_coupling_matrix, rtol = 1e-5)
 
         max_l = 8
         lambda=10.0
@@ -97,13 +102,18 @@ include("../../src/includes.jl")
         J_solution = zeros(ComplexF64, num_elements, num_harmonics)
         l, m = 0, 0
         for harmonic_idx=1:num_harmonics
-            sphericalWaveExcitation(x_test, y_test, z_test) = 2*wavenumber*sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
+            sphericalWaveExcitation(x_test, y_test, z_test) = 2*wavenumber*
+                                                              sphericalWave(excitation_amplitude,
+                                                                            real(wavenumber),
+                                                                            [x_test,y_test,z_test],
+                                                                            l,
+                                                                            m)
             sources, z, rhs = solveSoftIE(pulse_mesh,
-                              sphericalWaveExcitation,
-                              wavenumber,
-                              distance_to_edge_tol,
-                              near_singular_tol,
-                              true)
+                                          sphericalWaveExcitation,
+                                          wavenumber,
+                                          distance_to_edge_tol,
+                                          near_singular_tol,
+                                          true)
             V_solution[harmonic_idx, :] = rhs
             J_solution[:, harmonic_idx] = sources
             if m < l
@@ -113,7 +123,7 @@ include("../../src/includes.jl")
                 m = -l
             end
         end
-        test_VJ = calculateVJMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        test_VJ = calculateVJMatrix(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         solution_VJ = V_solution * J_solution
         @test size(test_VJ) == (num_harmonics, num_harmonics)
         @test isapprox(solution_VJ, test_VJ, rtol=1e-14)
