@@ -11,32 +11,27 @@ near_singular_tol = 1.0
 
 # mesh_filename = "examples/simple/circular_plate_1m.msh"
 mesh_filename = "examples/test/sphere_1m_1266.msh"
+pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
 planeWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = planeWaveNormalDerivative(excitation_amplitude, wavevector, [x_test,y_test,z_test], normal)
 l, m = 0, 0
 sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
 sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
-# sources = solveSoftCFIE(mesh_filename,
+# sources = solveSoftCFIE(pulse_mesh,
 #                 sphericalWaveExcitation,
 #                 sphericalWaveExcitationNormalDeriv,
 #                 wavenumber,
-#                 src_quadrature_rule,
-#                 test_quadrature_rule,
 #                 distance_to_edge_tol,
 #                 near_singular_tol,
 #                 nd_scale_factor)
-sources = solveSoftIE(mesh_filename,
+sources = solveSoftIE(pulse_mesh,
                 sphericalWaveExcitation,
                 wavenumber,
-                src_quadrature_rule,
-                test_quadrature_rule,
                 distance_to_edge_tol,
                 near_singular_tol)
-# sources = solveSoftIENormalDeriv(mesh_filename,
+# sources = solveSoftIENormalDeriv(pulse_mesh,
 #                 sphericalWaveExcitationNormalDeriv,
-#                 wavenumber,
-#                 src_quadrature_rule,
-#                 test_quadrature_rule)
+#                 wavenumber)
 
 real_filename = "sources_real"
 imag_filename = "sources_imag"

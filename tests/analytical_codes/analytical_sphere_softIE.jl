@@ -23,12 +23,11 @@ sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_ampli
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
     mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
+    pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
-    @time sources = solveSoftIE(mesh_filename,
+    @time sources = solveSoftIE(pulse_mesh,
                     sphericalWaveExcitation,
                     wavenumber,
-                    src_quadrature_rule,
-                    test_quadrature_rule,
                     distance_to_edge_tol,
                     near_singular_tol)
 

@@ -17,38 +17,31 @@ include("../../src/includes.jl")
         near_singular_tol = 1.0
 
         mesh_filename = "examples/simple/circular_plate_1m.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
         planeWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = planeWaveNormalDerivative(excitation_amplitude, wavevector, [x_test,y_test,z_test], normal)
 
-        sourcesIE = solveSoftIE(mesh_filename,
+        sourcesIE = solveSoftIE(pulse_mesh,
                         planeWaveExcitation,
                         wavenumber,
-                        src_quadrature_rule,
-                        test_quadrature_rule,
                         distance_to_edge_tol,
                         near_singular_tol)
-        sourcesIEnd = solveSoftIENormalDeriv(mesh_filename,
+        sourcesIEnd = solveSoftIENormalDeriv(pulse_mesh,
                         planeWaveExcitationNormalDeriv,
-                        wavenumber,
-                        src_quadrature_rule,
-                        test_quadrature_rule)
+                        wavenumber)
         soft_IE_only = 1.0
         soft_IE_nd_only = 0.0
-        sourcesCFIE_soft_IE_only = solveSoftCFIE(mesh_filename,
+        sourcesCFIE_soft_IE_only = solveSoftCFIE(pulse_mesh,
                         planeWaveExcitation,
                         planeWaveExcitationNormalDeriv,
                         wavenumber,
-                        src_quadrature_rule,
-                        test_quadrature_rule,
                         distance_to_edge_tol,
                         near_singular_tol,
                         soft_IE_only)
-        sourcesCFIE_soft_IE_nd_only = solveSoftCFIE(mesh_filename,
+        sourcesCFIE_soft_IE_nd_only = solveSoftCFIE(pulse_mesh,
                         planeWaveExcitation,
                         planeWaveExcitationNormalDeriv,
                         wavenumber,
-                        src_quadrature_rule,
-                        test_quadrature_rule,
                         distance_to_edge_tol,
                         near_singular_tol,
                         soft_IE_nd_only)
