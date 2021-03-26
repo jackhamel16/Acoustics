@@ -1,0 +1,10 @@
+Point(1) = {0, 0, 0, 0.9};
+Point(2) = {0, 10, 0, 0.9};
+Line(1) = {2, 1};
+Extrude {10, 0, 0} {
+  Curve{1};Layers{11}; 
+}
+Physical Surface(1) = {5};
+Physical Curve(333) = {3, 4};
+Physical Curve(666) = {1};
+Physical Curve(444) = {2};

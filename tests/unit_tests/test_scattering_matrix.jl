@@ -74,23 +74,23 @@ include("../../src/includes.jl")
         @test isapprox(test_S, transpose(test_S), rtol=1e-5)
         @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=1e-3)
 
-        #Test using a flat plate and S should still be unitary
-        max_l = 8
-        lambda=10.0
+        # Test using a flat plate and S should still be unitary
+        # takes a few minutes to run
+        max_l = 19
+        lambda = 5 # two wavelengths across plate
         wavenumber = 2*pi/lambda + 0*im
-        excitation_amplitude = 1.0
-        num_harmonics = 81
+        num_harmonics = 400
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss1rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
-        mesh_filename = "examples/test/rectangle_plate.msh"
+        mesh_filename = "examples/test/rectangle_plate_10m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
         test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test size(test_S) == (num_harmonics, num_harmonics)
-        @test isapprox(test_S, transpose(test_S), rtol=1e-5)
-        @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.11e-2)
+        @test isapprox(test_S, transpose(test_S), rtol=1e-4)
+        @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.8e-1)
 
     end # calculateScatteringMatrix tests
     @testset "calculateVJMatrix tests" begin
