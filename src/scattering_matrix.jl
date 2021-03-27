@@ -18,6 +18,11 @@
     return(S_matrix)
 end
 
+@views function calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+    term1 = -0.5*im/wavenumber^2 * calculateVJMatrix(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+    # term2 = -im/(2*wavenumber) .* dVdk_matrix * Js_matrix
+end
+
 @views function calculateVJMatrix(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
     @unpack num_elements = pulse_mesh
     excitation_amplitude = 1.0
@@ -53,4 +58,16 @@ end
         end
     end
     return(V_matrix * J_matrix)
+end
+
+@views function calculateZKDerivMatrix(pulse_mesh, wavenumber)
+    @unpack num_elements = pulse_mesh
+    testIntegrand(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh,
+                                                                                src_idx,
+                                                                                wavenumber,
+                                                                                r_test,
+                                                                                is_singular)
+    dZdk_matrix = zeros(ComplexF64, num_elements, num_elements)
+    matrixFill(pulse_mesh, testIntegrand, dZdk_matrix)
+    return(dZdk_matrix)
 end

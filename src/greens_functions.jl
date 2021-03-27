@@ -6,6 +6,11 @@ function scalarGreens(R::Float64, k::Complex{Float64})
     exp(-im*k*abs(R))/(4*pi*abs(R))
 end
 
+function scalarGreensKDeriv(R, k)
+    # derivative of 3D scalar Green's function w/ respect to k
+    -im*exp(-im*k*R)/(4*pi)
+end
+
 function scalarGreensNonSingular(R::Float64, k::Complex{Float64})
     (exp(-im*k*abs(R))-1)/(4*pi*abs(R))
 end
@@ -201,6 +206,57 @@ end
                                                  getTriangleNodes(triangle_idx, sub_elements, sub_nodes),
                                                  quadrature_points[triangle_idx],
                                                  quadrature_weights)
+    end
+    total_integral
+end
+
+@views function scalarGreensKDerivIntegration(pulse_mesh::PulseMesh,
+                                 element_idx::Int64,
+                                 wavenumber::Complex{Float64},
+                                 r_test::Array{Float64, 1},
+                                 is_singular::Bool)
+    # This function encapsulates all possible integration routines for the
+    # scalar Green's function over a source triangle.
+    # distance_to_edge_tol is distance at which the projection of r_test must be
+    #    to an edge or extension to ignore that edge's contribution to the integral
+    # near_singular_tol is the number of max edge lengths away r_test can be
+    #    before doing purely numerical integration
+    @unpack nodes,
+            elements,
+            src_quadrature_rule,
+            src_quadrature_points,
+            src_quadrature_weights = pulse_mesh
+    triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+    if is_singular == true
+        scalarGreensKDerivSingularIntegral(wavenumber, r_test, triangle_nodes,
+                                           src_quadrature_rule[1:3,:], src_quadrature_weights)
+    else
+        greens_k_deriv_integrand(x,y,z) = scalarGreensKDeriv(norm([x,y,z]-r_test), wavenumber)
+        integrateTriangle(triangle_nodes, greens_k_deriv_integrand,
+                          src_quadrature_points[element_idx], src_quadrature_weights)
+    end
+end
+
+@views function scalarGreensKDerivSingularIntegral(wavenumber::Complex{Float64},
+                                                   r_test::Array{Float64, 1},
+                                                   nodes::Array{Float64, 2},
+                                                   area_quadrature_points::AbstractArray{Float64, 2},
+                                                   quadrature_weights::AbstractArray{Float64, 1})
+    # Computes the integral of the scalar greens function for self-interactions
+    # i.e. r_test is in the source triangle described by nodes
+    sub_nodes = Array{Float64, 2}(undef, 4, 3)
+    sub_nodes[1:3,:] = nodes
+    sub_nodes[4,:] = r_test
+    sub_elements = [4 2 3; 1 4 3; 1 2 4]
+    quadrature_points = calculateQuadraturePoints(sub_nodes, sub_elements, area_quadrature_points)
+    total_integral = 0.0+im*0.0
+    for triangle_idx in 1:3
+        sub_element_nodes = getTriangleNodes(triangle_idx, sub_elements, sub_nodes)
+        k_deriv_integrand(x, y, z) = scalarGreensKDeriv(norm([x,y,z]-r_test),
+                                                             wavenumber)
+        total_integral += integrateTriangle(sub_element_nodes, k_deriv_integrand,
+                                            quadrature_points[triangle_idx],
+                                            quadrature_weights)
     end
     total_integral
 end

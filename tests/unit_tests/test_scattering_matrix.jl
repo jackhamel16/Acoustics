@@ -93,6 +93,20 @@ include("../../src/includes.jl")
         @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.8e-1)
 
     end # calculateScatteringMatrix tests
+    @testset "calculateScatteringMatrixDerivative tests" begin
+        max_l = 1
+        wavenumber = 1.0 + 0.0im
+        num_harmonics = 4
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss1rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        solution_dSdk = -im/(2*wavenumber)*calculateVJMatrix(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        @test isapprox(solution_dSdk, test_dSdk, rtol=1e-14)
+    end # calculateScatteringMatrixDerivative tests
     @testset "calculateVJMatrix tests" begin
         max_l = 1
         wavenumber = 1.0 + 0.0im
@@ -135,4 +149,35 @@ include("../../src/includes.jl")
         @test size(test_VJ) == (num_harmonics, num_harmonics)
         @test isapprox(solution_VJ, test_VJ, rtol=1e-14)
     end # calculateVJMatrix tests
+    @testset "calculateZKDerivMatrix tests" begin
+        wavenumber = 1.0 + 0.0im
+        delta_k = real(wavenumber) * 0.01
+        k_high = wavenumber + delta_k/2
+        k_low = wavenumber - delta_k/2
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss1rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        testIntegrandLow(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       k_low,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        Z_low = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrandLow, Z_low)
+        testIntegrandHigh(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       k_high,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        Z_high = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrandHigh, Z_high)
+        solution_dZdk = (Z_high - Z_low) ./ delta_k
+        test_dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
+        @test isapprox(solution_dZdk, test_dZdk, rtol=1e-4)
+    end # calculateScatteringMatrixDerivative tests
 end # scattering_matrix tests
