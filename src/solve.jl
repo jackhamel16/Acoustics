@@ -20,7 +20,7 @@ function solveSoftIE(pulse_mesh::PulseMesh,
     println("Filling Matrix...")
     z_matrix = zeros(ComplexF64, num_elements, num_elements)
     matrixFill(pulse_mesh, testIntegrand, z_matrix)
-    println("Inverting Matrix...")
+    println("Solving...")
     source_vec = z_matrix \ rhs
     if return_z_rhs == false
         return(source_vec)
@@ -47,7 +47,7 @@ function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
     println("Filling Matrix...")
     z_matrix = zeros(ComplexF64, num_elements, num_elements)
     matrixFill(pulse_mesh, testIntegrandNormalDerivative, z_matrix)
-    println("Inverting Matrix...")
+    println("Solving...")
     source_vec = z_matrix \ rhs
     if return_z == false
         return(source_vec)
@@ -97,7 +97,7 @@ function solveSoftCFIE(pulse_mesh::PulseMesh,
     rhsFill(pulse_mesh, excitation, rhs)
     rhs = softIE_weight * rhs + (1-softIE_weight) * nd_scale_factor * rhs_nd
 
-    println("Inverting Matrix...")
+    println("Solving...")
     source_vec = z_matrix \ rhs
     if return_z == false
         return(source_vec)
