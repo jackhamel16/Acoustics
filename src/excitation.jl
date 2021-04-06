@@ -1,20 +1,20 @@
 # dependencies: math.jl
 
-function planeWave(amplitude::Float64,
-                   wavevector::Array{Complex{Float64}, 1},
-                   position::Array{Float64, 1})
+function planeWave(amplitude,
+                   wavevector::AbstractArray{T, 1},
+                   position::Array{Float64, 1}) where T
     amplitude * exp(-im*dot(position, wavevector))
 end
 
-function planeWaveNormalDerivative(amplitude::Float64,
-                                   wavevector::Array{Complex{Float64}, 1},
+function planeWaveNormalDerivative(amplitude,
+                                   wavevector::AbstractArray{T, 1},
                                    position::Array{Float64, 1},
-                                   normal::Array{Float64, 1})
+                                   normal::Array{Float64, 1}) where T
     -im * dot(normal, wavevector) * planeWave(amplitude, wavevector, position)
 end
 
-function sphericalWave(amplitude::Float64,
-                       wavenumber::Float64,
+function sphericalWave(amplitude,
+                       wavenumber,
                        position::Array{Float64, 1},
                        l::Int64,
                        m::Int64)
@@ -25,8 +25,8 @@ function sphericalWave(amplitude::Float64,
     return(amplitude * Ylm[lm_idx] * sphericalBesselj(l, wavenumber*r))
 end
 
-@views function sphericalWaveNormalDerivative(amplitude::Float64,
-                                              wavenumber::Float64,
+@views function sphericalWaveNormalDerivative(amplitude,
+                                              wavenumber,
                                               position::Array{Float64, 1},
                                               l::Int64,
                                               m::Int64,
@@ -47,4 +47,17 @@ end
     transform_matrix[:,3] = [-y, x, 0] ./ r_0z
     gradient_spherical_wave_cartesian = transform_matrix * gradient_spherical_wave
     return(amplitude * dot(normal, transform_matrix * gradient_spherical_wave))
+end
+
+@views function sphericalWaveKDerivative(wavenumber,
+                                         position::Array{Float64, 1},
+                                         l::Int64,
+                                         m::Int64)
+    x, y, z = position
+    r = norm(position)
+    theta, phi = acos(z / r), atan(y, x)
+    lm_idx = l + m + l^2 + 1
+    Ylm, dYlm_dtheta, dYlm_dphi, l_ind, m_ind = sphericalHarmonics(theta, phi, l)
+    kr = wavenumber * r
+    return(2 * Ylm[lm_idx] * ((l+1)*sphericalBesselj(l, kr) - kr*sphericalBesselj(l+1, kr)))
 end

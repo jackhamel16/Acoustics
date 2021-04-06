@@ -40,18 +40,18 @@ function sphericalHarmonics(theta::Float64, phi::Float64, lmax::Int64)
     return (Ylm, dYlm_dtheta, dYlm_dphi, l_ind, m_ind);
 end
 
-function sphericalBesselj(n::Real, x::Float64)
+function sphericalBesselj(n::Real, x)
     return(sqrt(pi / (2 * x)) * besselj(n+0.5, x))
 end
 
-function sphericalBessely(n::Real, x::Float64)
+function sphericalBessely(n::Real, x)
     return(sqrt(pi / (2 * x)) * bessely(n+0.5, x))
 end
 
-function sphericalHankel2(n::Real, x::Float64)
+function sphericalHankel2(n::Real, x)
     return(sphericalBesselj(n, x) - im * sphericalBessely(n, x))
 end
 
-function sphericalHankel1(n::Real, x::Float64)
+function sphericalHankel1(n::Real, x)
     return(sphericalBesselj(n, x) + im * sphericalBessely(n, x))
 end

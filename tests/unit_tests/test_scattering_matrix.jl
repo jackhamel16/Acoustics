@@ -4,25 +4,6 @@ include("../../src/includes.jl")
 
 @testset "scattering_matrix tests" begin
     @testset "calculateScatteringMatrix tests" begin
-        # Test exact solution for l=0
-        max_l = 0
-        lambda=20.0
-        wavenumber = 2*pi/lambda + 0*im
-        num_harmonics = 1
-        src_quadrature_rule = gauss7rule
-        test_quadrature_rule = gauss1rule
-        distance_to_edge_tol = 1e-12
-        near_singular_tol = 1.0
-        mesh_filename = "examples/test/sphere_1m_1266.msh"
-        a = 1.0 # sphere radius
-        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
-        solution_S = 1 - 2 * sphericalBesselj(0, real(wavenumber) * a) / sphericalHankel2(0, real(wavenumber) * a)
-        @test Array{ComplexF64, 2} == typeof(test_S)
-        @test size(test_S) == (num_harmonics, num_harmonics)
-        @test isapprox(abs(test_S[1,1]), 1.0, rtol=1e-5)
-        @test isapprox(test_S[1,1], solution_S, rtol=0.25e-2)
-
         max_l = 1
         lambda=20.0
         wavenumber = 2*pi/lambda + 0*im
@@ -61,78 +42,277 @@ include("../../src/includes.jl")
         lambda=10.0
         wavenumber = 2*pi/lambda + 0*im
         excitation_amplitude = 1.0
-        num_harmonics = 81
+        num_harmonics = max_l^2 + 2*max_l + 1
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss1rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
-        mesh_filename = "examples/test/sphere_1m_1266.msh"
+        mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
         test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test size(test_S) == (num_harmonics, num_harmonics)
-        @test isapprox(test_S, transpose(test_S), rtol=1e-5)
-        @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=1e-3)
+        @test isapprox(test_S, transpose(test_S), rtol=1e-6)
+        @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.7e-4)
 
         # Test using a flat plate and S should still be unitary
         # takes a few minutes to run
-        max_l = 19
-        lambda = 5 # two wavelengths across plate
-        wavenumber = 2*pi/lambda + 0*im
-        num_harmonics = 400
-        src_quadrature_rule = gauss7rule
-        test_quadrature_rule = gauss1rule
-        distance_to_edge_tol = 1e-12
-        near_singular_tol = 1.0
-        mesh_filename = "examples/test/rectangle_plate_10m.msh"
-        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-
-        test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
-        @test size(test_S) == (num_harmonics, num_harmonics)
-        @test isapprox(test_S, transpose(test_S), rtol=1e-4)
-        @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.8e-1)
+        # max_l = 19
+        # lambda = 5 # two wavelengths across plate
+        # wavenumber = 2*pi/lambda + 0*im
+        # num_harmonics = 400
+        # src_quadrature_rule = gauss7rule
+        # test_quadrature_rule = gauss1rule
+        # distance_to_edge_tol = 1e-12
+        # near_singular_tol = 1.0
+        # mesh_filename = "examples/test/rectangle_plate_10m.msh"
+        # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        #
+        # test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        # @test size(test_S) == (num_harmonics, num_harmonics)
+        # @test isapprox(test_S, transpose(test_S), rtol=1e-4)
+        # @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.8e-1)
 
     end # calculateScatteringMatrix tests
-    @testset "calculateVJMatrix tests" begin
+
+    @testset "calculateScatteringMatrixDerivative tests" begin
         max_l = 1
         wavenumber = 1.0 + 0.0im
-        excitation_amplitude = 1.0
         num_harmonics = 4
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        @unpack num_elements = pulse_mesh
+        Z = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
+        Z_factors = lu(Z)
+        dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
+        Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
+        Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
+        dVsdk_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
+        harmonic_idx = 1
+        for l = 0:max_l
+            for m=-l:l
+                Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
+                Js[:,harmonic_idx] = Z_factors \ Vs_trans[harmonic_idx,:]
+                dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
+                harmonic_idx += 1
+            end
+        end
+        solution_dSdk = -im/(2*wavenumber^2)*Vs_trans*Js + im/(2*wavenumber)*dVsdk_trans*Js +
+                        im/(2*wavenumber)*(Vs_trans/Z_factors)*(transpose(dVsdk_trans)-dZdk*Js)
+        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        @test isapprox(solution_dSdk, test_dSdk, rtol=1e-5)
+
+        max_l = 10
+        wavenumber = 4.5 + 0.0im
+        deltak = 0.001 * wavenumber
+        k_high = wavenumber + deltak/2
+        k_low = wavenumber - deltak/2
+        num_harmonics = 121
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        S_high = calculateScatteringMatrix(max_l, k_high, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        S_low = calculateScatteringMatrix(max_l, k_low, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        solution_dSdk = (S_high - S_low) / deltak
+        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        @test size(test_dSdk) == (num_harmonics, num_harmonics)
+        @test isapprox(solution_dSdk, test_dSdk, rtol=0.15e-3)
+
+        max_l = 10
+        lambda = 1.5
+        wavenumber = 2*pi/lambda + 0.0im
+        deltak = 0.001 * wavenumber
+        k_high = wavenumber + deltak/2
+        k_low = wavenumber - deltak/2
+        num_harmonics = max_l^2 + 2*max_l + 1
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        mesh_filename = "examples/test/rectangular_strip.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        S_high = calculateScatteringMatrix(max_l, k_high, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        S_low = calculateScatteringMatrix(max_l, k_low, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        solution_dSdk = (S_high - S_low) / deltak
+        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        @test size(test_dSdk) == (num_harmonics, num_harmonics)
+        @test isapprox(solution_dSdk, test_dSdk, rtol=0.4e-4)
+    end # calculateScatteringMatrixDerivative tests
+
+    @testset "calculateVlm tests" begin
+        wavenumber = 0.5 + 0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        l, m = 1, 0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(2*wavenumber,
+                                                                        wavenumber,
+                                                                        [x_test,y_test,z_test],
+                                                                        l, m)
+        solution_Vlm = zeros(ComplexF64, pulse_mesh.num_elements)
+        rhsFill(pulse_mesh, sphericalWaveExcitation, solution_Vlm)
+        test_Vlm = calculateVlm(pulse_mesh, wavenumber, l, m)
+        @test isapprox(solution_Vlm, test_Vlm, rtol=1e-14)
+    end # calculateVlm tests
+
+    @testset "calculateVlmKDeriv tests" begin
+        wavenumber = 2.0 + 0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        l, m = 1, 0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        sphericalWaveKDerivIntegrand(x_test, y_test, z_test) = sphericalWaveKDerivative(wavenumber,
+                                                                        [x_test,y_test,z_test],
+                                                                        l, m)
+        solution_dVdk = zeros(ComplexF64, pulse_mesh.num_elements)
+        rhsFill(pulse_mesh, sphericalWaveKDerivIntegrand, solution_dVdk)
+        test_dVdk = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
+        @test isapprox(solution_dVdk, test_dVdk, rtol=1e-14)
+
+        wavenumber = 1.0 + 0.0im
+        delta_k = real(wavenumber) * 0.01
+        k_high = wavenumber + delta_k/2
+        k_low = wavenumber - delta_k/2
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss1rule
+        l, m = 0, 0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        sphericalWaveLow(x_test, y_test, z_test) = sphericalWave(2*k_low,
+                                                                  k_low,
+                                                                        [x_test,y_test,z_test],
+                                                                        l,
+                                                                        m)
+        V_low = zeros(ComplexF64, pulse_mesh.num_elements)
+        rhsFill(pulse_mesh, sphericalWaveLow, V_low)
+        sphericalWaveHigh(x_test, y_test, z_test) = sphericalWave(2*k_high,
+                                                                  k_high,
+                                                                        [x_test,y_test,z_test],
+                                                                        l,
+                                                                        m)
+        V_high = zeros(ComplexF64, pulse_mesh.num_elements)
+        rhsFill(pulse_mesh, sphericalWaveHigh, V_high)
+        solution_dVdk = (V_high - V_low) ./ delta_k
+        test_dVdk = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
+        @test isapprox(solution_dVdk, test_dVdk, rtol=1e-5)
+
+        wavenumber = 2.3 + 0.0im
+        delta_k = real(wavenumber) * 0.01
+        k_high = wavenumber + delta_k/2
+        k_low = wavenumber - delta_k/2
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss1rule
+        l, m = 4,-1
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        sphericalWaveLow(x_test, y_test, z_test) = sphericalWave(2*k_low,
+                                                                  k_low,
+                                                                        [x_test,y_test,z_test],
+                                                                        l,
+                                                                        m)
+        V_low = zeros(ComplexF64, pulse_mesh.num_elements)
+        rhsFill(pulse_mesh, sphericalWaveLow, V_low)
+        sphericalWaveHigh(x_test, y_test, z_test) = sphericalWave(2*k_high,
+                                                                  k_high,
+                                                                        [x_test,y_test,z_test],
+                                                                        l,
+                                                                        m)
+        V_high = zeros(ComplexF64, pulse_mesh.num_elements)
+        rhsFill(pulse_mesh, sphericalWaveHigh, V_high)
+        solution_dVdk = (V_high - V_low) ./ delta_k
+        test_dVdk = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
+        @test isapprox(solution_dVdk, test_dVdk, rtol=1e-4)
+    end # calculateVlmKDeriv tests
+
+    @testset "calculateZKDerivMatrix tests" begin
+        wavenumber = 1.0 + 0.0im
+        delta_k = real(wavenumber) * 0.01
+        k_high = wavenumber + delta_k/2
+        k_low = wavenumber - delta_k/2
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss1rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
         mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        num_elements = 8
-        V_solution = zeros(ComplexF64, num_harmonics, num_elements)
-        J_solution = zeros(ComplexF64, num_elements, num_harmonics)
-        l, m = 0, 0
-        for harmonic_idx=1:num_harmonics
-            sphericalWaveExcitation(x_test, y_test, z_test) = 2*wavenumber*
-                                                              sphericalWave(excitation_amplitude,
-                                                                            real(wavenumber),
-                                                                            [x_test,y_test,z_test],
-                                                                            l,
-                                                                            m)
-            sources, z, rhs = solveSoftIE(pulse_mesh,
-                                          sphericalWaveExcitation,
-                                          wavenumber,
-                                          distance_to_edge_tol,
-                                          near_singular_tol,
-                                          true)
-            V_solution[harmonic_idx, :] = rhs
-            J_solution[:, harmonic_idx] = sources
-            if m < l
-                m += 1
-            else
-                l+= 1
-                m = -l
-            end
-        end
-        test_VJ = calculateVJMatrix(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
-        solution_VJ = V_solution * J_solution
-        @test size(test_VJ) == (num_harmonics, num_harmonics)
-        @test isapprox(solution_VJ, test_VJ, rtol=1e-14)
-    end # calculateVJMatrix tests
+        testIntegrandLow(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       k_low,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        Z_low = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrandLow, Z_low)
+        testIntegrandHigh(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       k_high,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        Z_high = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrandHigh, Z_high)
+        solution_dZdk = (Z_high - Z_low) ./ delta_k
+        test_dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
+        @test isapprox(solution_dZdk, test_dZdk, rtol=1e-4)
+
+        wavelength = 1.25
+        wavenumber = 2*pi/wavelength + 0.0im
+        delta_k = real(wavenumber) * 0.01
+        k_high = wavenumber + delta_k/2
+        k_low = wavenumber - delta_k/2
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss1rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        mesh_filename = "examples/test/circular_plate_1m.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        testIntegrandLow(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       k_low,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        Z_low = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrandLow, Z_low)
+        testIntegrandHigh(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       k_high,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        Z_high = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrandHigh, Z_high)
+        solution_dZdk = (Z_high - Z_low) ./ delta_k
+        test_dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
+        @test isapprox(solution_dZdk, test_dZdk, rtol=0.15e-3)
+    end # calculateZKDerivMatrix tests
+
+    @testset "calculateZMatrix tests" begin
+        wavenumber = 0.5 + 0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss1rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        solution_Z = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrand, solution_Z)
+        test_Z = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
+        @test isapprox(solution_Z, test_Z, rtol=1e-14)
+    end # calculateZMatrix tests
 end # scattering_matrix tests

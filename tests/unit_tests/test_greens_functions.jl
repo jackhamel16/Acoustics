@@ -13,6 +13,11 @@ include("../../src/greens_functions.jl")
         @test scalarGreens(-1.5, 2.1+0*im) == exp(-im*2.1*1.5)/(4*pi*1.5)
         @test isinf(scalarGreens(0.0, 100.0+0*im)) == true
     end
+    @testset "scalarGreensKDeriv tests" begin
+        @test scalarGreensKDeriv(1.0, 0.0) == -im/(4*pi)
+        @test scalarGreensKDeriv(1.0, 1.0) == -im*exp(-im)/(4*pi)
+        @test scalarGreensKDeriv(1.62, 0.456) == -0.05358286337545204 - im*0.058834094963156794
+    end
     @testset "scalarGreensNonSingular tests" begin
         @test scalarGreensNonSingular(1.0, 0.0+0*im) == 0.0
         @test scalarGreensNonSingular(1.0, 1.0+0*im) == (exp(-im)-1)/(4*pi)
@@ -350,4 +355,61 @@ include("../../src/greens_functions.jl")
             @test params[9][i] == l_minus[i]
         end
     end
+    @testset "scalarGreensKDerivIntegration tests" begin
+        wavenumber = 1/10 + 0*im
+        nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 -1.0 0.0]
+        r_test_far = [0.5, 50.0, 0.0]
+        r_test_singular = [0.25, -0.25, 0.0]
+        greens_k_deriv_integrand(x,y,z) = scalarGreensKDeriv(norm([x,y,z]-r_test_far),
+                                                             wavenumber)
+        quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
+        solution_far = integrateTriangle(nodes, greens_k_deriv_integrand,
+                                         quadrature_points7[1], gauss7rule[4,:])
+        solution_singular = scalarGreensKDerivSingularIntegral(wavenumber, r_test_singular,
+                                        nodes, gauss7rule[1:3,:], gauss7rule[4,:])
+        pulse_mesh = PulseMesh(nodes=nodes, elements=[1 2 3],
+                               src_quadrature_rule=gauss7rule,
+                               src_quadrature_points=quadrature_points7,
+                               src_quadrature_weights=gauss7rule[4,:])
+        @test isapprox(scalarGreensKDerivIntegration(pulse_mesh, 1, wavenumber,
+                                                     r_test_far, false),
+                       solution_far, rtol=1e-15)
+        @test isapprox(scalarGreensKDerivIntegration(pulse_mesh, 1, wavenumber,
+                                                     r_test_singular, true),
+                       solution_singular, rtol=1e-15)
+        @test false == isapprox(scalarGreensKDerivIntegration(pulse_mesh, 1, wavenumber,
+                                                              r_test_singular, false),
+                                solution_singular, rtol=1e-15)
+    end #scalarGreensKDerivIntegration tests
+    @testset "scalarGreensKDerivSingularIntegral tests" begin
+        wavenumber = 1/10 +0*im
+        r_test = [1/3, 1/3, 0.0]
+        nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+        distance_to_edge_tol = 1e-12
+        quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
+        quadrature_points79 = calculateQuadraturePoints(nodes, [1 2 3], gauss79rule[1:3,:])
+        solution_to_test_7point = scalarGreensKDerivSingularIntegral(wavenumber, r_test,
+                                        nodes, gauss7rule[1:3,:], gauss7rule[4,:])
+        solution_to_test_79point = scalarGreensKDerivSingularIntegral(wavenumber, r_test,
+                                        nodes, gauss79rule[1:3,:], gauss79rule[4,:])
+
+        sub_nodes = ([1/3 1/3 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0],
+                     [0.0 0.0 0.0; 1/3 1/3 0.0; 0.0 1.0 0.0],
+                     [0.0 0.0 0.0; 1.0 0.0 0.0; 1/3 1/3 0.0])
+        solution = 0.0
+        for triangle_idx in 1:3
+            quadrature_points7 = calculateQuadraturePoints(sub_nodes[triangle_idx], [1 2 3], gauss7rule[1:3,:])
+            k_deriv_integrand(x,y,z) = scalarGreensKDeriv(norm(r_test-[x,y,z]),wavenumber)
+            solution += integrateTriangle(sub_nodes[triangle_idx], k_deriv_integrand,
+                                          quadrature_points7[1], gauss7rule[4,:])
+        end
+        # Checks against the same algorithm, but done again above with
+        # 79 point quadrature
+        @test isapprox(solution_to_test_7point, solution, rtol=1e-14)
+        # check against mathematic solution (trust to 12 digits with skepticism)
+        # obtained with NIntegrate with AccuracyGoal -> 16, PrecisionGoal -> 12
+        mathematica_solution = -0.0011990848286855759 - im*0.03976663460356885
+        @test isapprox(solution_to_test_7point, mathematica_solution, rtol=1e-3)
+        @test isapprox(solution_to_test_79point, mathematica_solution, rtol=1e-5)
+    end # scalarGreensKDerivSingularIntegral tests
 end
