@@ -21,15 +21,14 @@ test_quadrature_rule = gauss1rule
 distance_to_edge_tol = 1e-12
 near_singular_tol = 1.0
 
-pulse_mesh = buildPulseMesh(mesh_filename)
+pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
 r_test = [10.0, -1.0, 0.0]
 nodes = [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0]
 
-testIntegrand(r_test, nodes, is_singular) = scalarGreensIntegration(wavenumber,
+testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                               wavenumber,
                                                r_test,
-                                               nodes,
-                                               src_quadrature_rule,
                                                distance_to_edge_tol,
                                                near_singular_tol,
                                                is_singular)

@@ -120,6 +120,10 @@ end
     cartesian_coords
 end
 
+@views function calculateTriangleArea(nodes::AbstractArray{Float64, 2})
+    0.5*norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[1,:]))
+end
+
 function exportSourcesGmsh(mesh_filename::String,
                            output_filename::String,
                            sources::AbstractArray{Float64, 1})

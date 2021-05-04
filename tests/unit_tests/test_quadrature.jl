@@ -121,19 +121,21 @@ include("../../src/quadrature.jl")
             points = [-1.5 0.5 0.0; 0.0 1.0 2.0]; weights = [1.0, 9.1]
             solution = 26.299999999999997
             @test gaussQuadrature(1.0, returnXplusYplusZ, transpose(points), weights) == solution
-        end
-        @testset "integrateTriangle function tests" begin
+
+            # tests below integrate over triangles
             f(x,y,z) = 2*x
             nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 0.0]
+            triangle_area = 0.5*norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[1,:]))
             elements = [1 2 3]
             solution = 8/3
             quadrature_points7 = calculateQuadraturePoints(nodes, elements, gauss7rule[1:3,:])
             quadrature_points13 = calculateQuadraturePoints(nodes, elements, gauss13rule[1:3,:])
-            @test isapprox(integrateTriangle(nodes, f, quadrature_points7[1], gauss7rule[4,:]), solution, rtol=1e-16)
-            @test isapprox(integrateTriangle(nodes, f, quadrature_points13[1], gauss13rule[4,:]), solution, rtol=1e-15)
+            @test isapprox(gaussQuadrature(triangle_area, f, quadrature_points7[1], gauss7rule[4,:]), solution, rtol=1e-16)
+            @test isapprox(gaussQuadrature(triangle_area, f, quadrature_points13[1], gauss13rule[4,:]), solution, rtol=1e-15)
 
             include("../../src/greens_functions.jl")
             nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+            triangle_area = 0.5*norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[1,:]))
             elements = [1 2 3]
             k = 1/10 + 0*im
             r_test = [1/3, 1/3, 100]
@@ -142,12 +144,15 @@ include("../../src/quadrature.jl")
             quadrature_points7 = calculateQuadraturePoints(nodes, elements, gauss7rule[1:3,:])
             quadrature_points13 = calculateQuadraturePoints(nodes, elements, gauss13rule[1:3,:])
             quadrature_points79 = calculateQuadraturePoints(nodes, elements, gauss79rule[1:3,:])
-            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points7[1],
+            @test isapprox(gaussQuadrature(triangle_area, greensIntegrand, quadrature_points7[1],
                                              gauss7rule[4,:]), solution, rtol=5.6e-5)
-            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points13[1],
+            @test isapprox(gaussQuadrature(triangle_area, greensIntegrand, quadrature_points13[1],
                                              gauss13rule[4,:]), solution, rtol=5.6e-5)
-            @test isapprox(integrateTriangle(nodes, greensIntegrand, quadrature_points79[1],
+            @test isapprox(gaussQuadrature(triangle_area, greensIntegrand, quadrature_points79[1],
                                              gauss79rule[4,:]), solution, rtol=5.6e-5)
+        end
+        @testset "integrateTriangle function tests" begin
+
         end
     end
 

@@ -121,12 +121,3 @@ const gauss79rule = SArray{Tuple{4, 79}}(transpose([3.33333333333333314829616256
     end
     scale_factor * quadrature_sum
 end
-
-@views function integrateTriangle(nodes::Array{Float64, 2},
-                           func::Function,
-                           quadrature_points::AbstractArray{Float64, 2},
-                           quadrature_weights::AbstractArray{Float64, 1})
-    num_points = size(quadrature_points)[1]
-    triangle_area = norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[2,:]))/2.0
-    gaussQuadrature(triangle_area, func, quadrature_points, quadrature_weights)
-end
