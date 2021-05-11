@@ -23,7 +23,7 @@ include("../../src/greens_functions.jl")
         # simple 1 integration point test 1 triangle
         rhs_solution = -1 * area * planeWave(wavevector, r_test)
         pulse_mesh1 = PulseMesh(num_elements=num_elements, nodes=nodes_global, elements=elements,
-                               test_quadrature_rule=gauss1rule,
+                               areas=[area], test_quadrature_rule=gauss1rule,
                                test_quadrature_points=calculateQuadraturePoints(nodes_global, elements, gauss1rule[1:3,:]),
                                test_quadrature_weights=gauss1rule[4,:])
         rhs = zeros(ComplexF64, num_elements)
@@ -31,10 +31,10 @@ include("../../src/greens_functions.jl")
         @test isapprox(rhs[1], rhs_solution, rtol=1e-15)
         # 7 point integration test 1 triangle
         pulse_mesh7 = PulseMesh(num_elements=num_elements, nodes=nodes_global, elements=elements,
-                               test_quadrature_rule=gauss7rule,
+                               areas=[area], test_quadrature_rule=gauss7rule,
                                test_quadrature_points=calculateQuadraturePoints(nodes_global, elements, gauss7rule[1:3,:]),
                                test_quadrature_weights=gauss7rule[4,:])
-        rhs_solution = -1 * integrateTriangle(nodes_global, fieldFunc, pulse_mesh7.test_quadrature_points[1], pulse_mesh7.test_quadrature_weights)
+        rhs_solution = -1 * gaussQuadrature(area, fieldFunc, pulse_mesh7.test_quadrature_points[1], pulse_mesh7.test_quadrature_weights)
         rhs = zeros(ComplexF64, num_elements)
         rhsFill(pulse_mesh7, fieldFunc, rhs)
         @test isapprox(rhs[1], rhs_solution, rtol=1e-15)
@@ -42,14 +42,14 @@ include("../../src/greens_functions.jl")
         # Next three tests involve two triangles
         wavevector = [0.0, 0.0, 1/10]
         nodes_global = [0.0 0.0 1.5; 1.0 0.0 1.5; 1.0 1.0 1.5; 0.0 1.0 1.5]
-        areas = [0.5 0.5]
+        areas = [0.5, 0.5]
         elements = [1 2 4; 2 3 4]
         num_elements = 2
         fieldFunc(x,y,z) = planeWave(wavevector, [x,y,z])
         centroids = [1/3 1/3 1.5; 2/3 2/3 1.5]
         rhs_solution = -1 .* [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
         pulse_mesh1 = PulseMesh(num_elements=num_elements, nodes=nodes_global, elements=elements,
-                               test_quadrature_rule=gauss1rule,
+                               areas=areas, test_quadrature_rule=gauss1rule,
                                test_quadrature_points=calculateQuadraturePoints(nodes_global, elements, gauss1rule[1:3,:]),
                                test_quadrature_weights=gauss1rule[4,:])
         rhs = zeros(ComplexF64, num_elements)
@@ -58,14 +58,14 @@ include("../../src/greens_functions.jl")
         #
         wavevector = [0.0, 0.0, 1/10]
         nodes_global = [0.0 0.0 1.5; 1.0 0.0 1.5; 1.0 1.0 1.0; 0.0 1.0 1.5]
-        areas = [0.5 0.6123724356957945]
+        areas = [0.5, 0.6123724356957945]
         elements = [1 2 4; 2 3 4]
         num_elements = 2
         fieldFunc(x,y,z) = planeWave(wavevector, [x,y,z])
         centroids = [1/3 1/3 1.5; 2/3 2/3 1+1/3]
         rhs_solution = -1 .* [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
         pulse_mesh1 = PulseMesh(num_elements=num_elements, nodes=nodes_global, elements=elements,
-                               test_quadrature_rule=gauss1rule,
+                               areas=areas, test_quadrature_rule=gauss1rule,
                                test_quadrature_points=calculateQuadraturePoints(nodes_global, elements, gauss1rule[1:3,:]),
                                test_quadrature_weights=gauss1rule[4,:])
         rhs = zeros(ComplexF64, num_elements)
@@ -74,14 +74,14 @@ include("../../src/greens_functions.jl")
 
         wavevector = [1/30, 1/20, 1/15]
         nodes_global = [0.0 0.0 1.5; 1.0 0.0 1.5; 1.0 1.0 1.0; 0.0 1.0 1.5]
-        areas = [0.5 0.6123724356957945]
+        areas = [0.5, 0.6123724356957945]
         elements = [1 2 4; 2 3 4]
         num_elements = 2
         fieldFunc(x,y,z) = planeWave(wavevector, [x,y,z])
         centroids = [1/3 1/3 1.5; 2/3 2/3 1+1/3]
         rhs_solution = -1 .* [areas[1]*planeWave(wavevector, centroids[1,:]), areas[2]*planeWave(wavevector, centroids[2,:])]
         pulse_mesh1 = PulseMesh(num_elements=num_elements, nodes=nodes_global, elements=elements,
-                               test_quadrature_rule=gauss1rule,
+                               areas=areas, test_quadrature_rule=gauss1rule,
                                test_quadrature_points=calculateQuadraturePoints(nodes_global, elements, gauss1rule[1:3,:]),
                                test_quadrature_weights=gauss1rule[4,:])
         rhs = zeros(ComplexF64, num_elements)
@@ -99,7 +99,7 @@ include("../../src/greens_functions.jl")
         fieldFuncND(x,y,z,normal) = planeWaveNormalDerivative(amplitude, wavevector, [x,y,z], normal)
         # simple 1 integration point test 1 triangle
         pulse_mesh1 = PulseMesh(num_elements=num_elements, nodes=nodes_global, elements=elements, normals=normals,
-                               test_quadrature_rule=gauss1rule,
+                               areas=[area], test_quadrature_rule=gauss1rule,
                                test_quadrature_points=calculateQuadraturePoints(nodes_global, elements, gauss1rule[1:3,:]),
                                test_quadrature_weights=gauss1rule[4,:])
         rhs_solution = -area * planeWaveNormalDerivative(amplitude,
@@ -120,7 +120,7 @@ include("../../src/greens_functions.jl")
         fieldFuncND(x,y,z,normal) = planeWaveNormalDerivative(amplitude, wavevector, [x,y,z], normal)
         # simple 1 integration point test 1 triangle
         pulse_mesh1 = PulseMesh(num_elements=num_elements, nodes=nodes_global, elements=elements, normals=normals,
-                               test_quadrature_rule=gauss1rule,
+                               areas=[area], test_quadrature_rule=gauss1rule,
                                test_quadrature_points=calculateQuadraturePoints(nodes_global, elements, gauss1rule[1:3,:]),
                                test_quadrature_weights=gauss1rule[4,:])
         rhs_solution = -area * planeWaveNormalDerivative(amplitude,
@@ -164,9 +164,9 @@ include("../../src/greens_functions.jl")
                                               gauss7rule[4,:],
                                               distance_to_edge_tol)
         greensFunc(x,y,z)=scalarGreens(norm([x,y,z]-centroids[2,:]), wavenumber)
-        matrix_solution[2,1] = areas[2] * integrateTriangle(nodes_global[1:3,:], greensFunc, pulse_mesh.src_quadrature_points[1], pulse_mesh.src_quadrature_weights)
+        matrix_solution[2,1] = areas[2] * gaussQuadrature(areas[1], greensFunc, pulse_mesh.src_quadrature_points[1], pulse_mesh.src_quadrature_weights)
         greensFunc(x,y,z)=scalarGreens(norm([x,y,z]-centroids[1,:]), wavenumber)
-        matrix_solution[1,2] = areas[1] * integrateTriangle(nodes_global[4:6,:], greensFunc, pulse_mesh.src_quadrature_points[2], pulse_mesh.src_quadrature_weights)
+        matrix_solution[1,2] = areas[1] * gaussQuadrature(areas[2], greensFunc, pulse_mesh.src_quadrature_points[2], pulse_mesh.src_quadrature_weights)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh,
                                                        src_idx,
                                                        wavenumber,
@@ -218,21 +218,34 @@ include("../../src/greens_functions.jl")
         integrand13(x,y,z) = scalarGreensNearSingularIntegral(wavenumber,
                                                   [x,y,z], #r_test
                                                   getTriangleNodes(3, elements, nodes_global),
+                                                  areas[3],
                                                   pulse_mesh.src_quadrature_points[3],
                                                   pulse_mesh.src_quadrature_weights,
                                                   distance_to_edge_tol)
-        matrix_solution[1,1] = integrateTriangle(nodes_global[elements[1,:],:],
+        matrix_solution[1,1] = gaussQuadrature(areas[1],
                                                  integrand11,
                                                  pulse_mesh.test_quadrature_points[1],
                                                  pulse_mesh.test_quadrature_weights)
-        matrix_solution[1,2] = integrateTriangle(nodes_global[elements[1,:],:],
+        matrix_solution[1,2] = gaussQuadrature(areas[1],
                                                  integrand12,
                                                  pulse_mesh.test_quadrature_points[1],
                                                  pulse_mesh.test_quadrature_weights)
-        matrix_solution[1,3] = integrateTriangle(nodes_global[elements[1,:],:],
+        matrix_solution[1,3] = gaussQuadrature(areas[1],
                                                  integrand13,
                                                  pulse_mesh.test_quadrature_points[1],
                                                  pulse_mesh.test_quadrature_weights)
+         # matrix_solution[1,1] = integrateTriangle(nodes_global[elements[1,:],:],
+         #                                          integrand11,
+         #                                          pulse_mesh.test_quadrature_points[1],
+         #                                          pulse_mesh.test_quadrature_weights)
+         # matrix_solution[1,2] = integrateTriangle(nodes_global[elements[1,:],:],
+         #                                          integrand12,
+         #                                          pulse_mesh.test_quadrature_points[1],
+         #                                          pulse_mesh.test_quadrature_weights)
+         # matrix_solution[1,3] = integrateTriangle(nodes_global[elements[1,:],:],
+         #                                          integrand13,
+         #                                          pulse_mesh.test_quadrature_points[1],
+         #                                          pulse_mesh.test_quadrature_weights)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh,
                                                        src_idx,
                                                        wavenumber,

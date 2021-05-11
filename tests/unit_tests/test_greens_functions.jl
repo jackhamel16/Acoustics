@@ -37,6 +37,7 @@ include("../../src/greens_functions.jl")
         # The following two tests compare scalarGreensSingularityIntegral to the result
         # of integrating 1/R using 7-point Gauss quadrature
         nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         one_over_R(r_test, x, y, z) = 1 / (4 * pi * norm(r_test - [x, y, z]))
         distance_to_edge_tol = 1e-6
 
@@ -55,56 +56,56 @@ include("../../src/greens_functions.jl")
         quadrature_points79 = calculateQuadraturePoints(nodes, [1 2 3], gauss79rule[1:3,:])
         r_test = [1000.0, 1.0, 0.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points7[1], gauss7rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points7[1], gauss7rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-6)
 
         r_test = [1000.0, 1.0, 0.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points13[1], gauss13rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points13[1], gauss13rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-6)
 
         r_test = [0.5, 0.5, -50.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points1[1], gauss1rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points1[1], gauss1rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-4)
-        solution = integrateTriangle(nodes, integrand, quadrature_points7[1], gauss7rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points7[1], gauss7rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-11)
-        solution = integrateTriangle(nodes, integrand, quadrature_points13[1], gauss13rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points13[1], gauss13rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-15)
-        solution = integrateTriangle(nodes, integrand, quadrature_points79[1], gauss79rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points79[1], gauss79rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-15)
 
         # This test is of when the projection of r_test is on one edge extension
         r_test = [1000.0, 0.0, 0.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points7[1], gauss7rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points7[1], gauss7rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-6)
 
         # This test is of when the projection of r_test is on one edge
         r_test = [1.0, 0.0, 1000.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points7[1], gauss7rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points7[1], gauss7rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-6)
 
         # This test is of when the projection of r_test is on a corner (two edges)
         r_test = [0.0, 2.0, 1000.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points7[1], gauss7rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points7[1], gauss7rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-6)
 
         # This test is of when the projection of r_test is really close to an edge
         r_test = [1e-12, 1.0, 1000.0]
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points7[1], gauss7rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points7[1], gauss7rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, distance_to_edge_tol)
         @test isapprox(integral_results, solution, rtol=1e-6)
 
@@ -112,7 +113,7 @@ include("../../src/greens_functions.jl")
         r_test = [1.0, 100.0, 1000.0]
         high_tol = 10.0
         integrand(x,y,z)=one_over_R(r_test,x,y,z)
-        solution = integrateTriangle(nodes, integrand, quadrature_points7[1], gauss7rule[4,:])
+        solution = gaussQuadrature(triangle_area, integrand, quadrature_points7[1], gauss7rule[4,:])
         integral_results = scalarGreensSingularityIntegral(r_test, nodes, high_tol)
         @test abs((integral_results - solution)/solution) > 0.5
     end
@@ -123,62 +124,66 @@ include("../../src/greens_functions.jl")
         wavenumber = 0.0+0.0*im
         r_test = [1000.0, 1.0, 0.0]
         nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         distance_to_edge_tol = 1e-12
         scalar_greens_integrand(x,y,z) = scalarGreens(norm(r_test-[x,y,z]), wavenumber)
         quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points7[1], gauss7rule[4,:], distance_to_edge_tol), solution, rtol=1e-7)
 
         # one edge length away from triangle
         wavenumber = 1/100 +0*im
         r_test = [1/3, 1/3, 1.0]
         nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         distance_to_edge_tol = 1e-12
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
         quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
         quadrature_points13 = calculateQuadraturePoints(nodes, [1 2 3], gauss13rule[1:3,:])
         quadrature_points79 = calculateQuadraturePoints(nodes, [1 2 3], gauss79rule[1:3,:])
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points7[1], gauss7rule[4,:], distance_to_edge_tol), solution, rtol=1e-3)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points13[1], gauss13rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points13[1], gauss13rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points13[1], gauss13rule[4,:], distance_to_edge_tol), solution, rtol=1e-4)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points79[1], gauss79rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points79[1], gauss79rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points79[1], gauss79rule[4,:], distance_to_edge_tol), solution, rtol=1e-12)
 
         # ten edge lengths away from triangle
         wavenumber = 1/100 +0*im
         r_test = [1/3, 1/3, 10.0]
         nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         distance_to_edge_tol = 1e-12
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points7[1], gauss7rule[4,:], distance_to_edge_tol), solution, rtol=1e-9)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points13[1], gauss13rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points13[1], gauss13rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points13[1], gauss13rule[4,:], distance_to_edge_tol), solution, rtol=1e-12)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points79[1], gauss79rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points79[1], gauss79rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points79[1], gauss79rule[4,:], distance_to_edge_tol), solution, rtol=1e-15)
 
         # one edge length away from triangle in xy plane
         wavenumber = 1/10 +0*im
         r_test = [-1.0, 0.5, 0.0]
         nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         distance_to_edge_tol = 1e-12
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points7[1], gauss7rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points7[1], gauss7rule[4,:], distance_to_edge_tol), solution, rtol=1e-4)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points13[1], gauss13rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points13[1], gauss13rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points13[1], gauss13rule[4,:], distance_to_edge_tol), solution, rtol=1e-5)
-        solution = integrateTriangle(nodes, scalar_greens_integrand, quadrature_points79[1], gauss79rule[4,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        solution = gaussQuadrature(triangle_area, scalar_greens_integrand, quadrature_points79[1], gauss79rule[4,:])
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points79[1], gauss79rule[4,:], distance_to_edge_tol), solution, rtol=1e-14)
 
         # analytical test less than one edge lengths away from triangle
@@ -186,15 +191,16 @@ include("../../src/greens_functions.jl")
         wavenumber = 1/10+0*im
         r_test = [-0.5, 0.5, 0.5]
         nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.1]
+        triangle_area = calculateTriangleArea(nodes)
         distance_to_edge_tol = 1e-12
         quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
         quadrature_points13 = calculateQuadraturePoints(nodes, [1 2 3], gauss13rule[1:3,:])
         quadrature_points79 = calculateQuadraturePoints(nodes, [1 2 3], gauss79rule[1:3,:])
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points7[1], gauss7rule[4,:], distance_to_edge_tol), mathematica_solution, rtol=1e-7)
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points13[1], gauss13rule[4,:], distance_to_edge_tol), mathematica_solution, rtol=1e-8)
-        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes,
+        @test isapprox(scalarGreensNearSingularIntegral(wavenumber, r_test, nodes, triangle_area,
               quadrature_points79[1], gauss79rule[4,:], distance_to_edge_tol), mathematica_solution, rtol=1e-14)
 
 
@@ -218,8 +224,10 @@ include("../../src/greens_functions.jl")
         solution = 0.0
         for triangle_idx in 1:3
             quadrature_points7 = calculateQuadraturePoints(sub_nodes[triangle_idx], [1 2 3], gauss7rule[1:3,:])
+            sub_triangle_area = calculateTriangleArea(sub_nodes[triangle_idx])
             solution += scalarGreensNearSingularIntegral(wavenumber, r_test,
                                                          sub_nodes[triangle_idx],
+                                                         sub_triangle_area,
                                                          quadrature_points7[1],
                                                          gauss7rule[4,:],
                                                          distance_to_edge_tol)
@@ -237,6 +245,7 @@ include("../../src/greens_functions.jl")
     @testset "scalarGreensIntegration tests" begin
         wavenumber = 1/10 + 0*im
         nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 -1.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         max_edge_length = sqrt(2)
         near_singular_tol = 2.0
         distance_to_edge_tol = 1e-12
@@ -246,13 +255,13 @@ include("../../src/greens_functions.jl")
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test_far),
                                                       wavenumber)
         quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
-        solution_far = integrateTriangle(nodes, scalar_greens_integrand,
+        solution_far = gaussQuadrature(triangle_area, scalar_greens_integrand,
                                          quadrature_points7[1], gauss7rule[4,:])
-        solution_near = scalarGreensNearSingularIntegral(wavenumber, r_test_near, nodes,
+        solution_near = scalarGreensNearSingularIntegral(wavenumber, r_test_near, nodes, triangle_area,
                                                          quadrature_points7[1], gauss7rule[4,:], distance_to_edge_tol)
         solution_singular = scalarGreensSingularIntegral(wavenumber, r_test_singular,
                                         nodes, gauss7rule[1:3,:], gauss7rule[4,:], distance_to_edge_tol)
-        pulse_mesh = PulseMesh(nodes=nodes, elements=[1 2 3],
+        pulse_mesh = PulseMesh(nodes=nodes, elements=[1 2 3], areas=[triangle_area],
                                src_quadrature_rule=gauss7rule,
                                src_quadrature_points=quadrature_points7,
                                src_quadrature_weights=gauss7rule[4,:])
@@ -283,13 +292,14 @@ include("../../src/greens_functions.jl")
     @testset "scalarGreensNormalDerivativeIntegration tests" begin
         wavenumber = 1/10 + 0*im
         nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 -1.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         normal = [0.0, 0.0, 1.0]
         r_test_far = [0.5, 50.0, 0.0]
         r_test_singular = [0.25, -0.25, 0.0]
         scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test_far,
                                                       wavenumber, normal)
         quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
-        solution_far = integrateTriangle(nodes, scalar_greens_nd_integrand,
+        solution_far = gaussQuadrature(triangle_area, scalar_greens_nd_integrand,
                                          quadrature_points7[1], gauss7rule[4,:])
         solution_singular = 0.5
         pulse_mesh = PulseMesh(nodes=nodes, elements=[1 2 3], areas=[0.5,0.5],
@@ -358,16 +368,17 @@ include("../../src/greens_functions.jl")
     @testset "scalarGreensKDerivIntegration tests" begin
         wavenumber = 1/10 + 0*im
         nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 -1.0 0.0]
+        triangle_area = calculateTriangleArea(nodes)
         r_test_far = [0.5, 50.0, 0.0]
         r_test_singular = [0.25, -0.25, 0.0]
         greens_k_deriv_integrand(x,y,z) = scalarGreensKDeriv(norm([x,y,z]-r_test_far),
                                                              wavenumber)
         quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
-        solution_far = integrateTriangle(nodes, greens_k_deriv_integrand,
+        solution_far = gaussQuadrature(triangle_area, greens_k_deriv_integrand,
                                          quadrature_points7[1], gauss7rule[4,:])
         solution_singular = scalarGreensKDerivSingularIntegral(wavenumber, r_test_singular,
                                         nodes, gauss7rule[1:3,:], gauss7rule[4,:])
-        pulse_mesh = PulseMesh(nodes=nodes, elements=[1 2 3],
+        pulse_mesh = PulseMesh(nodes=nodes, elements=[1 2 3], areas=[triangle_area],
                                src_quadrature_rule=gauss7rule,
                                src_quadrature_points=quadrature_points7,
                                src_quadrature_weights=gauss7rule[4,:])
@@ -399,8 +410,9 @@ include("../../src/greens_functions.jl")
         solution = 0.0
         for triangle_idx in 1:3
             quadrature_points7 = calculateQuadraturePoints(sub_nodes[triangle_idx], [1 2 3], gauss7rule[1:3,:])
+            sub_triangle_area = calculateTriangleArea(sub_nodes[triangle_idx])
             k_deriv_integrand(x,y,z) = scalarGreensKDeriv(norm(r_test-[x,y,z]),wavenumber)
-            solution += integrateTriangle(sub_nodes[triangle_idx], k_deriv_integrand,
+            solution += gaussQuadrature(sub_triangle_area, k_deriv_integrand,
                                           quadrature_points7[1], gauss7rule[4,:])
         end
         # Checks against the same algorithm, but done again above with

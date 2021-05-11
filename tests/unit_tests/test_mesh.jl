@@ -662,4 +662,10 @@ include("../../src/quadrature.jl")
         cartesian_coords = [-1.6, -0.6, 0.7]
         @test barycentric2Cartesian(nodes, barycentric_coords) == cartesian_coords
     end
+    @testset "calculateTriangleArea tests" begin
+        nodes = [0.0 0.0 0.0; 1.0 0.0 0.0; 0.0 1.0 0.0]
+        @test isapprox(0.5, calculateTriangleArea(nodes), rtol=1e-14)
+        nodes = [-1.0 0.1 -0.5; 1.0 1.1 0.25; -0.1 2.0 0.25]
+        @test isapprox(1.544850316373724, calculateTriangleArea(nodes), rtol=1e-14)
+    end
 end
