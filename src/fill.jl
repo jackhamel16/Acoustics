@@ -19,18 +19,18 @@ function rhsFill(pulse_mesh::PulseMesh,
             triangle_area = areas[element_idx]
             fieldFuncNormal(x,y,z) = fieldFunc(x,y,z,normals[element_idx,:])
             rhs[element_idx] += -1 * gaussQuadrature(triangle_area,
-                                                       fieldFuncNormal,
-                                                       test_quadrature_points[element_idx],
-                                                       test_quadrature_weights)
+                                                     fieldFuncNormal,
+                                                     test_quadrature_points[element_idx],
+                                                     test_quadrature_weights)
         end
     else
         for element_idx in 1:num_elements
             triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
             triangle_area = areas[element_idx]
             rhs[element_idx] += -1 * gaussQuadrature(triangle_area,
-                                                       fieldFunc,
-                                                       test_quadrature_points[element_idx],
-                                                       test_quadrature_weights)
+                                                     fieldFunc,
+                                                     test_quadrature_points[element_idx],
+                                                     test_quadrature_weights)
         end
     end
 end
@@ -54,10 +54,6 @@ function matrixFill(pulse_mesh::PulseMesh,
                                                            testIntegrandXYZ,
                                                            test_quadrature_points[test_idx],
                                                            test_quadrature_weights)
-            # z_matrix[test_idx, src_idx] += integrateTriangle(test_nodes,
-            #                                                   testIntegrandXYZ,
-            #                                                   test_quadrature_points[test_idx],
-            #                                                   test_quadrature_weights)
         end
     end
 end
