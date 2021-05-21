@@ -1,22 +1,23 @@
 include("includes.jl")
 
 excitation_amplitude = 1.0
-lambda=10.0
+lambda=2
 wavenumber = 2*pi/lambda + 0*im
 wavevector = [wavenumber, 0.0, 0.0]
 src_quadrature_rule = gauss7rule
-test_quadrature_rule = gauss1rule
+test_quadrature_rule = gauss7rule
 distance_to_edge_tol = 1e-12
 near_singular_tol = 1.0
 
-# mesh_filename = "examples/simple/circular_plate_1m.msh"
-mesh_filename = "examples/test/sphere_1m_1266.msh"
+# mesh_filename = "examples/test/rectangular_strip_fine.msh"
+mesh_filename = "examples/simple/sphere/sphere_2m_1681.msh"
+mesh_filename = "examples/test/circular_plate_1m.msh"
 pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
-planeWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = planeWaveNormalDerivative(excitation_amplitude, wavevector, [x_test,y_test,z_test], normal)
-l, m = 0, 0
-sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
-sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
+# planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
+# planeWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = planeWaveNormalDerivative(excitation_amplitude, wavevector, [x_test,y_test,z_test], normal)
+# l, m = 0, 0
+# sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
+# sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
 # sources = solveSoftCFIE(pulse_mesh,
 #                 sphericalWaveExcitation,
 #                 sphericalWaveExcitationNormalDeriv,
@@ -24,14 +25,17 @@ sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWa
 #                 distance_to_edge_tol,
 #                 near_singular_tol,
 #                 nd_scale_factor)
-sources = solveSoftIE(pulse_mesh,
-                sphericalWaveExcitation,
-                wavenumber,
-                distance_to_edge_tol,
-                near_singular_tol)
+# sources = solveSoftIE(pulse_mesh,
+#                 sphericalWaveExcitation,
+#                 wavenumber,
+#                 distance_to_edge_tol,
+#                 near_singular_tol)
 # sources = solveSoftIENormalDeriv(pulse_mesh,
 #                 sphericalWaveExcitationNormalDeriv,
 #                 wavenumber)
+max_l = 6
+mode_idx = 1
+sources = solveWSMode(max_l, mode_idx, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
 
 real_filename = "sources_real"
 imag_filename = "sources_imag"
