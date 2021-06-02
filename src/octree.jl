@@ -19,6 +19,7 @@ end
 mutable struct Octree
     num_levels::Int64
     top_node_idx::Int64
+    leaf_node_idxs::Array{Int64,1}
     nodes::Array{Node,1}
 end
 
@@ -26,6 +27,45 @@ function computeNodeBounds(half_edge_length, node_centroid::Array{Float64,1})
     return([[node_centroid[1] - half_edge_length, node_centroid[1] + half_edge_length],
             [node_centroid[2] - half_edge_length, node_centroid[2] + half_edge_length],
             [node_centroid[3] - half_edge_length, node_centroid[3] + half_edge_length]])
+end
+
+function createChildren(parent_idx::Int64, parent_node::Node, ele_centroids::AbstractArray{Array{Float64,1},1})
+    num_children = 8
+    no_children_idxs = []
+    children_nodes = []
+    child_edge_length = (parent_node.bounds[1][2] - parent_node.bounds[1][1])/2
+    parent_ele_centroids = ele_centroids[parent_node.element_idxs]
+    child_idx = 1
+    for z_idx = 1:2
+        z_bounds = [parent_node.centroid[3]-(2-z_idx)*child_edge_length,
+                    parent_node.centroid[3]-(1-z_idx)*child_edge_length]
+        for y_idx = 1:2
+            y_bounds = [parent_node.centroid[2]-(2-y_idx)*child_edge_length,
+                        parent_node.centroid[2]-(1-y_idx)*child_edge_length]
+            for x_idx = 1:2
+                x_bounds = [parent_node.centroid[1]-(2-x_idx)*child_edge_length,
+                            parent_node.centroid[1]-(1-x_idx)*child_edge_length]
+                child_bounds = [x_bounds, y_bounds, z_bounds]
+                child_centroid = sum.(child_bounds) ./ 2
+                child_element_idxs = []
+                for local_ele_idx = 1:length(parent_ele_centroids)
+                    ele_centroid = parent_ele_centroids[local_ele_idx]
+                    if (((child_bounds[1][1] <= ele_centroid[1]) && (ele_centroid[1] < child_bounds[1][2])) &&
+                        ((child_bounds[2][1] <= ele_centroid[2]) && (ele_centroid[2] < child_bounds[2][2])) &&
+                        ((child_bounds[3][1] <= ele_centroid[3]) && (ele_centroid[3] < child_bounds[3][2])))
+                        global_ele_idx = parent_node.element_idxs[local_ele_idx]
+                        push!(child_element_idxs, global_ele_idx)
+                    end
+                end
+                if isempty(child_element_idxs) == false
+                    child_node = Node(parent_idx, no_children_idxs, child_element_idxs, child_bounds, child_centroid)
+                    push!(children_nodes, child_node)
+                end
+                child_idx += 1
+            end
+        end
+    end
+    return(children_nodes)
 end
 
 function initializeOctree(num_levels::Int64, ele_centroids::AbstractArray{Array{Float64,1},1})
