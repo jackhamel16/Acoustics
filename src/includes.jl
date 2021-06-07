@@ -3,6 +3,7 @@
 
 include("math.jl")
 include("mesh.jl") # depends on gmsh.jl but included in src file
+include("octree.jl") #dependencies: mesh.jl
 include("excitation.jl") # dependencies: math.jl
 include("quadrature.jl") # dependencies: mesh.jl
 include("fill.jl") # dependencies: quadrature.jl

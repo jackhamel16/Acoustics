@@ -1,5 +1,7 @@
 using Test
 
+include("../../src/mesh.jl")
+
 include("../../src/octree.jl")
 
 @testset "octree tests" begin
@@ -109,10 +111,20 @@ include("../../src/octree.jl")
         num_nodes = 3
         small_buffer = 1e-4
         sol_num_levels = 2
-        ele_centroids = [[0.0,0.0,1.0],[-1.0,1.0,0.0]]
+        # ele_centroids = [[0.0,0.0,1.0],[-1.0,1.0,0.0]]
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        ele_centroids = Array{Array{Float64,1},1}(undef, pulse_mesh.num_elements)
+        for ele_idx = 1:pulse_mesh.num_elements
+            ele_centroids[ele_idx] = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[ele_idx,:],:])
+        end
         sol_octree = initializeOctree(sol_num_levels, small_buffer, ele_centroids)
+        sol_top_node_idx = 1
         fillOctreeNodes!(sol_top_node_idx, sol_octree, ele_centroids)
-        test_octree = createOctree(sol_num_levels, ele_centroids)
+        # test_octree = createOctree(sol_num_levels, ele_centroids)
+        test_octree = createOctree(sol_num_levels, pulse_mesh)
         @test isapprox(test_octree.num_levels, sol_octree.num_levels, rtol=1e-15)
         @test isapprox(test_octree.top_node_idx, sol_octree.top_node_idx, rtol=1e-15)
         @test isapprox(test_octree.leaf_node_idxs, sol_octree.leaf_node_idxs, rtol=1e-15)

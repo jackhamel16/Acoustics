@@ -10,11 +10,11 @@ mutable struct Node
     centroid::Array{Float64,1}
 end
 
-mutable struct Octree
-    num_levels::Int64
-    top_node_idx::Int64
-    leaf_node_idxs::Array{Int64,1}
-    nodes::Array{Node,1}
+@with_kw mutable struct Octree
+    num_levels::Int64 = 0
+    top_node_idx::Int64 = 0
+    leaf_node_idxs::Array{Int64,1} = []
+    nodes::Array{Node,1} = []
 end
 
 @views function computeNodeBounds(half_edge_length, node_centroid::Array{Float64,1})
@@ -65,12 +65,19 @@ end
     return(children_nodes)
 end # createChildren
 
-@views function createOctree(num_levels::Int64, ele_centroids::AbstractArray{Array{Float64,1},1})
+@views function createOctree(num_levels::Int64, pulse_mesh::PulseMesh)
     # highest-level function that handles all octree construction
     parent_idx = 1
     buffer = 1e-4
+    ele_centroids = Array{Array{Float64,1},1}(undef, pulse_mesh.num_elements)
+    for ele_idx = 1:pulse_mesh.num_elements
+        println(typeof(pulse_mesh.nodes[pulse_mesh.elements[ele_idx,:],:]))
+        ele_centroids[ele_idx] = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[ele_idx,:],:])
+    end
     octree = initializeOctree(num_levels, buffer, ele_centroids)
-    fillOctreeNodes!(parent_idx, octree, ele_centroids)
+    if num_levels > 1
+        fillOctreeNodes!(parent_idx, octree, ele_centroids)
+    end
     return(octree)
 end
 

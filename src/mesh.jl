@@ -38,7 +38,7 @@ end
     quadrature_points
 end
 
-function computeCentroid(vertices::Array{Float64,2})
+function computeCentroid(vertices::AbstractArray{T,2}) where T
     # Computes the centroid of a triangle with 3D coordinates
     # vertices is a 3x3 array. each row is a point and col a coordinate
     [(vertices[1,1]+vertices[2,1]+vertices[3,1])/3,
