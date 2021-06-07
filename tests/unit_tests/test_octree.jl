@@ -46,11 +46,13 @@ include("../../src/octree.jl")
     end # computeNodeBounds tests
     @testset "createChildren tests" begin
         no_child_idxs = []
+        parent_level = 1
         ele_centroids = [[1,1,0.1],[-1,-1,-0.1]]
         parent_centroid = [0.0,0.0,0.0]
         max_distance = norm(ele_centroids[1])
-        parent_node = Node(0,no_child_idxs,[1,2],computeNodeBounds(max_distance, parent_centroid),parent_centroid)
+        parent_node = Node(parent_level, 0,no_child_idxs,[1,2],computeNodeBounds(max_distance, parent_centroid),parent_centroid)
         sol_parent_idx = 1
+        sol_child_level = parent_level + 1
         sol_element_idxs = [[2],[1]]
         sol_child1_bounds = [[-max_distance,0],[-max_distance,0],[-max_distance,0]]
         sol_child2_bounds = [[0,max_distance],[0,max_distance],[0,max_distance]]
@@ -60,6 +62,8 @@ include("../../src/octree.jl")
         @test isapprox(length(test_child_nodes), 2, rtol=1e-15)
         @test isapprox(test_child_nodes[1].parent_idx, sol_parent_idx, rtol=1e-15)
         @test isapprox(test_child_nodes[2].parent_idx, sol_parent_idx, rtol=1e-15)
+        @test isapprox(test_child_nodes[1].octree_level, sol_child_level, rtol=1e-15)
+        @test isapprox(test_child_nodes[2].octree_level, sol_child_level, rtol=1e-15)
         @test isempty(test_child_nodes[1].children_idxs)
         @test isempty(test_child_nodes[2].children_idxs)
         @test isapprox(test_child_nodes[1].element_idxs, sol_element_idxs[1], rtol=1e-15)
@@ -69,11 +73,13 @@ include("../../src/octree.jl")
         @test isapprox(test_child_nodes[1].centroid, sol_child1_centroid, rtol=1e-15)
         @test isapprox(test_child_nodes[2].centroid, sol_child2_centroid, rtol=1e-15)
 
+        parent_level = 2
         ele_centroids = [[0.0,-1.0,1.2],[0.0,-1.0,0.5],[1.0,0.5,2.0]]
         parent_centroid = [0.5,-0.5,1.0]
         max_distance = 1.5
-        parent_node = Node(0,no_child_idxs,[1,2,3],computeNodeBounds(max_distance,parent_centroid),parent_centroid)
+        parent_node = Node(parent_level, 0,no_child_idxs,[1,2,3],computeNodeBounds(max_distance,parent_centroid),parent_centroid)
         sol_parent_idx = 10
+        sol_child_level = parent_level + 1
         sol_children_ele_idxs = [[2],[1],[3]]
         sol_child_bounds = [[[-1.0,0.5],[-2.0,-0.5],[-0.5,1.0]],
                              [[-1.0,0.5],[-2.0,-0.5],[1.0,2.5]],
@@ -83,6 +89,9 @@ include("../../src/octree.jl")
         @test isapprox(test_child_nodes[1].parent_idx, sol_parent_idx, rtol=1e-15)
         @test isapprox(test_child_nodes[2].parent_idx, sol_parent_idx, rtol=1e-15)
         @test isapprox(test_child_nodes[3].parent_idx, sol_parent_idx, rtol=1e-15)
+        @test isapprox(test_child_nodes[1].octree_level, sol_child_level, rtol=1e-15)
+        @test isapprox(test_child_nodes[2].octree_level, sol_child_level, rtol=1e-15)
+        @test isapprox(test_child_nodes[3].octree_level, sol_child_level, rtol=1e-15)
         @test isempty(test_child_nodes[1].children_idxs)
         @test isempty(test_child_nodes[2].children_idxs)
         @test isempty(test_child_nodes[3].children_idxs)
@@ -96,14 +105,84 @@ include("../../src/octree.jl")
         @test isapprox(test_child_nodes[2].centroid, sol_child_centroids[2], rtol=1e-15)
         @test isapprox(test_child_nodes[3].centroid, sol_child_centroids[3], rtol=1e-15)
     end # createChildren tests
+    @testset "createOctree tests" begin
+        num_nodes = 3
+        small_buffer = 1e-4
+        sol_num_levels = 2
+        ele_centroids = [[0.0,0.0,1.0],[-1.0,1.0,0.0]]
+        sol_octree = initializeOctree(sol_num_levels, small_buffer, ele_centroids)
+        fillOctreeNodes!(sol_top_node_idx, sol_octree, ele_centroids)
+        test_octree = createOctree(sol_num_levels, ele_centroids)
+        @test isapprox(test_octree.num_levels, sol_octree.num_levels, rtol=1e-15)
+        @test isapprox(test_octree.top_node_idx, sol_octree.top_node_idx, rtol=1e-15)
+        @test isapprox(test_octree.leaf_node_idxs, sol_octree.leaf_node_idxs, rtol=1e-15)
+        for node_idx = 1:num_nodes
+            @test isapprox(test_octree.nodes[node_idx].octree_level, sol_octree.nodes[node_idx].octree_level, rtol=1e-15)
+            @test isapprox(test_octree.nodes[node_idx].parent_idx, sol_octree.nodes[node_idx].parent_idx, rtol=1e-15)
+            @test isapprox(test_octree.nodes[node_idx].children_idxs, sol_octree.nodes[node_idx].children_idxs, rtol=1e-15)
+            @test isapprox(test_octree.nodes[node_idx].element_idxs, sol_octree.nodes[node_idx].element_idxs, rtol=1e-15)
+            @test isapprox(test_octree.nodes[node_idx].bounds, sol_octree.nodes[node_idx].bounds, rtol=1e-15)
+            @test isapprox(test_octree.nodes[node_idx].centroid, sol_octree.nodes[node_idx].centroid, rtol=1e-15)
+        end
+    end
+    @testset "fillOctree tests" begin
+        level1 = 1; level2 = 2; level3 = 3; level4 = 4
+        no_buffer = 0.0
+        num_levels = 3
+        ele_centroids = [[1,1,0.1],[-1,-1,-0.1]]
+        sol_top_node_idx = 1
+        sol_num_nodes = 5
+        sol_element_idxs = [[1,2],[2],[1],[2],[1]]
+        sol_leaf_node_idxs = [4,5]
+        test_octree = initializeOctree(num_levels, no_buffer, ele_centroids)
+        fillOctreeNodes!(level1, test_octree, ele_centroids)
+        @test isapprox(test_octree.num_levels, num_levels, rtol=1e-15)
+        @test isapprox(length(test_octree.nodes), sol_num_nodes, rtol=1e-15)
+        @test isapprox(test_octree.nodes[1].children_idxs, [2,3], rtol=1e-15)
+        test_child_nodes = test_octree.nodes[test_octree.nodes[1].children_idxs]
+        @test isapprox(test_octree.nodes[1].octree_level, level1, rtol=1e-15)
+        @test isapprox(test_octree.nodes[2].octree_level, level2, rtol=1e-15)
+        @test isapprox(test_octree.nodes[3].octree_level, level2, rtol=1e-15)
+        @test isapprox(test_octree.nodes[4].octree_level, level3, rtol=1e-15)
+        @test isapprox(test_octree.nodes[5].octree_level, level3, rtol=1e-15)
+        for node_idx = 1:sol_num_nodes
+            @test isapprox(test_octree.nodes[node_idx].element_idxs, sol_element_idxs[node_idx], rtol=1e-15)
+        end
+        @test isapprox(test_octree.leaf_node_idxs, sol_leaf_node_idxs)
+
+        num_levels = 4
+        ele_centroids = [[1,1,0.1],[-1,-1,-0.1]]
+        sol_top_node_idx = 1
+        sol_num_nodes = 7
+        sol_element_idxs = [[1,2],[2],[1],[2],[2],[1],[1]]
+        sol_leaf_node_idxs = [5,7]
+        test_octree = initializeOctree(num_levels, no_buffer, ele_centroids)
+        fillOctreeNodes!(sol_top_node_idx, test_octree, ele_centroids)
+        @test isapprox(test_octree.top_node_idx, sol_top_node_idx, rtol=1e-15)
+        @test isapprox(test_octree.num_levels, num_levels, rtol=1e-15)
+        @test isapprox(length(test_octree.nodes), sol_num_nodes, rtol=1e-15)
+        @test isapprox(test_octree.nodes[1].children_idxs, [2,3], rtol=1e-15)
+        @test isapprox(test_octree.nodes[1].octree_level, level1, rtol=1e-15)
+        @test isapprox(test_octree.nodes[2].octree_level, level2, rtol=1e-15)
+        @test isapprox(test_octree.nodes[3].octree_level, level2, rtol=1e-15)
+        @test isapprox(test_octree.nodes[4].octree_level, level3, rtol=1e-15)
+        @test isapprox(test_octree.nodes[5].octree_level, level4, rtol=1e-15)
+        @test isapprox(test_octree.nodes[6].octree_level, level3, rtol=1e-15)
+        @test isapprox(test_octree.nodes[7].octree_level, level4, rtol=1e-15)
+        for node_idx = 1:sol_num_nodes
+            @test isapprox(test_octree.nodes[node_idx].element_idxs, sol_element_idxs[node_idx], rtol=1e-15)
+        end
+        @test isapprox(test_octree.leaf_node_idxs, sol_leaf_node_idxs)
+    end
     @testset "initializeOctree tests" begin
         num_levels = 1
         ele_centroids = [[1.0,1,0],[-1.0,-1,0]]
         node_centroid =[0.0,0.0,0.0]
-        box_bounds = [-sqrt(2),sqrt(2)] # same for all dimensions
+        box_bounds = [-1.05*sqrt(2),1.05*sqrt(2)] # same for all dimensions
         sol_top_node_idx = 1
         sol_num_nodes = 1
-        test_octree = initializeOctree(num_levels, ele_centroids)
+        buffer = 0.1 # edge lengths
+        test_octree = initializeOctree(num_levels, buffer, ele_centroids)
         test_node = test_octree.nodes[1]
         @test isapprox(test_octree.num_levels, num_levels, rtol=1e-15)
         @test isapprox(test_octree.top_node_idx, sol_top_node_idx, rtol=1e-15)
@@ -119,13 +198,14 @@ include("../../src/octree.jl")
         @test isapprox(test_node.bounds[3][2], box_bounds[2], rtol=1e-15)
         #
         num_levels = 3
+        buffer = 1
         ele_centroids = [[-1.0,0.2,0.0],[0.0,1.5,0.3],[0.0,0.0,1.0]]
         node_centroid = [-1,1.7,1.3] ./ 3
-        max_ele_distance = 1.0
+        max_ele_distance = 1.0 * (1+buffer/2)
         sol_x_bounds = [-1/3-max_ele_distance,-1/3+max_ele_distance]
         sol_top_node_idx = 1
         sol_num_nodes = 1
-        test_octree = initializeOctree(num_levels, ele_centroids)
+        test_octree = initializeOctree(num_levels, buffer, ele_centroids)
         test_node = test_octree.nodes[1]
         @test isapprox(test_octree.num_levels, num_levels, rtol=1e-15)
         @test isapprox(test_octree.top_node_idx, sol_top_node_idx, rtol=1e-15)
