@@ -71,12 +71,13 @@ end # createChildren
     buffer = 1e-4
     ele_centroids = Array{Array{Float64,1},1}(undef, pulse_mesh.num_elements)
     for ele_idx = 1:pulse_mesh.num_elements
-        println(typeof(pulse_mesh.nodes[pulse_mesh.elements[ele_idx,:],:]))
         ele_centroids[ele_idx] = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[ele_idx,:],:])
     end
     octree = initializeOctree(num_levels, buffer, ele_centroids)
     if num_levels > 1
         fillOctreeNodes!(parent_idx, octree, ele_centroids)
+    else
+        octree.leaf_node_idxs = [1]
     end
     return(octree)
 end

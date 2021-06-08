@@ -108,14 +108,25 @@ include("../../src/octree.jl")
         @test isapprox(test_child_nodes[3].centroid, sol_child_centroids[3], rtol=1e-15)
     end # createChildren tests
     @testset "createOctree tests" begin
-        num_nodes = 3
-        small_buffer = 1e-4
-        sol_num_levels = 2
-        # ele_centroids = [[0.0,0.0,1.0],[-1.0,1.0,0.0]]
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss7rule
         mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+
+        num_nodes = 1
+        small_buffer = 1e-4
+        sol_num_levels = 1
+        sol_top_node_idx = 1
+        sol_leaf_node_idxs = [1]
+        test_octree = createOctree(sol_num_levels, pulse_mesh)
+        @test isapprox(test_octree.num_levels, sol_num_levels, rtol=1e-15)
+        @test isapprox(test_octree.top_node_idx, sol_top_node_idx, rtol=1e-15)
+        @test isapprox(test_octree.leaf_node_idxs, sol_leaf_node_idxs, rtol=1e-15)
+        @test isapprox(length(test_octree.nodes), num_nodes, rtol=1e-15)
+
+        num_nodes = 3
+        small_buffer = 1e-4
+        sol_num_levels = 2
         ele_centroids = Array{Array{Float64,1},1}(undef, pulse_mesh.num_elements)
         for ele_idx = 1:pulse_mesh.num_elements
             ele_centroids[ele_idx] = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[ele_idx,:],:])
