@@ -31,6 +31,10 @@
         end
     end
 end # computeRHSContributionSoundSoft!
+
+@views function computeRHSConstributionACA()
+    # start off reviewing aCA paper and implementing the algorithm here given two nodes
+end #computeRHSContributionACA
 # function computeRHSContributionSoundSoft!(pulse_mesh::PulseMesh, wavenumber, distance_to_edge_tol, near_singular_tol, node1::Node, node2::Node, J_vec::AbstractArray{T,1}, V_vec::AbstractArray{T,1}) where T
 #     # Computes the RHS contributions for interactions between all elements
 #     # in node1 and node2 (non-self-node interactions)

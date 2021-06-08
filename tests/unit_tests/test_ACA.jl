@@ -66,6 +66,9 @@ include("../../src/ACA.jl")
         computeRHSContributionSoundSoft!(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, node1, node2, J_vec, V_vec)
         @test isapprox(V_vec, sol_V_vec, rtol=1e-15)
     end #computeRHSContribution tests
+    @testset "computeRHSContributionACA" begin
+        test = computeRHSContributionACA()
+    end #computeRHSContributionACA
     @testset "computeZJMatVec tests" begin
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
