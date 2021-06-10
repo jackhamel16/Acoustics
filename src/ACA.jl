@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 @views function computeRHSContributionSoundSoft!(pulse_mesh::PulseMesh,
                                                  wavenumber,
                                                  distance_to_edge_tol,
@@ -45,6 +47,7 @@ end # computeRHSContributionSoundSoft!
         global_src_idx = global_src_idxs[local_src_idx]
         Z_array[local_src_idx] = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idx)
     end
+    return(Z_array)
 end
 
 @views function computeRHSContributionACA(pulse_mesh::PulseMesh,
@@ -62,60 +65,63 @@ end
     I1 = 1
     R_tilde = zeros(ComplexF64, num_ele_test_node, num_ele_src_node) # change to not store entire matrix?
     #initialization
-    Z_I1_row = zeros(ComplexF64, num_ele_src_node)
     global_test_ele_idx = test_node.element_idxs[I1]
-    for src_ele_idx = 1:num_ele_src_node
-        global_src_ele_idx = src_node.element_idxs[src_ele_idx]
-        Z_I1_row[src_ele_idx] = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idx)
-    end
-    # global_test_ele_idx = test_node.element_idxs[I1]
-    # global_src_ele_idxs = src_node.element_idxs
-    # Z_I1_row = computeZArray(pulse_mesh,
-    #               wavenumber,
-    #               distance_to_edge_tol,
-    #               near_singular_tol,
-    #               global_test_ele_idx,
-    #               global_src_ele_idxs)
-    R_tilde[I1,:] = Z_I1_row
+    global_src_ele_idxs = src_node.element_idxs
+    R_tilde[I1,:] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
+                             near_singular_tol, global_test_ele_idx, global_src_ele_idxs)
     R_tilde_J1, J1 = findmax(abs.(R_tilde[I1,:]))
-    V[I1,:] = R_tilde[I1,:] ./ R_tilde_J1
-    Z_J1_col = zeros(ComplexF64, num_ele_test_node)
+    V[1,:] = R_tilde[I1,:] ./ R_tilde_J1
     global_src_ele_idx = src_node.element_idxs[J1]
-    for test_ele_idx = 1:num_ele_test_node
-        global_test_ele_idx = test_node.element_idxs[test_ele_idx]
-        Z_J1_col[test_ele_idx] = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idx)
-    end
-    R_tilde[:,J1] = Z_J1_col
-    U[:,J1] = R_tilde[:,J1]
+    global_test_ele_idxs = test_node.element_idxs
+    R_tilde[:,J1] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
+                             near_singular_tol, global_src_ele_idx, global_test_ele_idxs)
+    U[:,1] = R_tilde[:,J1]
+    norm_Z_tilde_1 = sqrt(norm(U[:,1])^2*norm(V[1,:])^2)
     # end initialization
-
-    Ik = findmax(abs.(R_tilde[:,J1]))[2]
-    Z_Ik_row = zeros(ComplexF64, num_ele_src_node)
-    global_test_ele_idx = test_node.element_idxs[Ik]
-    for src_ele_idx = 1:num_ele_src_node
-        global_src_ele_idx = src_node.element_idxs[src_ele_idx]
-        Z_Ik_row[src_ele_idx] = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idx)
-    end
-    sum_uv_term = zeros(ComplexF64, num_ele_src_node)
-    for idx = 1:Ik-1
-        sum_uv_term += U[Ik,idx] * V[idx,:]
-    end
-    R_tilde[Ik,:] = Z_Ik_row - sum_uv_term
-    R_tilde_Jk, Jk = findmax(abs.(R_tilde[Ik,:]))
-    println(V)
-    V = transpose(hcat(V[:], R_tilde[Ik,:] ./ R_tilde_Jk))
-    Z_Jk_col = zeros(ComplexF64, num_ele_test_node)
-    global_src_ele_idx = src_node.element_idxs[Jk]
-    for test_ele_idx = 1:num_ele_test_node
-        global_test_ele_idx = test_node.element_idxs[test_ele_idx]
-        Z_Jk_col[test_ele_idx] = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idx)
-    end
-    sum_uv_term = zeros(ComplexF64, num_ele_src_node)
-    for idx = 1:Jk-1
-        sum_uv_term += V[idx,Jk] * U[:,idx]
-    end
-    R_tilde[:,Jk] = Z_Jk_col - sum_uv_term
-    U = hcat(U[:], R_tilde[:,Jk])
+    norm_Z_tilde_k = norm_Z_tilde_1
+    k = 2
+    while norm(U[:,k-1])*norm(V[k-1,:]) > approximation_tol * norm_Z_tilde_k #&& k <=3
+        Ik = findmax(abs.(R_tilde[:,J1]))[2]
+        Z_Ik_row = zeros(ComplexF64, num_ele_src_node)
+        global_test_ele_idx = test_node.element_idxs[Ik]
+        for src_ele_idx = 1:num_ele_src_node
+            global_src_ele_idx = src_node.element_idxs[src_ele_idx]
+            Z_Ik_row[src_ele_idx] = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idx)
+        end
+        sum_uv_term = zeros(ComplexF64, num_ele_src_node)
+        for idx = 1:k-1
+            sum_uv_term += U[Ik,idx] * V[idx,:]
+        end
+        R_tilde[Ik,:] = Z_Ik_row - sum_uv_term
+        R_tilde_Jk, Jk = findmax(abs.(R_tilde[Ik,:]))
+        V = cat(V, transpose(R_tilde[Ik,:] ./ R_tilde_Jk), dims=1)
+        Z_Jk_col = zeros(ComplexF64, num_ele_test_node)
+        global_src_ele_idx = src_node.element_idxs[Jk]
+        for test_ele_idx = 1:num_ele_test_node
+            global_test_ele_idx = test_node.element_idxs[test_ele_idx]
+            Z_Jk_col[test_ele_idx] = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idx)
+        end
+        sum_uv_term = zeros(ComplexF64, num_ele_test_node)
+        for idx = 1:k-1
+            sum_uv_term += V[idx,Jk] * U[:,idx]
+        end
+        R_tilde[:,Jk] = Z_Jk_col - sum_uv_term
+        U = cat(U, R_tilde[:,Jk], dims=2)
+        # sum_term = 0
+        # for j = 1:k-1
+        #     sum_term += abs(transpose(U[:,j])*U[:,k]) * abs(transpose(V[j,:])*V[k,:])
+        # end
+        # norm_Z_tilde_k = sqrt(norm_Z_tilde_k + 2*sum_term + norm(U[:,k])^2*norm(V[k,:])^2)
+        sum_term = 0
+        for j = 1:k-1
+            sum_term += abs(transpose(U[:,j])*U[:,k]) * abs(transpose(V[j,:])*V[k,:])
+        end
+        norm_Z_tilde_k = sqrt(norm_Z_tilde_k^2 + 2*sum_term + norm(U[:,k])^2*norm(V[k,:])^2)
+        # println("compare inside ", norm_Z_tilde_k)
+        # # norm_Z_tilde_k = norm(U*V) #bad way, but should be accurate
+        # println("               ", norm_Z_tilde_k)
+        k += 1
+    end # while
     return(U,V)
     # start off reviewing ACA paper and implementing the algorithm here given two nodes
 

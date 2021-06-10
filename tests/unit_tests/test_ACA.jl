@@ -74,9 +74,8 @@ include("../../src/ACA.jl")
         near_singular_tol = 1.0
         approximation_tol = 1e-3
         mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
-        mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        num_levels = 2
+        num_levels = 3
         octree = createOctree(num_levels, pulse_mesh)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                        wavenumber,
@@ -86,17 +85,65 @@ include("../../src/ACA.jl")
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
         matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        test_node = octree.nodes[6]; src_node = octree.nodes[7]
+        sol_sub_Z = z_matrix[test_node.element_idxs,src_node.element_idxs]
+        test_U, test_V = computeRHSContributionACA(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, approximation_tol, test_node, src_node)
+        @test isapprox(test_U*test_V, sol_sub_Z, rtol=0.2e-2)
 
-        test_node = octree.nodes[2]
-        src_node = octree.nodes[3]
-        sol = z_matrix[test_node.element_idxs[1],src_node.element_idxs]
-        sol2 = z_matrix[test_node.element_idxs,src_node.element_idxs[1]]
-        sol3 = z_matrix[test_node.element_idxs,src_node.element_idxs]
-        test = computeRHSContributionACA(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, approximation_tol, test_node, src_node)
-        # @test isapprox(test[1,:], sol, rtol=1e-15)
-        # @test isapprox(test[:,1], sol2, rtol=1e-15)
-        # @test isapprox(test[1]*test[2], sol2, rtol=1e-15)
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        approximation_tol = 1e-4
+        mesh_filename = "examples/simple/disjoint_triangles.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        num_levels = 3
+        octree = createOctree(num_levels, pulse_mesh)
+        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        test_node = octree.nodes[6]; src_node = octree.nodes[7]
+        sol_sub_Z = z_matrix[test_node.element_idxs,src_node.element_idxs]
+        test_U, test_V = computeRHSContributionACA(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, approximation_tol, test_node, src_node)
+        @test isapprox(test_U*test_V, sol_sub_Z, rtol=1e-2)
+        test_node = octree.nodes[6]; src_node = octree.nodes[9]
+        sol_sub_Z = z_matrix[test_node.element_idxs,src_node.element_idxs]
+        test_U, test_V = computeRHSContributionACA(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, approximation_tol, test_node, src_node)
+        @test isapprox(test_U*test_V, sol_sub_Z, rtol=0.38e-2)
+        # println(norm(test_U*test_V-sol_sub_Z)/norm(sol_sub_Z))
     end #computeRHSContributionACA
+    @testset "computeZArray tests" begin
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        global_test_idx = 1
+        global_src_idxs = [1]
+        test_array = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idxs)
+        @test isapprox(test_array, z_matrix[global_test_idx, global_src_idxs], rtol=1e-14)
+        global_test_idx = 2
+        global_src_idxs = [1,3,5]
+        test_array = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idxs)
+        @test isapprox(test_array, z_matrix[global_test_idx, global_src_idxs], rtol=1e-14)
+    end
     @testset "computeZJMatVec tests" begin
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
