@@ -67,7 +67,35 @@ include("../../src/ACA.jl")
         @test isapprox(V_vec, sol_V_vec, rtol=1e-15)
     end #computeRHSContribution tests
     @testset "computeRHSContributionACA" begin
-        test = computeRHSContributionACA()
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        approximation_tol = 1e-3
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        mesh_filename = "examples/test/circular_plate_1m.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        num_levels = 2
+        octree = createOctree(num_levels, pulse_mesh)
+        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+
+        test_node = octree.nodes[2]
+        src_node = octree.nodes[3]
+        sol = z_matrix[test_node.element_idxs[1],src_node.element_idxs]
+        sol2 = z_matrix[test_node.element_idxs,src_node.element_idxs[1]]
+        sol3 = z_matrix[test_node.element_idxs,src_node.element_idxs]
+        test = computeRHSContributionACA(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, approximation_tol, test_node, src_node)
+        # @test isapprox(test[1,:], sol, rtol=1e-15)
+        # @test isapprox(test[:,1], sol2, rtol=1e-15)
+        # @test isapprox(test[1]*test[2], sol2, rtol=1e-15)
     end #computeRHSContributionACA
     @testset "computeZJMatVec tests" begin
         wavenumber = 1.0+0.0im
