@@ -50,14 +50,13 @@ end # computeRHSContributionSoundSoft!
     return(Z_array)
 end
 
-@views function computeRHSContributionACA(pulse_mesh::PulseMesh,
-                                           wavenumber,
-                                           distance_to_edge_tol,
-                                           near_singular_tol,
+@views function computeRHSContributionACA(computeMatrixArrayFunc::Function,
                                            approximation_tol,
                                            test_node::Node,
                                            src_node::Node)
-    @unpack num_elements = pulse_mesh
+    # computeMatrixArrayFunc tells ACA how to compute a row/col of the matrix it is approximating
+    # note thtat this assumes for the same indicies, a row is the same as a col of the matrix.
+    # For example, the EFIE entry is the same for a pair of elements when 1 is the source and 2 is the test and vice versa.
     num_ele_test_node = length(test_node.element_idxs)
     num_ele_src_node = length(src_node.element_idxs)
     U = Array{ComplexF64, 2}(undef, num_ele_test_node, 1)
@@ -67,39 +66,51 @@ end
     Ik = 1
     global_test_ele_idx = test_node.element_idxs[Ik]
     global_src_ele_idxs = src_node.element_idxs
-    R_tilde[Ik,:] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
-                             near_singular_tol, global_test_ele_idx, global_src_ele_idxs)
+    R_tilde[Ik,:] = computeMatrixArrayFunc(global_test_ele_idx, global_src_ele_idxs)
     R_tilde_Jk, Jk = findmax(abs.(R_tilde[Ik,:]))
     V[1,:] = R_tilde[Ik,:] ./ R_tilde_Jk
     global_src_ele_idx = src_node.element_idxs[Jk]
     global_test_ele_idxs = test_node.element_idxs
-    R_tilde[:,Jk] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
-                             near_singular_tol, global_src_ele_idx, global_test_ele_idxs)
+    R_tilde[:,Jk] = computeMatrixArrayFunc(global_src_ele_idx, global_test_ele_idxs)
     U[:,1] = R_tilde[:,Jk]
     norm_Z_tilde_k = sqrt(norm(U[:,1])^2*norm(V[1,:])^2)
     k = 2
     # end initialization
-    max_k = max(num_ele_test_node, num_ele_src_node)
-    while norm(U[:,k-1])*norm(V[k-1,:]) > approximation_tol * norm_Z_tilde_k && k <=2
-        Ik = findmax(abs.(R_tilde[:,Jk]))[2]
-        println(Ik)
+    max_rank = min(num_ele_test_node, num_ele_src_node)
+    used_Iks, used_Jks = [Ik], [Jk]
+    while (norm(U[:,k-1])*norm(V[k-1,:]) > approximation_tol * norm_Z_tilde_k) && (k < max_rank)
+        max_Ik_val, Ik = 0, 0
+        for row_idx = 1:num_ele_test_node
+            abs_val = abs(R_tilde[row_idx,Jk])
+            if (abs_val > max_Ik_val) && ((row_idx in used_Iks) == false)
+                Ik = row_idx
+                max_Ik_val = abs_val
+            end
+        end
+        append!(used_Iks, Ik)
         Z_Ik_row = zeros(ComplexF64, num_ele_src_node)
         global_test_ele_idx = test_node.element_idxs[Ik]
         global_src_ele_idxs = src_node.element_idxs
-        R_tilde[Ik,:] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
-                                 near_singular_tol, global_test_ele_idx, global_src_ele_idxs)
+        R_tilde[Ik,:] = computeMatrixArrayFunc(global_test_ele_idx, global_src_ele_idxs)
         sum_uv_term = zeros(ComplexF64, num_ele_src_node)
         for idx = 1:k-1
-            sum_uv_term += U[Ik,idx] * V[idx,:]
+            sum_uv_term += U[Ik,idx] * V[idx,:] #math here could be implemented incorrectly
         end
         R_tilde[Ik,:] = Z_Ik_row - sum_uv_term
-        R_tilde_Jk, Jk = findmax(abs.(R_tilde[Ik,:]))
-        V = cat(V, transpose(R_tilde[Ik,:] ./ R_tilde_Jk), dims=1)
+        max_Jk_val, Jk = 0, 0
+        for col_idx = 1:num_ele_src_node
+            abs_val = abs(R_tilde[Ik,col_idx])
+            if (abs_val > max_Jk_val) && ((col_idx in used_Jks) == false)
+                Jk = col_idx
+                max_Jk_val = abs_val
+            end
+        end
+        append!(used_Jks, Jk)
+        V = cat(V, transpose(R_tilde[Ik,:] ./ R_tilde[Ik,Jk]), dims=1)
         Z_Jk_col = zeros(ComplexF64, num_ele_test_node)
         global_src_ele_idx = src_node.element_idxs[Jk]
         global_test_ele_idxs = test_node.element_idxs
-        Z_Jk_col = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
-                                 near_singular_tol, global_src_ele_idx, global_test_ele_idxs)
+        Z_Jk_col = computeMatrixArrayFunc(global_src_ele_idx, global_test_ele_idxs)
         sum_uv_term = zeros(ComplexF64, num_ele_test_node)
         for idx = 1:k-1
             sum_uv_term += V[idx,Jk] * U[:,idx]
@@ -111,17 +122,100 @@ end
             sum_term += abs(transpose(U[:,j])*U[:,k]) * abs(transpose(V[j,:])*V[k,:])
         end
         norm_Z_tilde_k = sqrt(norm_Z_tilde_k^2 + 2*sum_term + norm(U[:,k])^2*norm(V[k,:])^2)
-        # println("compare inside ", norm_Z_tilde_k)
-        norm_Z_tilde_k = norm(U*V) #bad way, but should be accurate
-        # println("               ", norm_Z_tilde_k)
         k += 1
     end # while
     return(U,V)
-    # start off reviewing ACA paper and implementing the algorithm here given two nodes
-
-####### left off with this primitive version of the algorithm. It doesnt pass test 3 so it may have a bug or the nodes just arent well separated enough (they are touching...)
-
 end #computeRHSContributionACA
+# @views function computeRHSContributionACA(pulse_mesh::PulseMesh,
+#                                            wavenumber,
+#                                            distance_to_edge_tol,
+#                                            near_singular_tol,
+#                                            approximation_tol,
+#                                            test_node::Node,
+#                                            src_node::Node)
+#     # @unpack num_elements = pulse_mesh
+#     num_ele_test_node = length(test_node.element_idxs)
+#     num_ele_src_node = length(src_node.element_idxs)
+#     U = Array{ComplexF64, 2}(undef, num_ele_test_node, 1)
+#     V = Array{ComplexF64, 2}(undef, 1, num_ele_src_node)
+#     R_tilde = zeros(ComplexF64, num_ele_test_node, num_ele_src_node) # change to not store entire matrix?
+#     #initialization
+#     Ik = 1
+#     global_test_ele_idx = test_node.element_idxs[Ik]
+#     global_src_ele_idxs = src_node.element_idxs
+#     R_tilde[Ik,:] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
+#                              near_singular_tol, global_test_ele_idx, global_src_ele_idxs)
+#     R_tilde_Jk, Jk = findmax(abs.(R_tilde[Ik,:]))
+#     V[1,:] = R_tilde[Ik,:] ./ R_tilde_Jk
+#     global_src_ele_idx = src_node.element_idxs[Jk]
+#     global_test_ele_idxs = test_node.element_idxs
+#     R_tilde[:,Jk] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
+#                              near_singular_tol, global_src_ele_idx, global_test_ele_idxs)
+#     U[:,1] = R_tilde[:,Jk]
+#     norm_Z_tilde_k = sqrt(norm(U[:,1])^2*norm(V[1,:])^2)
+#     k = 2
+#     # end initialization
+#     max_rank = min(num_ele_test_node, num_ele_src_node)
+#     used_Iks, used_Jks = [Ik], [Jk]
+#     while (norm(U[:,k-1])*norm(V[k-1,:]) > approximation_tol * norm_Z_tilde_k) && (k < max_rank)
+#         # Ik = findmax(abs.(R_tilde[:,Jk]))[2]
+#         # println(Ik)
+#         max_Ik_val, Ik = 0, 0
+#         for row_idx = 1:num_ele_test_node
+#             abs_val = abs(R_tilde[row_idx,Jk])
+#             # println(abs_val, "  ", row_idx)
+#             if (abs_val > max_Ik_val) && ((row_idx in used_Iks) == false)
+#                 Ik = row_idx
+#                 # println(Ik)
+#                 max_Ik_val = abs_val
+#             end
+#         end
+#         append!(used_Iks, Ik)
+#         Z_Ik_row = zeros(ComplexF64, num_ele_src_node)
+#         # println(max_Ik_val, "   ", Ik)
+#         global_test_ele_idx = test_node.element_idxs[Ik]
+#         global_src_ele_idxs = src_node.element_idxs
+#         R_tilde[Ik,:] = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
+#                                  near_singular_tol, global_test_ele_idx, global_src_ele_idxs)
+#         sum_uv_term = zeros(ComplexF64, num_ele_src_node)
+#         for idx = 1:k-1
+#             sum_uv_term += U[Ik,idx] * V[idx,:] #math here could be implemented incorrectly
+#         end
+#         R_tilde[Ik,:] = Z_Ik_row - sum_uv_term
+#         # R_tilde_Jk, Jk = findmax(abs.(R_tilde[Ik,:]))
+#         max_Jk_val, Jk = 0, 0
+#         for col_idx = 1:num_ele_src_node
+#             abs_val = abs(R_tilde[Ik,col_idx])
+#             if (abs_val > max_Jk_val) && ((col_idx in used_Jks) == false)
+#                 Jk = col_idx
+#                 max_Jk_val = abs_val
+#             end
+#         end
+#         append!(used_Jks, Jk)
+#         V = cat(V, transpose(R_tilde[Ik,:] ./ R_tilde[Ik,Jk]), dims=1)
+#         Z_Jk_col = zeros(ComplexF64, num_ele_test_node)
+#         global_src_ele_idx = src_node.element_idxs[Jk]
+#         global_test_ele_idxs = test_node.element_idxs
+#         Z_Jk_col = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol,
+#                                  near_singular_tol, global_src_ele_idx, global_test_ele_idxs)
+#         sum_uv_term = zeros(ComplexF64, num_ele_test_node)
+#         for idx = 1:k-1
+#             sum_uv_term += V[idx,Jk] * U[:,idx]
+#         end
+#         R_tilde[:,Jk] = Z_Jk_col - sum_uv_term
+#         U = cat(U, R_tilde[:,Jk], dims=2)
+#         sum_term = 0
+#         for j = 1:k-1
+#             sum_term += abs(transpose(U[:,j])*U[:,k]) * abs(transpose(V[j,:])*V[k,:])
+#         end
+#         norm_Z_tilde_k = sqrt(norm_Z_tilde_k^2 + 2*sum_term + norm(U[:,k])^2*norm(V[k,:])^2)
+#         # println("compare inside ", norm_Z_tilde_k)
+#         # norm_Z_tilde_k = norm(U*V) #bad way, but should be accurate
+#         # println("               ", norm_Z_tilde_k)
+#         k += 1
+#     end # while
+#     return(U,V)
+# end #computeRHSContributionACA
 
 @views function computeZEntrySoundSoft(pulse_mesh::PulseMesh, wavenumber, distance_to_edge_tol, near_singular_tol, test_ele_idx::Int64, src_ele_idx::Int64)
     # currently no unit test
