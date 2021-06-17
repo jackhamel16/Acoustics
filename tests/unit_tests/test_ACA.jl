@@ -240,4 +240,44 @@ include("../../src/ACA.jl")
         test_V = computeZJMatVec(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, J_vec)
         @test isapprox(test_V, sol_V_vec, rtol=1e-14)
     end # computeZJMatVec tests
+    @testset "nodeMatrixFillACA tests" begin
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        approximation_tol = 1e-3
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        num_levels = 3
+        octree = createOctree(num_levels, pulse_mesh)
+        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        sol = z_matrix[1,2]
+        test_node = octree.nodes[6]
+        src_node = octree.nodes[7]
+        sub_Z = zeros(ComplexF64, 1, 1)
+        nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z)
+        @test isapprox(sub_Z[1,1], sol, rtol=1e-14)
+
+        sol = z_matrix[2,8]
+        test_node = octree.nodes[7]
+        src_node = octree.nodes[13]
+        sub_Z = zeros(ComplexF64, 1, 1)
+        nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z)
+        @test isapprox(sub_Z[1,1], sol, rtol=1e-14)
+
+        sol = z_matrix[[1,2],[3,4]]
+        test_node = octree.nodes[2]
+        src_node = octree.nodes[3]
+        sub_Z = zeros(ComplexF64, 2, 2)
+        nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z)
+        @test isapprox(sub_Z, sol, rtol=1e-14)
+    end # nodeMatrixFillACA tests
 end # ACA tests

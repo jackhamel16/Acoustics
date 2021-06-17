@@ -1,6 +1,7 @@
 using Test
 
 include("../../src/mesh.jl")
+include("../../src/quadrature.jl")
 
 include("../../src/octree.jl")
 
@@ -48,11 +49,12 @@ include("../../src/octree.jl")
     end # computeNodeBounds tests
     @testset "createChildren tests" begin
         no_child_idxs = []
+        no_Z_matrices = []
         parent_level = 1
         ele_centroids = [[1,1,0.1],[-1,-1,-0.1]]
         parent_centroid = [0.0,0.0,0.0]
         max_distance = norm(ele_centroids[1])
-        parent_node = Node(parent_level, 0,no_child_idxs,[1,2],computeNodeBounds(max_distance, parent_centroid),parent_centroid)
+        parent_node = Node(parent_level, 0,no_child_idxs,[1,2],computeNodeBounds(max_distance, parent_centroid),parent_centroid,no_Z_matrices)
         sol_parent_idx = 1
         sol_child_level = parent_level + 1
         sol_element_idxs = [[2],[1]]
@@ -79,7 +81,7 @@ include("../../src/octree.jl")
         ele_centroids = [[0.0,-1.0,1.2],[0.0,-1.0,0.5],[1.0,0.5,2.0]]
         parent_centroid = [0.5,-0.5,1.0]
         max_distance = 1.5
-        parent_node = Node(parent_level, 0,no_child_idxs,[1,2,3],computeNodeBounds(max_distance,parent_centroid),parent_centroid)
+        parent_node = Node(parent_level, 0,no_child_idxs,[1,2,3],computeNodeBounds(max_distance,parent_centroid),parent_centroid,no_Z_matrices)
         sol_parent_idx = 10
         sol_child_level = parent_level + 1
         sol_children_ele_idxs = [[2],[1],[3]]
@@ -196,6 +198,34 @@ include("../../src/octree.jl")
             @test isapprox(test_octree.nodes[node_idx].element_idxs, sol_element_idxs[node_idx], rtol=1e-15)
         end
         @test isapprox(test_octree.leaf_node_idxs, sol_leaf_node_idxs)
+    end
+    @testset "fillOctreeZMatricesSoundSoft! tests" begin
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        approximation_tol = 1e-3
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        num_levels = 1
+        octree = createOctree(num_levels, pulse_mesh)
+        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol)
+        @test isapprox(octree.nodes[1].node2node_Z_matrices[1], z_matrix,rtol = 1e-14)
+
+        num_levels = 2
+        octree = createOctree(num_levels, pulse_mesh)
+        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol)
+        @test isapprox(octree.nodes[2].node2node_Z_matrices[1], z_matrix[[1,2],[1,2]], rtol = 1e-14)
+        @test isapprox(octree.nodes[2].node2node_Z_matrices[1], z_matrix[[1,2],[3,4]], rtol = 1e-14)
     end
     @testset "initializeOctree tests" begin
         num_levels = 1

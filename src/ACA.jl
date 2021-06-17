@@ -22,7 +22,7 @@ using LinearAlgebra
         end
     end
 end # computeRHSContributionSoundSoft!
-# 
+
 # @views function computeZArray(pulse_mesh::PulseMesh,
 #                               wavenumber,
 #                               distance_to_edge_tol,
@@ -114,16 +114,17 @@ end # computeRHSContributionSoundSoft!
 #     return(U,V)
 # end #computeRHSContributionACA
 
-@views function computeRHSContributionACA(computeMatrixEntryFunc::Function,
-                                          approximation_tol,
-                                          num_rows::Int64,
-                                          num_cols::Int64)
-    # computeMatrixArrayFunc tells ACA how to compute a row/col of the matrix it is approximating
-    # note thtat this assumes for the same indicies, a row is the same as a col of the matrix.
-    # For example, the EFIE entry is the same for a pair of elements when 1 is the source and 2 is the test and vice versa.
+@views function computeMatrixACA(computeMatrixEntryFunc::Function,
+                                 approximation_tol,
+                                 num_rows::Int64,
+                                 num_cols::Int64)
+    # computeMatrixEntryFunc tells ACA how to compute an entry of the matrix it is approximating
+    # This function takes only local col and row idxs of the matrix so this function is generalized.
+    # approximation_tol: the condition that stop iterations state that the norm of the approximate
+    # error matrix must be less than the norm of the approximated matrix given by UV times this tolerance
+    # num_rows and num_cols give the dimensions of the matrix
     U = Array{ComplexF64, 2}(undef, num_rows, 1)
     V = Array{ComplexF64, 2}(undef, 1, num_cols)
-    R_tilde = zeros(ComplexF64, num_rows, num_cols) # change to not store entire matrix?
     #initialization
     Ik = 1
     R_tilde_Ik = zeros(ComplexF64, num_cols)

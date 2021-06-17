@@ -57,3 +57,31 @@ function matrixFill(pulse_mesh::PulseMesh,
         end
     end
 end
+
+function nodeMatrixFill!(pulse_mesh::PulseMesh,
+                        test_node::Node,
+                        src_node::Node,
+                        testIntegrand::Function,
+                        sub_z_matrix::AbstractArray{ComplexF64, 2})
+    @unpack elements,
+            areas,
+            nodes,
+            test_quadrature_points,
+            test_quadrature_weights = pulse_mesh
+    num_src_elements = length(src_node.element_idxs)
+    num_test_elements = length(test_node.element_idxs)
+    for local_src_idx in 1:num_src_elements
+        global_src_idx = src_node.element_idxs[local_src_idx]
+        for local_test_idx in 1:num_test_elements
+            global_test_idx = test_node.element_idxs[local_test_idx]
+            is_singular = (global_src_idx == global_test_idx)
+            test_tri_nodes = getTriangleNodes(global_test_idx, elements, nodes)
+            src_tri_nodes = getTriangleNodes(global_src_idx, elements, nodes)
+            testIntegrandXYZ(x,y,z) = testIntegrand([x,y,z], global_src_idx, is_singular)
+            sub_z_matrix[local_test_idx, local_src_idx] += gaussQuadrature(areas[global_test_idx],
+                                                           testIntegrandXYZ,
+                                                           test_quadrature_points[global_test_idx],
+                                                           test_quadrature_weights)
+        end
+    end
+end

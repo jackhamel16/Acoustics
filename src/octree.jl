@@ -8,6 +8,7 @@ mutable struct Node
     element_idxs::Array{Int64,1}
     bounds::Array{Array{Float64,1},1}
     centroid::Array{Float64,1}
+    node2node_Z_matrices::Array{Any,1}
 end
 
 @with_kw mutable struct Octree
@@ -28,6 +29,7 @@ end
     # element centroids and returning each node in an array
     num_children = 8
     no_children_idxs = []
+    no_Z_matrices = []
     children_nodes = []
     child_level = parent_node.octree_level + 1
     child_edge_length = (parent_node.bounds[1][2] - parent_node.bounds[1][1])/2
@@ -55,7 +57,7 @@ end
                     end
                 end
                 if isempty(child_element_idxs) == false
-                    child_node = Node(child_level, parent_idx, no_children_idxs, child_element_idxs, child_bounds, child_centroid)
+                    child_node = Node(child_level, parent_idx, no_children_idxs, child_element_idxs, child_bounds, child_centroid, no_Z_matrices)
                     push!(children_nodes, child_node)
                 end
                 child_idx += 1
@@ -102,6 +104,41 @@ end
     end
 end # fillOctreeNodes!
 
+@views function fillOctreeZMatricesSoundSoft!(pulse_mesh::PulseMesh,
+                                              octree::Octree,
+                                              wavenumber,
+                                              distance_to_edge_tol,
+                                              near_singular_tol)
+    # test_node, src_node = octree.nodes[1], octree.nodes[1]
+    soundSoftTestIntegrand(r_test, global_src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, global_src_idx,
+                                                   wavenumber,
+                                                   r_test,
+                                                   distance_to_edge_tol,
+                                                   near_singular_tol,
+                                                   is_singular)
+    # sub_z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
+    # nodeMatrixFill!(pulse_mesh,
+    #                           test_node,
+    #                           src_node,
+    #                           testIntegrand,
+    #                           sub_z_matrix::AbstractArray{ComplexF64, 2})
+
+    num_leaves = length(octree.leaf_node_idxs)
+    for local_test_node_idx = 1:num_leaves
+
+        global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
+        test_node = octree.nodes[global_test_node_idx]
+        println(global_test_node_idx)
+        for local_src_node_idx = 1:num_leaves
+            global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
+            src_node = octree.nodes[global_src_node_idx]
+            sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
+            nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftTestIntegrand, sub_Z_matrix)
+            append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
+        end
+    end
+end
+
 @views function initializeOctree(num_levels::Int64, buffer, ele_centroids::AbstractArray{Array{Float64,1},1})
     # Creates in octree instance with only the level 1 node, the node
     # encapsulating all elements, filled.
@@ -109,6 +146,7 @@ end # fillOctreeNodes!
     level1 = 1
     no_parent_idx = 0 # the zero indicates it is at the highest level
     no_children_idxs = [] # empty array indicates it is a leaf
+    no_Z_matrices = []
     no_leaves = []
     num_elements = length(ele_centroids)
     all_ele_idxs = [i for i=1:num_elements]
@@ -122,7 +160,7 @@ end # fillOctreeNodes!
     end
     level1_half_edge_length = (1+buffer/2)*max_distance
     level1_bounds = computeNodeBounds(level1_half_edge_length, level1_centroid)
-    level1_node = Node(level1, no_parent_idx, no_children_idxs, all_ele_idxs, level1_bounds, level1_centroid)
+    level1_node = Node(level1, no_parent_idx, no_children_idxs, all_ele_idxs, level1_bounds, level1_centroid, no_Z_matrices)
     level1_node_idx = 1
     return(Octree(num_levels, level1_node_idx, no_leaves, [level1_node]))
 end # initializeOctree
