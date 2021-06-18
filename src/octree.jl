@@ -28,8 +28,6 @@ end
     # creates the child nodes of parent_node only storing the ones containing
     # element centroids and returning each node in an array
     num_children = 8
-    no_children_idxs = []
-    no_Z_matrices = []
     children_nodes = []
     child_level = parent_node.octree_level + 1
     child_edge_length = (parent_node.bounds[1][2] - parent_node.bounds[1][1])/2
@@ -57,6 +55,8 @@ end
                     end
                 end
                 if isempty(child_element_idxs) == false
+                    no_children_idxs = []
+                    no_Z_matrices = []
                     child_node = Node(child_level, parent_idx, no_children_idxs, child_element_idxs, child_bounds, child_centroid, no_Z_matrices)
                     push!(children_nodes, child_node)
                 end
@@ -108,30 +108,30 @@ end # fillOctreeNodes!
                                               octree::Octree,
                                               wavenumber,
                                               distance_to_edge_tol,
-                                              near_singular_tol)
-    # test_node, src_node = octree.nodes[1], octree.nodes[1]
+                                              near_singular_tol,
+                                              compression_distance,
+                                              ACA_approximation_tol)
+    # compression distance is the number of node edge lengths separation between centroids of nodes dictating when ACA can be used
     soundSoftTestIntegrand(r_test, global_src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, global_src_idx,
                                                    wavenumber,
                                                    r_test,
                                                    distance_to_edge_tol,
                                                    near_singular_tol,
                                                    is_singular)
-    # sub_z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
-    # nodeMatrixFill!(pulse_mesh,
-    #                           test_node,
-    #                           src_node,
-    #                           testIntegrand,
-    #                           sub_z_matrix::AbstractArray{ComplexF64, 2})
-
     num_leaves = length(octree.leaf_node_idxs)
+    leaf_edge_length = octree.nodes[octree.leaf_node_idxs[1]].bounds[1][2] - octree.nodes[octree.leaf_node_idxs[1]].bounds[1][1]
+    min_separation = compression_distance * leaf_edge_length
     for local_test_node_idx = 1:num_leaves
-
         global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
         test_node = octree.nodes[global_test_node_idx]
-        println(global_test_node_idx)
         for local_src_node_idx = 1:num_leaves
             global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
             src_node = octree.nodes[global_src_node_idx]
+            if norm(src_node.centroid-test_node.centroid) > min_separation # use ACA
+                compressed_sub_Z = computeMatrixACA(computeMatrixEntryFunc,
+                                                 ACA_approximation_tol,
+                                                 num_rows,
+                                                 num_cols)
             sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
             nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftTestIntegrand, sub_Z_matrix)
             append!(test_node.node2node_Z_matrices, [sub_Z_matrix])

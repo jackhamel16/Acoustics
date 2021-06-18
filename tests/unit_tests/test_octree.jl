@@ -206,6 +206,7 @@ include("../../src/octree.jl")
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
         approximation_tol = 1e-3
+        compression_distance = 1.5 # should exclude all box touching sides or corners
         mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
@@ -225,7 +226,13 @@ include("../../src/octree.jl")
         octree = createOctree(num_levels, pulse_mesh)
         fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(octree.nodes[2].node2node_Z_matrices[1], z_matrix[[1,2],[1,2]], rtol = 1e-14)
-        @test isapprox(octree.nodes[2].node2node_Z_matrices[1], z_matrix[[1,2],[3,4]], rtol = 1e-14)
+        @test isapprox(octree.nodes[2].node2node_Z_matrices[2], z_matrix[[1,2],[3,4]], rtol = 1e-14)
+        @test isapprox(octree.nodes[2].node2node_Z_matrices[4], z_matrix[[1,2],[7,8]], rtol = 1e-14)
+        @test isapprox(octree.nodes[3].node2node_Z_matrices[1], z_matrix[[3,4],[1,2]], rtol = 1e-14)
+        @test isapprox(octree.nodes[4].node2node_Z_matrices[4], z_matrix[[5,6],[7,8]], rtol = 1e-14)
+        @test isapprox(octree.nodes[5].node2node_Z_matrices[3], z_matrix[[7,8],[5,6]], rtol = 1e-14)
+
+        num_levels = 3
     end
     @testset "initializeOctree tests" begin
         num_levels = 1
