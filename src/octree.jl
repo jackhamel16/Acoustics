@@ -128,13 +128,19 @@ end # fillOctreeNodes!
             global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
             src_node = octree.nodes[global_src_node_idx]
             if norm(src_node.centroid-test_node.centroid) > min_separation # use ACA
-                compressed_sub_Z = computeMatrixACA(computeMatrixEntryFunc,
+                num_rows = length(test_node.element_idxs)
+                num_cols = length(src_node.element_idxs)
+                computeMatrixEntry(test_idx, src_idx) = computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
+                compressed_sub_Z = computeMatrixACA(computeMatrixEntry,
                                                  ACA_approximation_tol,
                                                  num_rows,
                                                  num_cols)
-            sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
-            nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftTestIntegrand, sub_Z_matrix)
-            append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
+                append!(test_node.node2node_Z_matrices, [compressed_sub_Z])
+            else # use direct Z calculation
+                sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
+                nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftTestIntegrand, sub_Z_matrix)
+                append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
+            end # if-else
         end
     end
 end

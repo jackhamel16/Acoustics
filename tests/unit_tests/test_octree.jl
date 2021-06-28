@@ -2,6 +2,9 @@ using Test
 
 include("../../src/mesh.jl")
 include("../../src/quadrature.jl")
+include("../../src/fill.jl")
+include("../../src/greens_functions.jl")
+include("../../src/ACA.jl")
 
 include("../../src/octree.jl")
 
@@ -207,6 +210,7 @@ include("../../src/octree.jl")
         near_singular_tol = 1.0
         approximation_tol = 1e-3
         compression_distance = 1.5 # should exclude all box touching sides or corners
+        ACA_tol = 1e-4
         mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
@@ -219,12 +223,12 @@ include("../../src/octree.jl")
         matrixFill(pulse_mesh, testIntegrand, z_matrix)
         num_levels = 1
         octree = createOctree(num_levels, pulse_mesh)
-        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol)
+        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
         @test isapprox(octree.nodes[1].node2node_Z_matrices[1], z_matrix,rtol = 1e-14)
 
         num_levels = 2
         octree = createOctree(num_levels, pulse_mesh)
-        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol)
+        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
         @test isapprox(octree.nodes[2].node2node_Z_matrices[1], z_matrix[[1,2],[1,2]], rtol = 1e-14)
         @test isapprox(octree.nodes[2].node2node_Z_matrices[2], z_matrix[[1,2],[3,4]], rtol = 1e-14)
         @test isapprox(octree.nodes[2].node2node_Z_matrices[4], z_matrix[[1,2],[7,8]], rtol = 1e-14)
@@ -233,6 +237,34 @@ include("../../src/octree.jl")
         @test isapprox(octree.nodes[5].node2node_Z_matrices[3], z_matrix[[7,8],[5,6]], rtol = 1e-14)
 
         num_levels = 3
+        large_compression_dist = 1e10 # all interactions use direct Z calculation
+        octree = createOctree(num_levels, pulse_mesh)
+        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, large_compression_dist, ACA_tol)
+        @test isapprox(octree.nodes[11].node2node_Z_matrices[5][1,1], z_matrix[5,6], rtol = 1e-14)
+        @test isapprox(octree.nodes[11].node2node_Z_matrices[8][1,1], z_matrix[5,8], rtol = 1e-14)
+
+        num_levels = 3
+        octree = createOctree(num_levels, pulse_mesh)
+        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
+        # first test types of elements of node2node_Z_matrices are correct
+        UV_type = Tuple{Array{ComplexF64,2},Array{ComplexF64,2}}
+        Z_type = Array{ComplexF64,2}
+        @test typeof(octree.nodes[10].node2node_Z_matrices[1]) == UV_type
+        @test typeof(octree.nodes[10].node2node_Z_matrices[2]) == Z_type
+        @test typeof(octree.nodes[10].node2node_Z_matrices[3]) == UV_type
+        @test typeof(octree.nodes[10].node2node_Z_matrices[4]) == Z_type
+        @test typeof(octree.nodes[10].node2node_Z_matrices[5]) == Z_type
+        @test typeof(octree.nodes[10].node2node_Z_matrices[6]) == Z_type
+        @test typeof(octree.nodes[10].node2node_Z_matrices[7]) == Z_type
+        @test typeof(octree.nodes[10].node2node_Z_matrices[8]) == UV_type
+        # Now test a few exact values
+        test_node = octree.nodes[11]
+        src_node = octree.nodes[13]
+        @test isapprox(test_node.node2node_Z_matrices[5][1,1], z_matrix[5,6], rtol = 1e-14)
+        computeMatrixEntry(test_idx,src_idx) = computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
+        sol_U, sol_V = computeMatrixACA(computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
+        @test isapprox(test_node.node2node_Z_matrices[8][1], sol_U, rtol = 1e-14)
+        @test isapprox(test_node.node2node_Z_matrices[8][2], sol_V, rtol = 1e-14)
     end
     @testset "initializeOctree tests" begin
         num_levels = 1
