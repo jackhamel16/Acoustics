@@ -1,17 +1,13 @@
 # dependencies: fill.jl greens_functions.jl mesh.jl ACA.jl octree.jl
+using LinearAlgebra
+using IterativeSolvers
+using LinearMaps
+using Parameters
 
 @views function fullMatvecACA(pulse_mesh::PulseMesh, octree::Octree, J::AbstractArray{T,1}) where T
     # This function implicitly computes Z*J=V for the entire Z matrix using the
-    # sub-Z matrices computed directly or compressed as U and V for nodes of the octree.
-
-    #initialize V
-    # for each test leaf node
-        #for each src leaf node
-            # get element idxs in src node and then build sub-J by indexing J
-            # get interaction z matrix
-            # if Z, multiply Z*J=V
-            # if U and V, multiply U*(V*J)=V
-            # get element idxs in test node and add sub-V elements to correct V elements
+    # sub-Z matrices computed directly or compressed as U and V for interactions
+    # between the elements in nodes of the octree.
     @unpack num_elements = pulse_mesh
     V = zeros(ComplexF64, num_elements)
     leaf_nodes = octree.nodes[octree.leaf_node_idxs]
@@ -29,10 +25,39 @@
     return(V)
 end # fullMatvecACA
 
+@views function solveSoundSoftIEACA(pulse_mesh::PulseMesh,
+                                    num_levels::Int64,
+                                    # octree::Octree,
+                                    excitation::Function,
+                                    wavenumber,
+                                    distance_to_edge_tol,
+                                    near_singular_tol,
+                                    compression_distance,
+                                    ACA_approximation_tol)
+    # build V
+    # wrap matvec function in linear map
+    # use gmres to find J
+    @unpack num_elements = pulse_mesh
+    octree = createOctree(num_levels, pulse_mesh)
+    fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
+                                  distance_to_edge_tol, near_singular_tol,
+                                  compression_distance, ACA_approximation_tol)
+    rhs = zeros(ComplexF64, num_elements)
+    rhsFill(pulse_mesh, excitation, rhs)
+    fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
+    fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
+    sources = gmres(fullMatvecLinearMap, rhs)
+    return(sources)
+end #solveSoundSoftIEACA
+
 @views function subMatvecACA(sub_Z::AbstractArray{T,2}, sub_J::AbstractArray{T,1}) where T
+    # computes the matrix-vector product between sub_Z and sub_J when sub_Z is
+    # not decomposed
     return(sub_Z * sub_J)
 end #subMatvecACA
 
 @views function subMatvecACA(sub_Z::Tuple{Array{T,2},Array{T,2}}, sub_J::AbstractArray{T,1}) where T
+    # computes the matrix-vector product between sub_Z and sub_J when sub_Z is
+    # decomposed into U and V matrices
     return(sub_Z[1] * (sub_Z[2] * sub_J))
 end #subMatvecACA
