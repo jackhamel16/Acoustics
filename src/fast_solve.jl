@@ -1,107 +1,38 @@
-# dependencies: fill.jl greens_functions.jl mesh.jl
+# dependencies: fill.jl greens_functions.jl mesh.jl ACA.jl octree.jl
 
-function solveSoftIE(pulse_mesh::PulseMesh,
-                     excitation::Function,
-                     wavenumber::Complex{Float64},
-                     distance_to_edge_tol::Float64,
-                     near_singular_tol::Float64,
-                     return_z_rhs=false)
+@views function fullMatvecACA(pulse_mesh::PulseMesh, octree::Octree, J::AbstractArray{T,1}) where T
+    # This function implicitly computes Z*J=V for the entire Z matrix using the
+    # sub-Z matrices computed directly or compressed as U and V for nodes of the octree.
 
+    #initialize V
+    # for each test leaf node
+        #for each src leaf node
+            # get element idxs in src node and then build sub-J by indexing J
+            # get interaction z matrix
+            # if Z, multiply Z*J=V
+            # if U and V, multiply U*(V*J)=V
+            # get element idxs in test node and add sub-V elements to correct V elements
     @unpack num_elements = pulse_mesh
-    println("Filling RHS...")
-    rhs = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation, rhs)
-    testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
-                                                   wavenumber,
-                                                   r_test,
-                                                   distance_to_edge_tol,
-                                                   near_singular_tol,
-                                                   is_singular)
-    println("Filling Matrix...")
-    z_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrand, z_matrix)
-    println("Solving...")
-    source_vec = z_matrix \ rhs
-    if return_z_rhs == false
-        return(source_vec)
-    else
-        return(source_vec, z_matrix, rhs)
+    V = zeros(ComplexF64, num_elements)
+    leaf_nodes = octree.nodes[octree.leaf_node_idxs]
+    num_nodes = length(leaf_nodes)
+    for test_node_idx = 1:num_nodes
+        test_node = leaf_nodes[test_node_idx]
+        for src_node_idx = 1:num_nodes
+            src_node = leaf_nodes[src_node_idx]
+            sub_J = J[src_node.element_idxs]
+            sub_Z = test_node.node2node_Z_matrices[src_node_idx]
+            sub_V = subMatvecACA(sub_Z, sub_J)
+            V[test_node.element_idxs] += sub_V
+        end
     end
-end
+    return(V)
+end # fullMatvecACA
 
-function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
-                                excitation_normal_derivative::Function,
-                                wavenumber::Complex{Float64},
-                                return_z=false)
+@views function subMatvecACA(sub_Z::AbstractArray{T,2}, sub_J::AbstractArray{T,1}) where T
+    return(sub_Z * sub_J)
+end #subMatvecACA
 
-    @unpack num_elements = pulse_mesh
-    println("Filling RHS...")
-    rhs = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation_normal_derivative, rhs, true)
-    testIntegrandNormalDerivative(r_test, src_idx, is_singular) =
-                            scalarGreensNormalDerivativeIntegration(pulse_mesh,
-                                                                    src_idx,
-                                                                    wavenumber,
-                                                                    r_test,
-                                                                    is_singular)
-    println("Filling Matrix...")
-    z_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrandNormalDerivative, z_matrix)
-    println("Solving...")
-    source_vec = z_matrix \ rhs
-    if return_z == false
-        return(source_vec)
-    else
-        return(source_vec, z_matrix)
-    end
-end
-
-function solveSoftCFIE(pulse_mesh::PulseMesh,
-                       excitation::Function,
-                       excitation_normal_derivative::Function,
-                       wavenumber::Complex{Float64},
-                       distance_to_edge_tol::Float64,
-                       near_singular_tol::Float64,
-                       softIE_weight::Float64,
-                       return_z=false)
-
-    @unpack num_elements = pulse_mesh
-    testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh,
-                                                        src_idx,
-                                                        wavenumber,
-                                                        r_test,
-                                                        distance_to_edge_tol,
-                                                        near_singular_tol,
-                                                        is_singular)
-    testIntegrandNormalDerivative(r_test, src_idx, is_singular) =
-                            scalarGreensNormalDerivativeIntegration(pulse_mesh,
-                                                                    src_idx,
-                                                                    wavenumber,
-                                                                    r_test,
-                                                                    is_singular)
-    println("Filling Matrix...")
-    z_matrix_nd = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrandNormalDerivative, z_matrix_nd)
-    z_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrand, z_matrix)
-
-    avg_z_nd = sum(abs.(z_matrix_nd))./length(z_matrix_nd)
-    avg_z = sum(abs.(z_matrix))./length(z_matrix)
-    nd_scale_factor = im*avg_z / avg_z_nd
-    z_matrix = softIE_weight * z_matrix + (1-softIE_weight) * nd_scale_factor * z_matrix_nd
-
-    println("Filling RHS...")
-    rhs_nd = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation_normal_derivative, rhs_nd, true)
-    rhs = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation, rhs)
-    rhs = softIE_weight * rhs + (1-softIE_weight) * nd_scale_factor * rhs_nd
-
-    println("Solving...")
-    source_vec = z_matrix \ rhs
-    if return_z == false
-        return(source_vec)
-    else
-        return(source_vec, z_matrix)
-    end
-end
+@views function subMatvecACA(sub_Z::Tuple{Array{T,2},Array{T,2}}, sub_J::AbstractArray{T,1}) where T
+    return(sub_Z[1] * (sub_Z[2] * sub_J))
+end #subMatvecACA

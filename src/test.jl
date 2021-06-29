@@ -26,11 +26,3 @@ rhs = matrix * x
 test_sol = gmres(map2, rhs)
 
 println("Results = ", isapprox(test_sol, x, rtol=1e-10))
-
-for node_idx = 1:length(octree.nodes)
-    node = octree.nodes[node_idx]
-    println("node ", node_idx, " is child = ", isempty(node.children_idxs))
-    println("    x bounds: ", node.bounds[1])
-    println("    y bounds: ", node.bounds[2])
-    println("    z bounds: ", node.bounds[3])
-end

@@ -1,4 +1,4 @@
-# dependencies: mesh.jl quadrature.jl
+# dependencies: mesh.jl quadrature.jl octree.jl
 
 using LinearAlgebra
 
