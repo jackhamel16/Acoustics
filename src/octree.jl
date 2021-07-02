@@ -19,6 +19,9 @@ end
 end
 
 @views function computeNodeBounds(half_edge_length, node_centroid::Array{Float64,1})
+    # Computes the boundaries of the node given half the length of a node edge
+    # (assumes node is a cube) and the centroid of the node. Returns array of
+    # arrays: [[lower_x,upper_x],[lower_y,upper_y],[lower_z,upper_z]]
     return([[node_centroid[1] - half_edge_length, node_centroid[1] + half_edge_length],
             [node_centroid[2] - half_edge_length, node_centroid[2] + half_edge_length],
             [node_centroid[3] - half_edge_length, node_centroid[3] + half_edge_length]])
@@ -26,14 +29,14 @@ end
 
 @views function createChildren(parent_idx::Int64, parent_node::Node, ele_centroids::AbstractArray{Array{Float64,1},1})
     # creates the child nodes of parent_node only storing the ones containing
-    # element centroids and returning each node in an array
+    # element centroids and returning all child nodes in the array children_nodes
     num_children = 8
     children_nodes = []
     child_level = parent_node.octree_level + 1
     child_edge_length = (parent_node.bounds[1][2] - parent_node.bounds[1][1])/2
     parent_ele_centroids = ele_centroids[parent_node.element_idxs]
     child_idx = 1
-    for z_idx = 1:2 # the x, y and z idxs implicitly loop through children
+    for z_idx = 1:2 # the x, y and z idxs implicitly loop through all children
         z_bounds = [parent_node.centroid[3]-(2-z_idx)*child_edge_length,
                     parent_node.centroid[3]-(1-z_idx)*child_edge_length]
         for y_idx = 1:2
@@ -47,6 +50,8 @@ end
                 child_element_idxs = []
                 for local_ele_idx = 1:length(parent_ele_centroids)
                     ele_centroid = parent_ele_centroids[local_ele_idx]
+                    # note: in below criteria, note that if no buffer is used in initializing the octree,
+                    # then if a centroid lies on uppermost edges of octree domain, it doesn't get included in a node
                     if (((child_bounds[1][1] <= ele_centroid[1]) && (ele_centroid[1] < child_bounds[1][2])) &&
                         ((child_bounds[2][1] <= ele_centroid[2]) && (ele_centroid[2] < child_bounds[2][2])) &&
                         ((child_bounds[3][1] <= ele_centroid[3]) && (ele_centroid[3] < child_bounds[3][2])))
@@ -67,13 +72,20 @@ end
     return(children_nodes)
 end # createChildren
 
-@views function createOctree(num_levels::Int64, pulse_mesh::PulseMesh)
+function createOctree(num_levels::Int64, pulse_mesh::PulseMesh)
     # highest-level function that handles all octree construction
+    # num_levels dictates the amount of levels in the octree
+    # returns the octree with everything filled except node2node_Z_matrices in the nodes
+    # note: this function has type inference issues, but is only called once so I think it is okay as long as issues arent propagating
+    # note 2: It appears that the infernece issues disappear when called in higher level functions
+    @unpack num_elements,
+            elements,
+            nodes = pulse_mesh
     parent_idx = 1
     buffer = 1e-4
-    ele_centroids = Array{Array{Float64,1},1}(undef, pulse_mesh.num_elements)
-    for ele_idx = 1:pulse_mesh.num_elements
-        ele_centroids[ele_idx] = computeCentroid(pulse_mesh.nodes[pulse_mesh.elements[ele_idx,:],:])
+    ele_centroids = Array{Array{Float64,1},1}(undef, num_elements)
+    for ele_idx = 1:num_elements
+        ele_centroids[ele_idx] = computeCentroid(nodes[elements[ele_idx,:],:]::Array{Float64,2}) # declaring type avoids inference issue
     end
     octree = initializeOctree(num_levels, buffer, ele_centroids)
     if num_levels > 1
@@ -93,13 +105,12 @@ end
     child_nodes = createChildren(parent_idx, octree.nodes[parent_idx], ele_centroids)
     append!(octree.nodes, child_nodes)
     octree.nodes[parent_idx].children_idxs = [i+current_num_nodes for i=1:length(child_nodes)]
-    if (parent_level + 1) < octree.num_levels
+    if parent_level < (octree.num_levels - 1)
         for local_child_idx = 1:length(child_nodes)
             global_child_idx = local_child_idx + current_num_nodes
             fillOctreeNodes!(global_child_idx, octree, ele_centroids)
         end
-    end
-    if parent_level == (octree.num_levels - 1)
+    else # at leaf level; stop recursion
         append!(octree.leaf_node_idxs, octree.nodes[parent_idx].children_idxs)
     end
 end # fillOctreeNodes!
@@ -111,7 +122,14 @@ end # fillOctreeNodes!
                                               near_singular_tol,
                                               compression_distance,
                                               ACA_approximation_tol)
-    # compression distance is the number of node edge lengths separation between centroids of nodes dictating when ACA can be used
+    # Computes the sub Z matrices for interactions between nodes using ACA if the nodes
+    #   are sufficiently far apart or directly computing the sub-Z matrix if too close
+    # octree is the Octree object for which the sub-Z matrices will be computed and stored in
+    #   i.e. it has empyt arrays stored for node2node_Z_matrices when passed as argument
+    # compression distance is the number of node edge lengths between centroids of nodes dictating when ACA can be used
+    # ACA_approximation_tol determines how accurately the compressed matrices represent Z
+    # returns nothing
+    z_entry_datatype = ComplexF64
     soundSoftTestIntegrand(r_test, global_src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, global_src_idx,
                                                    wavenumber,
                                                    r_test,
@@ -130,11 +148,12 @@ end # fillOctreeNodes!
             if norm(src_node.centroid-test_node.centroid) > min_separation # use ACA
                 num_rows = length(test_node.element_idxs)
                 num_cols = length(src_node.element_idxs)
-                computeMatrixEntry(test_idx, src_idx) = computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
-                compressed_sub_Z = computeMatrixACA(computeMatrixEntry,
-                                                 ACA_approximation_tol,
-                                                 num_rows,
-                                                 num_cols)
+                computeMatrixEntry(test_idx, src_idx) = computeZEntrySoundSoft(pulse_mesh,
+                                                            test_node, src_node, wavenumber,
+                                                            distance_to_edge_tol, near_singular_tol,
+                                                            test_idx, src_idx)
+                compressed_sub_Z = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
+                                                    ACA_approximation_tol, num_rows, num_cols)
                 append!(test_node.node2node_Z_matrices, [compressed_sub_Z])
             else # use direct Z calculation
                 sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
@@ -146,8 +165,7 @@ end # fillOctreeNodes!
 end
 
 @views function initializeOctree(num_levels::Int64, buffer, ele_centroids::AbstractArray{Array{Float64,1},1})
-    # Creates in octree instance with only the level 1 node, the node
-    # encapsulating all elements, filled.
+    # Creates in octree instance with only the level 1 node encapsulating all elements
     # buffer increases node edge length by fraction of its required edge length to make sure all elements are included
     level1 = 1
     no_parent_idx = 0 # the zero indicates it is at the highest level

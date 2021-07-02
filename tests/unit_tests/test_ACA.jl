@@ -70,8 +70,9 @@ include("../../src/ACA.jl")
         approximation_tol = 1e-3
         num_rows, num_cols = 5, 5
         sol = I(num_rows)
-        computeMatrixEntry(test_idx, src_idx) = convert(Float64, test_idx == src_idx)
-        test_U, test_V = computeMatrixACA(computeMatrixEntry, approximation_tol, num_rows, num_cols)
+        computeMatrixEntry(test_idx, src_idx)::Float64 = convert(Float64, test_idx == src_idx)
+        func_return_type = Val(Float64)
+        test_U, test_V = computeMatrixACA(func_return_type, computeMatrixEntry, approximation_tol, num_rows, num_cols)
         @test isapprox(test_U*test_V, sol, rtol=1e-14)
 
         # nodes are not well-separated for this test
@@ -96,7 +97,8 @@ include("../../src/ACA.jl")
         test_node = octree.nodes[6]; src_node = octree.nodes[7]
         sol_sub_Z = z_matrix[test_node.element_idxs,src_node.element_idxs]
         computeMatrixEntry(test_idx,src_idx)=computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
-        test_U, test_V = computeMatrixACA(computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
+        func_return_type = Val(ComplexF64)
+        test_U, test_V = computeMatrixACA(func_return_type, computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
         @test isapprox(test_U*test_V, sol_sub_Z, rtol=1e-14)
 
         # in this test, triangles are separated by ~80 elements
@@ -124,13 +126,13 @@ include("../../src/ACA.jl")
         # computeMatrixArrayFunc(global_test_ele_idx, global_src_ele_idxs) = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idxs)
         # test_U, test_V = computeRHSContributionACA(computeMatrixArrayFunc, approximation_tol, test_node, src_node)
         computeMatrixEntry(test_idx,src_idx)=computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
-        test_U, test_V = computeMatrixACA(computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
+        test_U, test_V = computeMatrixACA(func_return_type, computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
         @test isapprox(test_U*test_V, sol_sub_Z, rtol=0.17e-5)
         test_node = octree.nodes[6]; src_node = octree.nodes[9]
         sol_sub_Z = z_matrix[test_node.element_idxs,src_node.element_idxs]
         # test_U, test_V = computeRHSContributionACA(computeMatrixArrayFunc, approximation_tol, test_node, src_node)
         computeMatrixEntry(test_idx,src_idx)=computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
-        test_U, test_V = computeMatrixACA(computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
+        test_U, test_V = computeMatrixACA(func_return_type, computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
         @test isapprox(test_U*test_V, sol_sub_Z, rtol=0.22e-5)
 
         # in this test, triangles are separated by ~800 elements
@@ -156,7 +158,7 @@ include("../../src/ACA.jl")
         # test_node = octree.nodes[13]; src_node = octree.nodes[11]
         sol_sub_Z = z_matrix[test_node.element_idxs,src_node.element_idxs]
         computeMatrixEntry(test_idx,src_idx)=computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
-        test_U, test_V = computeMatrixACA(computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
+        test_U, test_V = computeMatrixACA(func_return_type, computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
         # computeMatrixArrayFunc(global_test_ele_idx, global_src_ele_idxs) = computeZArray(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_ele_idx, global_src_ele_idxs)
         # test_U, test_V = computeRHSContributionACA(computeMatrixArrayFunc, approximation_tol, test_node, src_node)
         @test isapprox(test_U*test_V, sol_sub_Z, rtol=1e-15)
