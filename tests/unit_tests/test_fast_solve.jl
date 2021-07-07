@@ -87,7 +87,7 @@ include("../../src/fast_solve.jl")
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
-        @test isapprox(test_V, sol_V, rtol=0.5e-5)
+        @test isapprox(test_V, sol_V, rtol=0.6e-5)
     end # fullMatvecACA tests
     @testset "solveSoundSoftIEACA tests" begin
         wavenumber = 1.0+0.0im

@@ -1,30 +1,7 @@
 using LinearAlgebra
 using Parameters
 
-@views function computeRHSContributionSoundSoft!(pulse_mesh::PulseMesh,
-                                                 wavenumber,
-                                                 distance_to_edge_tol,
-                                                 near_singular_tol,
-                                                 test_node::Node,
-                                                 src_node::Node,
-                                                 J_vec::AbstractArray{T,1},
-                                                 V_vec::AbstractArray{T,1}) where T
-    # Computes the RHS contributions for interactions between all elements
-    # in node1 and node2 (non-self-node interactions)
-    @unpack areas,
-            test_quadrature_points,
-            test_quadrature_weights = pulse_mesh
-    for local_testele_idx = 1:length(test_node.element_idxs)
-        global_testele_idx = test_node.element_idxs[local_testele_idx]
-        for local_srcele_idx = 1:length(src_node.element_idxs)
-            global_srcele_idx = src_node.element_idxs[local_srcele_idx]
-            Z_entry = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_testele_idx, global_srcele_idx)
-            V_vec[global_testele_idx] += Z_entry * J_vec[global_srcele_idx]
-        end
-    end
-end # computeRHSContributionSoundSoft!
-
-@views function computeMatrixACA(func_return_type::Val{T},
+@views @fastmath @inbounds function computeMatrixACA(func_return_type::Val{T},
                                  computeMatrixEntryFunc::Function,
                                  approximation_tol,
                                  num_rows::Int64,
@@ -93,7 +70,7 @@ end # computeRHSContributionSoundSoft!
             end
         end
         append!(used_Jks, Jk)
-        V = [V; transpose(R_tilde_Ik ./ R_tilde_Ik[Jk])::Transpose{T,Array{T,1}}]
+        V = [V; transpose(R_tilde_Ik ./ R_tilde_Ik[Jk])]
         # compute R_tilde_Jk (the Jkth col of approximate error matrix)
         for row_idx = 1:num_rows
             R_tilde_Jk[row_idx] = computeMatrixEntryFunc(row_idx, Jk)
@@ -121,6 +98,9 @@ end #computeRHSContributionACA
                                        near_singular_tol,
                                        test_ele_idx::Int64,
                                        src_ele_idx::Int64)::ComplexF64
+    # Computes the sounds soft IE Z matrix values for the interaction between the test element
+    #   at global index test_ele_idx and source element at global index src_ele_idx.
+    # Returns the requested entry of the Z matrix
     @unpack areas,
             test_quadrature_points,
             test_quadrature_weights = pulse_mesh
@@ -135,7 +115,7 @@ end #computeRHSContributionACA
     Z_entry = gaussQuadrature(areas[test_ele_idx],
                               testIntegrand,
                               test_quadrature_points[test_ele_idx],
-                              test_quadrature_weights)
+                              test_quadrature_weights)::ComplexF64
     return(Z_entry)
 end # computeZEntry
 
@@ -147,34 +127,15 @@ end # computeZEntry
                                        near_singular_tol,
                                        test_idx::Int64,
                                        src_idx::Int64)
-    # Alternative implementation of computeZEntrySoundSoft that can be wrapped up to give to ACA
-    # passing in valid test_idx and src_idx requires knowledge of the size of the matrix
+    # Alternative implementation of computeZEntrySoundSoft that can be wrapped up to give to
+    #   computeMatrixACA easily. Rather than pass in global element idxs, the function assumes
+    #   you are computing a sub-matrix of Z for all elements between test_node and src_node.
+    #   test_idx and src_idx are local element idxs for elements contained in test_node and
+    #   src_node, respectively.  The function assumes test_idx and src_idx are valid indices
+    #   (i.e. not larger than the total number of elements in test_node or src_node)
+    # Returns the requested entry of the sub-Z matrix
     global_test_idx = test_node.element_idxs[test_idx]
     global_src_idx = src_node.element_idxs[src_idx]
     Z_entry = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idx)
     return(Z_entry)
 end
-
-function computeZJMatVec(pulse_mesh::PulseMesh,
-                         octree::Octree,
-                         wavenumber,
-                         distance_to_edge_tol,
-                         near_singular_tol,
-                         J_vec::AbstractArray{T,1}) where T
-    @unpack num_elements = pulse_mesh
-    @unpack leaf_node_idxs,
-            nodes = octree
-    leaf_nodes = octree.nodes[octree.leaf_node_idxs]
-    num_leaves = length(leaf_nodes)
-    V_vec = zeros(ComplexF64, num_elements)
-    for local_test_node_idx = 1:num_leaves
-        global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
-        test_node = octree.nodes[global_test_node_idx]
-        for local_src_node_idx = 1:num_leaves
-            global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
-            src_node = octree.nodes[global_src_node_idx]
-            computeRHSContributionSoundSoft!(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, test_node, src_node, J_vec, V_vec)
-        end
-    end
-    return(V_vec)
-end # computeZJMatVec
