@@ -2,18 +2,32 @@ using Parameters
 
 include("../packages/gmsh.jl")
 
+# @with_kw struct PulseMesh
+#     num_elements::Int64 = 0
+#     nodes::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+#     elements::AbstractArray{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
+#     areas::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
+#     normals::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+#     src_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+#     test_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+#     src_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
+#     src_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
+#     test_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
+#     test_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
+# end
+
 @with_kw struct PulseMesh
     num_elements::Int64 = 0
-    nodes::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-    elements::AbstractArray{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
-    areas::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
-    normals::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-    src_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-    test_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-    src_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
-    src_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
-    test_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
-    test_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
+    nodes::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+    elements::Array{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
+    areas::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
+    normals::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+    src_quadrature_rule::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+    test_quadrature_rule::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
+    src_quadrature_points::Array{Array{Float64, 2},1} = Array{Array{Float64, 2},1}(undef, 0)
+    src_quadrature_weights::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
+    test_quadrature_points::Array{Array{Float64, 2},1} = Array{Array{Float64, 2},1}(undef, 0)
+    test_quadrature_weights::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
 end
 
 @views function calculateQuadraturePoints(nodes::AbstractArray{Float64, 2},
