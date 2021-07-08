@@ -61,7 +61,7 @@ end
                                                                     l,
                                                                     m)
     Vlm = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, sphericalWaveExcitation, Vlm)
+    rhsFill!(pulse_mesh, sphericalWaveExcitation, Vlm)
     return(Vlm)
 end
 
@@ -69,7 +69,7 @@ end
     @unpack num_elements = pulse_mesh
     dVlmdk = zeros(ComplexF64, num_elements)
     sphericalWaveKDerivIntegrand(x,y,z) = sphericalWaveKDerivative(wavenumber, [x,y,z], l, m)
-    rhsFill(pulse_mesh, sphericalWaveKDerivIntegrand, dVlmdk)
+    rhsFill!(pulse_mesh, sphericalWaveKDerivIntegrand, dVlmdk)
     return(dVlmdk)
 end
 
@@ -81,7 +81,7 @@ end
                                                                                 r_test,
                                                                                 is_singular)
     dZdk_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrand, dZdk_matrix)
+    matrixFill!(pulse_mesh, testIntegrand, dZdk_matrix)
     return(dZdk_matrix)
 end
 
@@ -94,6 +94,6 @@ end
                                                    near_singular_tol,
                                                    is_singular)
     Z_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrand, Z_matrix)
+    matrixFill!(pulse_mesh, testIntegrand, Z_matrix)
     return(Z_matrix)
 end

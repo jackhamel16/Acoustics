@@ -2,15 +2,15 @@ using Test
 
 include("../../src/math.jl")
 include("../../src/excitation.jl")
-include("../../src/mesh.jl")
+include("../../src/code_structures/mesh.jl")
 include("../../src/quadrature.jl")
-include("../../src/octree.jl")
+include("../../src/code_structures/octree.jl")
 include("../../src/fill.jl")
 include("../../src/greens_functions.jl")
 include("../../src/solve.jl")
-include("../../src/ACA.jl")
+include("../../src/ACA/ACA.jl")
 
-include("../../src/fast_solve.jl")
+include("../../src/ACA/fast_solve.jl")
 
 @testset "fast_solve tests" begin
     @testset "fullMatvecACA tests" begin
@@ -33,7 +33,7 @@ include("../../src/fast_solve.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
@@ -58,7 +58,7 @@ include("../../src/fast_solve.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
@@ -83,11 +83,11 @@ include("../../src/fast_solve.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
-        @test isapprox(test_V, sol_V, rtol=0.5e-5)
+        @test isapprox(test_V, sol_V, rtol=0.6e-5)
     end # fullMatvecACA tests
     @testset "solveSoundSoftIEACA tests" begin
         wavenumber = 1.0+0.0im
@@ -112,7 +112,7 @@ include("../../src/fast_solve.jl")
         test_quadrature_rule = gauss7rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
-        compression_distance = 1.5
+        compression_distance = 1
         ACA_approximation_tol = 1e-4
         mesh_filename = "examples/test/disjoint_triangles.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
@@ -129,7 +129,7 @@ include("../../src/fast_solve.jl")
         test_quadrature_rule = gauss7rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
-        compression_distance = 1
+        compression_distance = 1.5
         ACA_approximation_tol = 1e-2
         mesh_filename = "examples/test/rectangular_strip.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
@@ -139,7 +139,7 @@ include("../../src/fast_solve.jl")
         # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J, rtol=0.51e-2)
+        @test isapprox(sol_J, test_J, rtol=0.42e-2)
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -164,7 +164,7 @@ include("../../src/fast_solve.jl")
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
         compression_distance = 1.5
-        ACA_approximation_tol = 1e-10
+        ACA_approximation_tol = 1e-4
         mesh_filename = "examples/test/sphere_1m_1266.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         l, m = 0, 0
@@ -173,7 +173,7 @@ include("../../src/fast_solve.jl")
         # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J, rtol=0.21e-5)
+        @test isapprox(sol_J, test_J, rtol=0.21e-3)
 
     end # solveSoundSoftIEACA tests
     @testset "subMatvecACA tests" begin

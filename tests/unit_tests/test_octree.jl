@@ -1,12 +1,12 @@
 using Test
 
-include("../../src/mesh.jl")
+include("../../src/code_structures/mesh.jl")
 include("../../src/quadrature.jl")
+include("../../src/code_structures/octree.jl")
 include("../../src/fill.jl")
 include("../../src/greens_functions.jl")
-include("../../src/ACA.jl")
+include("../../src/ACA/ACA.jl")
 
-include("../../src/octree.jl")
 
 @testset "octree tests" begin
     @testset "computeNodeBounds tests" begin
@@ -135,7 +135,7 @@ include("../../src/octree.jl")
             @test isapprox(test_octree.nodes[node_idx].centroid, sol_octree.nodes[node_idx].centroid, rtol=1e-15)
         end
     end
-    @testset "fillOctree tests" begin
+    @testset "fillOctreeNodes! tests" begin
         level1 = 1; level2 = 2; level3 = 3; level4 = 4
         no_buffer = 0.0
         num_levels = 3
@@ -183,7 +183,7 @@ include("../../src/octree.jl")
             @test isapprox(test_octree.nodes[node_idx].element_idxs, sol_element_idxs[node_idx], rtol=1e-15)
         end
         @test isapprox(test_octree.leaf_node_idxs, sol_leaf_node_idxs)
-    end
+    end # fillOctreeNodes!
     @testset "fillOctreeZMatricesSoundSoft! tests" begin
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -202,7 +202,7 @@ include("../../src/octree.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         num_levels = 1
         octree = createOctree(num_levels, pulse_mesh)
         fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
@@ -244,7 +244,7 @@ include("../../src/octree.jl")
         src_node = octree.nodes[13]
         @test isapprox(test_node.node2node_Z_matrices[5][1,1], z_matrix[5,6], rtol = 1e-14)
         computeMatrixEntry(test_idx,src_idx) = computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
-        sol_U, sol_V = computeMatrixACA(computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
+        sol_U, sol_V = computeMatrixACA(Val(ComplexF64), computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
         @test isapprox(test_node.node2node_Z_matrices[8][1], sol_U, rtol = 1e-14)
         @test isapprox(test_node.node2node_Z_matrices[8][2], sol_V, rtol = 1e-14)
     end
