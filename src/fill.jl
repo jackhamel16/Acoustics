@@ -2,7 +2,7 @@
 
 using LinearAlgebra
 
-function rhsFill(pulse_mesh::PulseMesh,
+function rhsFill!(pulse_mesh::PulseMesh,
                  fieldFunc::Function,
                  rhs::AbstractArray{ComplexF64, 1},
                  normal_derivative=false)
@@ -35,7 +35,7 @@ function rhsFill(pulse_mesh::PulseMesh,
     end
 end
 
-function matrixFill(pulse_mesh::PulseMesh,
+function matrixFill!(pulse_mesh::PulseMesh,
                     testIntegrand::Function,
                     z_matrix::AbstractArray{ComplexF64, 2})
     @unpack num_elements,
@@ -58,11 +58,14 @@ function matrixFill(pulse_mesh::PulseMesh,
     end
 end
 
-function nodeMatrixFill!(pulse_mesh::PulseMesh,
+@views function nodeMatrixFill!(pulse_mesh::PulseMesh,
                         test_node::Node,
                         src_node::Node,
                         testIntegrand::Function,
                         sub_z_matrix::AbstractArray{ComplexF64, 2})
+    # Directly computes the sub-Z matrix for interactions between elements in test_node
+    #   and src_node.
+    # Results stored in sub_z_matrix
     @unpack elements,
             areas,
             nodes,
@@ -78,7 +81,7 @@ function nodeMatrixFill!(pulse_mesh::PulseMesh,
             test_tri_nodes = getTriangleNodes(global_test_idx, elements, nodes)
             src_tri_nodes = getTriangleNodes(global_src_idx, elements, nodes)
             testIntegrandXYZ(x,y,z) = testIntegrand([x,y,z], global_src_idx, is_singular)
-            sub_z_matrix[local_test_idx, local_src_idx] += gaussQuadrature(areas[global_test_idx],
+            sub_z_matrix[local_test_idx, local_src_idx] = gaussQuadrature(areas[global_test_idx],
                                                            testIntegrandXYZ,
                                                            test_quadrature_points[global_test_idx],
                                                            test_quadrature_weights)

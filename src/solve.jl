@@ -10,7 +10,7 @@ function solveSoftIE(pulse_mesh::PulseMesh,
     @unpack num_elements = pulse_mesh
     println("Filling RHS...")
     rhs = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation, rhs)
+    rhsFill!(pulse_mesh, excitation, rhs)
     testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                    wavenumber,
                                                    r_test,
@@ -19,7 +19,7 @@ function solveSoftIE(pulse_mesh::PulseMesh,
                                                    is_singular)
     println("Filling Matrix...")
     z_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrand, z_matrix)
+    matrixFill!(pulse_mesh, testIntegrand, z_matrix)
     println("Solving...")
     source_vec = z_matrix \ rhs
     if return_z_rhs == false
@@ -37,7 +37,7 @@ function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
     @unpack num_elements = pulse_mesh
     println("Filling RHS...")
     rhs = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation_normal_derivative, rhs, true)
+    rhsFill!(pulse_mesh, excitation_normal_derivative, rhs, true)
     testIntegrandNormalDerivative(r_test, src_idx, is_singular) =
                             scalarGreensNormalDerivativeIntegration(pulse_mesh,
                                                                     src_idx,
@@ -46,7 +46,7 @@ function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
                                                                     is_singular)
     println("Filling Matrix...")
     z_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrandNormalDerivative, z_matrix)
+    matrixFill!(pulse_mesh, testIntegrandNormalDerivative, z_matrix)
     println("Solving...")
     source_vec = z_matrix \ rhs
     if return_z == false
@@ -81,9 +81,9 @@ function solveSoftCFIE(pulse_mesh::PulseMesh,
                                                                     is_singular)
     println("Filling Matrix...")
     z_matrix_nd = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrandNormalDerivative, z_matrix_nd)
+    matrixFill!(pulse_mesh, testIntegrandNormalDerivative, z_matrix_nd)
     z_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill(pulse_mesh, testIntegrand, z_matrix)
+    matrixFill!(pulse_mesh, testIntegrand, z_matrix)
 
     avg_z_nd = sum(abs.(z_matrix_nd))./length(z_matrix_nd)
     avg_z = sum(abs.(z_matrix))./length(z_matrix)
@@ -92,9 +92,9 @@ function solveSoftCFIE(pulse_mesh::PulseMesh,
 
     println("Filling RHS...")
     rhs_nd = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation_normal_derivative, rhs_nd, true)
+    rhsFill!(pulse_mesh, excitation_normal_derivative, rhs_nd, true)
     rhs = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation, rhs)
+    rhsFill!(pulse_mesh, excitation, rhs)
     rhs = softIE_weight * rhs + (1-softIE_weight) * nd_scale_factor * rhs_nd
 
     println("Solving...")

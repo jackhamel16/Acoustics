@@ -202,7 +202,7 @@ include("../../src/ACA.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         num_levels = 1
         octree = createOctree(num_levels, pulse_mesh)
         fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)

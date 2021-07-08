@@ -158,7 +158,7 @@ include("../../src/includes.jl")
                                                                         [x_test,y_test,z_test],
                                                                         l, m)
         solution_Vlm = zeros(ComplexF64, pulse_mesh.num_elements)
-        rhsFill(pulse_mesh, sphericalWaveExcitation, solution_Vlm)
+        rhsFill!(pulse_mesh, sphericalWaveExcitation, solution_Vlm)
         test_Vlm = calculateVlm(pulse_mesh, wavenumber, l, m)
         @test isapprox(solution_Vlm, test_Vlm, rtol=1e-14)
     end # calculateVlm tests
@@ -174,7 +174,7 @@ include("../../src/includes.jl")
                                                                         [x_test,y_test,z_test],
                                                                         l, m)
         solution_dVdk = zeros(ComplexF64, pulse_mesh.num_elements)
-        rhsFill(pulse_mesh, sphericalWaveKDerivIntegrand, solution_dVdk)
+        rhsFill!(pulse_mesh, sphericalWaveKDerivIntegrand, solution_dVdk)
         test_dVdk = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
         @test isapprox(solution_dVdk, test_dVdk, rtol=1e-14)
 
@@ -193,14 +193,14 @@ include("../../src/includes.jl")
                                                                         l,
                                                                         m)
         V_low = zeros(ComplexF64, pulse_mesh.num_elements)
-        rhsFill(pulse_mesh, sphericalWaveLow, V_low)
+        rhsFill!(pulse_mesh, sphericalWaveLow, V_low)
         sphericalWaveHigh(x_test, y_test, z_test) = sphericalWave(2*k_high,
                                                                   k_high,
                                                                         [x_test,y_test,z_test],
                                                                         l,
                                                                         m)
         V_high = zeros(ComplexF64, pulse_mesh.num_elements)
-        rhsFill(pulse_mesh, sphericalWaveHigh, V_high)
+        rhsFill!(pulse_mesh, sphericalWaveHigh, V_high)
         solution_dVdk = (V_high - V_low) ./ delta_k
         test_dVdk = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
         @test isapprox(solution_dVdk, test_dVdk, rtol=1e-5)
@@ -220,14 +220,14 @@ include("../../src/includes.jl")
                                                                         l,
                                                                         m)
         V_low = zeros(ComplexF64, pulse_mesh.num_elements)
-        rhsFill(pulse_mesh, sphericalWaveLow, V_low)
+        rhsFill!(pulse_mesh, sphericalWaveLow, V_low)
         sphericalWaveHigh(x_test, y_test, z_test) = sphericalWave(2*k_high,
                                                                   k_high,
                                                                         [x_test,y_test,z_test],
                                                                         l,
                                                                         m)
         V_high = zeros(ComplexF64, pulse_mesh.num_elements)
-        rhsFill(pulse_mesh, sphericalWaveHigh, V_high)
+        rhsFill!(pulse_mesh, sphericalWaveHigh, V_high)
         solution_dVdk = (V_high - V_low) ./ delta_k
         test_dVdk = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
         @test isapprox(solution_dVdk, test_dVdk, rtol=1e-4)
@@ -251,7 +251,7 @@ include("../../src/includes.jl")
                                                        near_singular_tol,
                                                        is_singular)
         Z_low = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrandLow, Z_low)
+        matrixFill!(pulse_mesh, testIntegrandLow, Z_low)
         testIntegrandHigh(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                        k_high,
                                                        r_test,
@@ -259,7 +259,7 @@ include("../../src/includes.jl")
                                                        near_singular_tol,
                                                        is_singular)
         Z_high = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrandHigh, Z_high)
+        matrixFill!(pulse_mesh, testIntegrandHigh, Z_high)
         solution_dZdk = (Z_high - Z_low) ./ delta_k
         test_dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
         @test isapprox(solution_dZdk, test_dZdk, rtol=1e-4)
@@ -282,7 +282,7 @@ include("../../src/includes.jl")
                                                        near_singular_tol,
                                                        is_singular)
         Z_low = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrandLow, Z_low)
+        matrixFill!(pulse_mesh, testIntegrandLow, Z_low)
         testIntegrandHigh(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                        k_high,
                                                        r_test,
@@ -290,7 +290,7 @@ include("../../src/includes.jl")
                                                        near_singular_tol,
                                                        is_singular)
         Z_high = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrandHigh, Z_high)
+        matrixFill!(pulse_mesh, testIntegrandHigh, Z_high)
         solution_dZdk = (Z_high - Z_low) ./ delta_k
         test_dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
         @test isapprox(solution_dZdk, test_dZdk, rtol=0.15e-3)
@@ -311,7 +311,7 @@ include("../../src/includes.jl")
                                                        near_singular_tol,
                                                        is_singular)
         solution_Z = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, solution_Z)
+        matrixFill!(pulse_mesh, testIntegrand, solution_Z)
         test_Z = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(solution_Z, test_Z, rtol=1e-14)
     end # calculateZMatrix tests

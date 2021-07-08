@@ -33,7 +33,7 @@ include("../../src/fast_solve.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
@@ -58,7 +58,7 @@ include("../../src/fast_solve.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
@@ -83,7 +83,7 @@ include("../../src/fast_solve.jl")
                                                        near_singular_tol,
                                                        is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)

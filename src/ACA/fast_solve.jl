@@ -46,7 +46,7 @@ end # fullMatvecACA
                                   distance_to_edge_tol, near_singular_tol,
                                   compression_distance, ACA_approximation_tol)
     rhs = zeros(ComplexF64, num_elements)
-    rhsFill(pulse_mesh, excitation, rhs)
+    rhsFill!(pulse_mesh, excitation, rhs)
     fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
     fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
     sources = zeros(ComplexF64, num_elements)

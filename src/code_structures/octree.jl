@@ -1,3 +1,5 @@
+# dependencies: mesh.jl quadrature.jl fill.jl
+
 using LinearAlgebra
 using Parameters
 
@@ -156,7 +158,8 @@ end # fillOctreeNodes!
                                                     ACA_approximation_tol, num_rows, num_cols)
                 append!(test_node.node2node_Z_matrices, [compressed_sub_Z])
             else # use direct Z calculation
-                sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
+                # sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
+                sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
                 nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftTestIntegrand, sub_Z_matrix)
                 append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
             end # if-else
