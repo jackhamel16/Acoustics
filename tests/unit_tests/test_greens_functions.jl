@@ -2,7 +2,7 @@ using Test
 using LinearAlgebra
 
 include("../../src/quadrature.jl")
-include("../../src/mesh.jl")
+include("../../src/code_structures/mesh.jl")
 
 include("../../src/greens_functions.jl")
 
@@ -32,8 +32,6 @@ include("../../src/greens_functions.jl")
         @test isnan(scalarGreensNormalDerivative([0.0, 0.0, 0.0], 1.0+0*im, [0.0, 0.0, 1.0])) == true
     end
     @testset "scalarGreensSingularityIntegral tests" begin
-        include("../../src/quadrature.jl")
-        include("../../src/mesh.jl")
         # The following two tests compare scalarGreensSingularityIntegral to the result
         # of integrating 1/R using 7-point Gauss quadrature
         nodes = [0.0 0.0 0.0; 2.0 0.0 0.0; 0.0 2.0 0.0]

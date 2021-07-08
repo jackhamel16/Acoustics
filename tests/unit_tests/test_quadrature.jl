@@ -1,6 +1,6 @@
 using Test
 
-include("../../src/mesh.jl")
+include("../../src/code_structures/mesh.jl")
 
 include("../../src/quadrature.jl")
 

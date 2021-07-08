@@ -2,15 +2,15 @@ using Test
 
 include("../../src/math.jl")
 include("../../src/excitation.jl")
-include("../../src/mesh.jl")
+include("../../src/code_structures/mesh.jl")
 include("../../src/quadrature.jl")
-include("../../src/octree.jl")
+include("../../src/code_structures/octree.jl")
 include("../../src/fill.jl")
 include("../../src/greens_functions.jl")
 include("../../src/solve.jl")
-include("../../src/ACA.jl")
+include("../../src/ACA/ACA.jl")
 
-include("../../src/fast_solve.jl")
+include("../../src/ACA/fast_solve.jl")
 
 @testset "fast_solve tests" begin
     @testset "fullMatvecACA tests" begin

@@ -2,9 +2,9 @@ using Test
 using LinearAlgebra
 
 include("../../src/excitation.jl")
-include("../../src/mesh.jl")
+include("../../src/code_structures/mesh.jl")
 include("../../src/quadrature.jl")
-include("../../src/octree.jl")
+include("../../src/code_structures/octree.jl")
 
 include("../../src/fill.jl")
 

@@ -1,6 +1,6 @@
 using Parameters
 
-include("../packages/gmsh.jl")
+include("../../packages/gmsh.jl")
 
 # @with_kw struct PulseMesh
 #     num_elements::Int64 = 0

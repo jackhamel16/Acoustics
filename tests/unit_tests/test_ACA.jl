@@ -1,12 +1,12 @@
 using Test
 
 include("../../src/quadrature.jl")
-include("../../src/mesh.jl")
+include("../../src/code_structures/mesh.jl")
 include("../../src/greens_functions.jl")
-include("../../src/octree.jl")
+include("../../src/code_structures/octree.jl")
 include("../../src/fill.jl")
 
-include("../../src/ACA.jl")
+include("../../src/ACA/ACA.jl")
 
 @testset "ACA tests" begin
     @testset "computeMatrixACA tests" begin
