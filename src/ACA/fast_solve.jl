@@ -4,6 +4,88 @@ using IterativeSolvers
 using LinearMaps
 using Parameters
 
+struct ACAMetrics
+    num_eles_per_node::Array{Int64, 1}
+    compressed_size::Int64
+    uncompressed_size::Int64
+    compression_ratio::Float64
+    percentage_matrices_compressed::Float64
+    avg_rank::Int64
+    min_rank::Int64
+    max_rank::Int64
+    avg_num_eles::Int64
+    min_num_eles::Int64
+    max_num_eles::Int64
+end
+
+@views function computeACAMetrics(num_elements, octree::Octree)
+    num_nodes = length(octree.leaf_node_idxs)
+    num_eles_per_node = Array{Int64, 1}(undef, num_nodes)
+    ranks = []
+    compressed_size = 0
+    for local_node_idx = 1:num_nodes
+        global_node_idx = octree.leaf_node_idxs[local_node_idx]
+        node = octree.nodes[global_node_idx]
+        num_eles_per_node[local_node_idx] = length(node.element_idxs)
+        for local_node_idx2 = 1:num_nodes
+            global_node_idx2 = octree.leaf_node_idxs[local_node_idx2]
+            sub_Z = node.node2node_Z_matrices[local_node_idx2]
+            if typeof(sub_Z) == Tuple{Array{ComplexF64,2},Array{ComplexF64,2}}
+                append!(ranks, size(sub_Z[1], 2))
+                matrix_size = length(sub_Z[1]) + length(sub_Z[2])
+                compressed_size += matrix_size
+            else
+                matrix_size = length(sub_Z)
+                compressed_size += matrix_size
+            end
+        end
+    end
+    uncompressed_size = num_elements^2
+    compression_ratio = compressed_size / uncompressed_size
+    percentage_matrices_compressed = length(ranks) / num_nodes^2
+    num_compressed_matrices = length(ranks)
+    if num_compressed_matrices != 0
+        avg_rank = sum(ranks) / num_compressed_matrices
+        min_rank = min(ranks...)
+        max_rank = max(ranks...)
+    else
+        avg_rank = 0
+        min_rank = 0
+        max_rank = 0
+    end
+    avg_num_eles = sum(num_eles_per_node) / num_nodes
+    min_num_eles = min(num_eles_per_node...)
+    max_num_eles = max(num_eles_per_node...)
+    return(ACAMetrics(num_eles_per_node,
+                      compressed_size,
+                      uncompressed_size,
+                      compression_ratio,
+                      percentage_matrices_compressed,
+                      avg_rank,
+                      min_rank,
+                      max_rank,
+                      avg_num_eles,
+                      min_num_eles,
+                      max_num_eles))
+end # ACAMetrics
+
+function printACAMetrics(metrics::ACAMetrics)
+    println("Displaying ACA Metrics:")
+    println("  Octree Metrics:")
+    println("    Number of elements per node:")
+    println("      Mean = ", metrics.avg_num_eles)
+    println("      Min = ", metrics.min_num_eles)
+    println("      Max = ", metrics.max_num_eles)
+    println("  Matrix Metrics:")
+    println("    Matrix Rank:")
+    println("      Mean = ", metrics.avg_rank)
+    println("      Min = ", metrics.min_rank)
+    println("      Max = ", metrics.max_rank)
+    println("  Compression Metrics:")
+    println("    Percentage of Matrices Compressed = ", 100*metrics.percentage_matrices_compressed)
+    println("    Compression Ratio = ", metrics.compression_ratio)
+end
+
 @views function fullMatvecACA(pulse_mesh::PulseMesh, octree::Octree, J::AbstractArray{T,1})::Array{T,1} where T
     # This function implicitly computes Z*J=V for the entire Z matrix using the
     #   sub-Z matrices computed directly or compressed as U and V for interactions
