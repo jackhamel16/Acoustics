@@ -10,10 +10,10 @@ struct ACAMetrics
     uncompressed_size::Int64
     compression_ratio::Float64
     percentage_matrices_compressed::Float64
-    avg_rank::Int64
+    avg_rank::Float64
     min_rank::Int64
     max_rank::Int64
-    avg_num_eles::Int64
+    avg_num_eles::Float64
     min_num_eles::Int64
     max_num_eles::Int64
 end
@@ -86,6 +86,23 @@ function printACAMetrics(metrics::ACAMetrics)
     println("    Compression Ratio = ", metrics.compression_ratio)
 end
 
+function printACAMetrics(metrics::ACAMetrics, output_file::IOStream)
+    println(output_file, "Displaying ACA Metrics:")
+    println(output_file, "  Octree Metrics:")
+    println(output_file, "    Number of elements per node:")
+    println(output_file, "      Mean = ", metrics.avg_num_eles)
+    println(output_file, "      Min = ", metrics.min_num_eles)
+    println(output_file, "      Max = ", metrics.max_num_eles)
+    println(output_file, "  Matrix Metrics:")
+    println(output_file, "    Matrix Rank:")
+    println(output_file, "      Mean = ", metrics.avg_rank)
+    println(output_file, "      Min = ", metrics.min_rank)
+    println(output_file, "      Max = ", metrics.max_rank)
+    println(output_file, "  Compression Metrics:")
+    println(output_file, "    Percentage of Matrices Compressed = ", 100*metrics.percentage_matrices_compressed)
+    println(output_file, "    Compression Ratio = ", metrics.compression_ratio)
+end
+
 @views function fullMatvecACA(pulse_mesh::PulseMesh, octree::Octree, J::AbstractArray{T,1})::Array{T,1} where T
     # This function implicitly computes Z*J=V for the entire Z matrix using the
     #   sub-Z matrices computed directly or compressed as U and V for interactions
@@ -133,7 +150,8 @@ end # fullMatvecACA
     fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
     sources = zeros(ComplexF64, num_elements)
     gmres!(sources, fullMatvecLinearMap, rhs)
-    return(sources)
+    return((sources, octree, computeACAMetrics(num_elements, octree)))
+    # return(computeACAMetrics(num_elements, octree))
 end #solveSoundSoftIEACA
 
 @views function subMatvecACA(sub_Z::AbstractArray{T,2}, sub_J::AbstractArray{T,1})::Array{T,1} where T
