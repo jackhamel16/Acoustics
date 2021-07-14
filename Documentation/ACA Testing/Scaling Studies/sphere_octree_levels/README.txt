@@ -1,0 +1,1 @@
+changing the number of octree levels to determine what octree size provides the lowest compression ratio with a given number of unknowns

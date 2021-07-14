@@ -1,13 +1,14 @@
 using DataFrames
 using GLM
 using Plots
+using Printf
 
 include("../../src/includes.jl")
 include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
-lambda = 10.0
-wavenumber = 2*pi / lambda + 0*im
+# lambda = 10.0
+# wavenumber = 2*pi / lambda + 0*im
 src_quadrature_rule = gauss7rule
 test_quadrature_rule = gauss1rule
 distance_to_edge_tol = 1e-12
@@ -16,25 +17,33 @@ near_singular_tol = 1.0
 radius = 1.0
 l, m = 0, 0
 
-num_levels = 3
+num_levels = 4
 compression_distance = 1.5
-ACA_approximation_tol = 1e-8
+ACA_approximation_tol = 1e-4
 
 num_elements = [1266, 3788, 8010, 19034]
+edges_per_wavelength = 120 # hold ration of lambda to edge length constant
+sphere_area = pi * radius^2
+element_areas = sphere_area ./ num_elements
+avg_element_edge_lengths = sqrt.(element_areas .* 4 ./ sqrt(3)) #assumes equilateral triangle
+lambdas = edges_per_wavelength .* avg_element_edge_lengths
+wavenumbers = 2 .* pi ./ lambdas .+ 0*im
+
 l2errors = Array{Float64, 1}(undef, 0)
 all_metrics = Array{ACAMetrics, 1}(undef, length(num_elements))
 all_times = Array{Float64, 1}(undef, length(num_elements))
 
-sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
+
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
+    sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumbers[run_idx]), [x_test,y_test,z_test], l, m)
     mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
     pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
     run_time = @elapsed sources, octree, metrics = solveSoundSoftIEACA(pulse_mesh,
                                         num_levels,
                                         sphericalWaveExcitation,
-                                        wavenumber,
+                                        wavenumbers[run_idx],
                                         distance_to_edge_tol,
                                         near_singular_tol,
                                         compression_distance,
@@ -47,7 +56,7 @@ for run_idx in 1:length(num_elements)
     exportSourcesGmsh(mesh_filename, imag_filename, imag.(sources))
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources))
 
-    sources_analytical = computeAnalyticalSolution(wavenumber, radius, mesh_filename)
+    sources_analytical = computeAnalyticalSolution(wavenumbers[run_idx], radius, mesh_filename)
 
     append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
     all_metrics[run_idx] = metrics
@@ -56,21 +65,37 @@ for run_idx in 1:length(num_elements)
     printACAMetrics(metrics)
 end
 
-# Fit line to log of data
+# Fit line to log of error data
 error_data = DataFrame(X=log.(sqrt.(num_elements)), Y=log.(l2errors))
-linreg_output = lm(@formula(Y ~ X), error_data)
+error_linreg_output = lm(@formula(Y ~ X), error_data)
 
-intercept = coef(linreg_output)[1]
-slope = coef(linreg_output)[2]
+intercept = coef(error_linreg_output)[1]
+slope = coef(error_linreg_output)[2]
 error_fit(n) = exp(intercept + slope*log(n))
-
 n = [i for i in 1000:100:20000]
 predicted_errors = error_fit.(sqrt.(n))
 
-Plots.scatter(sqrt.(num_elements), l2errors, label="", xaxis=:log, yaxis=:log, size=(800,600))
-plot!(sqrt.(n), predicted_errors, title="1m Sphere ACA vs Analytical Solution", label="Sound-Soft", xlabel="sqrt(N), N is number of unknowns", ylabel="l2-Error")
+error_labels = [@sprintf("%.2E",l2errors[i]) for i in 1:length(l2errors)]
+xtick_labels=string.(round.(sqrt.(num_elements),digits=1))
+plot(sqrt.(n), predicted_errors, title="1m Sphere ACA vs Analytical Solution", label="Sound-Soft", xlabel="sqrt(N), N is number of unknowns", ylabel="l2-Error", xticks=(sqrt.(num_elements),xtick_labels), yticks=(l2errors,error_labels))
+Plots.scatter!(sqrt.(num_elements), l2errors, label="", xaxis=:log, yaxis=:log, size=(800,600))
 savefig("sphere_convergence_results_softIEACA")
 println("Convergence rate = ", slope)
+
+# Fit line to log of time data
+time_data = DataFrame(X=log.(sqrt.(num_elements)), Y=log.(all_times))
+time_linreg_output = lm(@formula(Y ~ X), time_data)
+
+intercept = coef(time_linreg_output)[1]
+slope = coef(time_linreg_output)[2]
+time_fit(n) = exp(intercept + slope*log(n))
+n = [i for i in 1000:100:20000]
+predicted_times = time_fit.(sqrt.(n))
+
+time_labels = [@sprintf("%.2E",all_times[i]) for i in 1:length(all_times)]
+plot(sqrt.(n), predicted_times, title="1m Sphere ACA vs Analytical Solution", label="Sound-Soft", xlabel="sqrt(N), N is number of unknowns", ylabel="Run Time", xticks=(sqrt.(num_elements),xtick_labels), yticks=(all_times,time_labels))
+Plots.scatter!(sqrt.(num_elements), all_times, label="", xaxis=:log, yaxis=:log, size=(800,600))
+savefig("sphere_runtime_results_softIEACA")
 
 #Check if convergence rate is correct
 convergence_rates = [-1.4091981672046228, -1.4007949737755323, -1.3258954178113702] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
