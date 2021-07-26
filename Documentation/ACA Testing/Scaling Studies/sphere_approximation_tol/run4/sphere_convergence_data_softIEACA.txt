@@ -1,13 +1,13 @@
-Convergence rate = -1.354736423980766
+Convergence rate = -1.3240606259477714
 [num unknowns, l2-error]
-[1266.0, 0.009562549885073815]
-[3788.0, 0.004408396962470965]
-[8010.0, 0.0026067727264959028]
-[19034.0, 0.0015385199148018577]
+[1266.0, 0.009419082576960402]
+[3788.0, 0.004427129202425006]
+[8010.0, 0.002648044018244357]
+[19034.0, 0.0015794160285433196]
 
 
 Run Number: 1
-Run time = 8.517288301 seconds
+Run time = 7.9839806 seconds
 Displaying ACA Metrics:
   Octree Metrics:
     Number of elements per node:
@@ -16,14 +16,14 @@ Displaying ACA Metrics:
       Max = 33
   Matrix Metrics:
     Matrix Rank:
-      Mean = 12.602307692307692
+      Mean = 12.593076923076923
       Min = 2
-      Max = 23
+      Max = 22
   Compression Metrics:
     Percentage of Matrices Compressed = 82.90816326530613
-    Compression Ratio = 1.1997896123926537
+    Compression Ratio = 1.1989011427815588
 Run Number: 2
-Run time = 26.113773099 seconds
+Run time = 24.9513291 seconds
 Displaying ACA Metrics:
   Octree Metrics:
     Number of elements per node:
@@ -32,14 +32,14 @@ Displaying ACA Metrics:
       Max = 89
   Matrix Metrics:
     Matrix Rank:
-      Mean = 16.098846153846154
-      Min = 7
-      Max = 30
+      Mean = 16.125384615384615
+      Min = 8
+      Max = 29
   Compression Metrics:
     Percentage of Matrices Compressed = 82.90816326530613
-    Compression Ratio = 0.595214811626556
+    Compression Ratio = 0.5958435686974596
 Run Number: 3
-Run time = 68.7637215 seconds
+Run time = 72.6659285 seconds
 Displaying ACA Metrics:
   Octree Metrics:
     Number of elements per node:
@@ -48,14 +48,14 @@ Displaying ACA Metrics:
       Max = 186
   Matrix Metrics:
     Matrix Rank:
-      Mean = 16.738076923076925
+      Mean = 17.134615384615383
       Min = 7
-      Max = 31
+      Max = 32
   Compression Metrics:
     Percentage of Matrices Compressed = 82.90816326530613
-    Compression Ratio = 0.3865875053187261
+    Compression Ratio = 0.3916157549629754
 Run Number: 4
-Run time = 281.3388244 seconds
+Run time = 288.656222701 seconds
 Displaying ACA Metrics:
   Octree Metrics:
     Number of elements per node:
@@ -64,9 +64,9 @@ Displaying ACA Metrics:
       Max = 426
   Matrix Metrics:
     Matrix Rank:
-      Mean = 17.046923076923076
-      Min = 7
-      Max = 32
+      Mean = 18.148076923076925
+      Min = 9
+      Max = 33
   Compression Metrics:
     Percentage of Matrices Compressed = 82.90816326530613
-    Compression Ratio = 0.27287211575147724
+    Compression Ratio = 0.27855066906094134

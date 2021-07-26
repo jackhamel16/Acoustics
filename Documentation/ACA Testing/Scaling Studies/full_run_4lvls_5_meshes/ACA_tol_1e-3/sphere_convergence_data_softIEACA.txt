@@ -1,0 +1,89 @@
+Convergence rate = -0.4527847025426512
+[num unknowns, l2-error]
+[1266.0, 0.009347095068845583]
+[3788.0, 0.004560514664613969]
+[8010.0, 0.0031094767795718783]
+[19034.0, 0.004563615638848025]
+[43918.0, 0.00360563658703085]
+
+
+Run Number: 1
+Run time = 17.592284699 seconds
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 5.023809523809524
+      Min = 1
+      Max = 11
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 2.871988446136677
+      Min = 1
+      Max = 7
+  Compression Metrics:
+    Percentage of Matrices Compressed = 95.9498614260519
+    Compression Ratio = 1.2805361514790774
+Run Number: 2
+Run time = 31.314673099 seconds
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 14.294339622641509
+      Min = 1
+      Max = 27
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 3.602083518831805
+      Min = 1
+      Max = 9
+  Compression Metrics:
+    Percentage of Matrices Compressed = 95.95728017087932
+    Compression Ratio = 0.5594883498046964
+Run Number: 3
+Run time = 77.424208701 seconds
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 29.55719557195572
+      Min = 1
+      Max = 54
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 3.772076982031849
+      Min = 1
+      Max = 9
+  Compression Metrics:
+    Percentage of Matrices Compressed = 95.93823613512888
+    Compression Ratio = 0.30107247339078336
+Run Number: 4
+Run time = 225.9970233 seconds
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 69.9779411764706
+      Min = 3
+      Max = 121
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 4.052623422001804
+      Min = 2
+      Max = 10
+  Compression Metrics:
+    Percentage of Matrices Compressed = 95.93425605536332
+    Compression Ratio = 0.15715705653572987
+Run Number: 5
+Run time = 564.9272866 seconds
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 161.03676470588235
+      Min = 9
+      Max = 294
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 4.119547452660054
+      Min = 2
+      Max = 10
+  Compression Metrics:
+    Percentage of Matrices Compressed = 95.93425605536332
+    Compression Ratio = 0.09300962622831378
