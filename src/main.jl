@@ -11,7 +11,7 @@ near_singular_tol = 1.0
 
 # mesh_filename = "examples/test/rectangular_strip_fine.msh"
 # mesh_filename = "examples/simple/plates/rectangular_strip_super_fine.msh"
-mesh_filename = "examples/test/sphere_1m_328.msh"
+mesh_filename = "examples/test/spheres/sphere_1m_328.msh"
 # mesh_filename = "examples/test/circular_plate_1m.msh"
 pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])

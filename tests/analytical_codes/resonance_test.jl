@@ -31,9 +31,9 @@ l, m = 0, 0
 
 # softIE modes occur when phi_inc is zero on sphere
 #     l,m=0 modes: 2, 1, 2/3
-num_freqs = 10
-max_lambda = 1.6
-min_lambda = 1.2
+num_freqs = 30
+max_lambda = 11
+min_lambda = 9
 lambdas = [i for i in range(max_lambda,stop=min_lambda,length=num_freqs)]
 num_elements = 1266
 mesh_filename = string("examples/test/sphere_1m_",num_elements,".msh")
