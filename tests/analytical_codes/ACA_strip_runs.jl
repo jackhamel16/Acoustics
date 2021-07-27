@@ -16,7 +16,7 @@ near_singular_tol = 1.0
 radius = 1.0
 l, m = 0, 0
 
-num_levels = 4
+num_levels = 5
 compression_distance = 1.5
 ACA_approximation_tol = 1e-4
 gmres_tol = 1e-12

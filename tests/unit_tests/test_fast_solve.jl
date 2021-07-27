@@ -127,7 +127,7 @@ include("../../src/ACA/fast_solve.jl")
         near_singular_tol = 1.0
         compression_distance = 1.5
         ACA_tol = 1e-4
-        mesh_filename = "examples/test/rectangular_strip.msh"
+        mesh_filename = "examples/test/rectangular_strips/rectangular_strip.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         num_levels = 3
         octree = createOctree(num_levels, pulse_mesh)
@@ -161,7 +161,9 @@ include("../../src/ACA/fast_solve.jl")
         # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J, rtol=0.13e-6)
+        @test isapprox(sol_J, test_J[1], rtol=0.13e-6)
+        @test typeof(test_J[2]) == Octree
+        @test typeof(test_J[3]) == ACAMetrics
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -178,7 +180,7 @@ include("../../src/ACA/fast_solve.jl")
         # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         # sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J, rtol=0.15e-6)
+        @test isapprox(sol_J, test_J[1], rtol=0.15e-6)
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -187,7 +189,7 @@ include("../../src/ACA/fast_solve.jl")
         near_singular_tol = 1.0
         compression_distance = 1.5
         ACA_approximation_tol = 1e-2
-        mesh_filename = "examples/test/rectangular_strip.msh"
+        mesh_filename = "examples/test/rectangular_strips/rectangular_strip.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
@@ -195,7 +197,7 @@ include("../../src/ACA/fast_solve.jl")
         # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J, rtol=0.42e-2)
+        @test isapprox(sol_J, test_J[1], rtol=0.42e-2)
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -204,7 +206,7 @@ include("../../src/ACA/fast_solve.jl")
         near_singular_tol = 1.0
         compression_distance = 1.5
         ACA_approximation_tol = 1e-6
-        mesh_filename = "examples/test/rectangular_strip.msh"
+        mesh_filename = "examples/test/rectangular_strips/rectangular_strip.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
@@ -212,7 +214,7 @@ include("../../src/ACA/fast_solve.jl")
         # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         # sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J, rtol=0.34e-6)
+        @test isapprox(sol_J, test_J[1], rtol=0.34e-6)
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -221,7 +223,7 @@ include("../../src/ACA/fast_solve.jl")
         near_singular_tol = 1.0
         compression_distance = 1.5
         ACA_approximation_tol = 1e-4
-        mesh_filename = "examples/test/sphere_1m_1266.msh"
+        mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
@@ -229,7 +231,7 @@ include("../../src/ACA/fast_solve.jl")
         # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J, rtol=0.21e-3)
+        @test isapprox(sol_J, test_J[1], rtol=0.21e-3)
 
     end # solveSoundSoftIEACA tests
     @testset "subMatvecACA tests" begin

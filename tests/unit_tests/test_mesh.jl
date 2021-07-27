@@ -162,7 +162,7 @@ include("../../src/quadrature.jl")
         @test isapprox(test_quadrature_weights, gauss1rule[4, :], rtol=1e-14)
 
         # Testing locations of nodes and nodes comprising elements of a sphere
-        test_mesh_filename3 = "examples/test/sphere_1m.msh"
+        test_mesh_filename3 = "examples/test/spheres/sphere_1m.msh"
         test_pulse_mesh3 = buildPulseMesh(test_mesh_filename3, gauss1rule, gauss1rule)
         nodes_solution = [6.123031769111886e-17 -1.499660721822137e-32 1
                             6.123031769111886e-17 -1.499660721822137e-32 -1

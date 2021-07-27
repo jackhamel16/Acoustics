@@ -87,6 +87,7 @@ function printACAMetrics(metrics::ACAMetrics)
 end
 
 function printACAMetrics(metrics::ACAMetrics, output_file::IOStream)
+    # Prints metrics to an output file
     println(output_file, "Displaying ACA Metrics:")
     println(output_file, "  Octree Metrics:")
     println(output_file, "    Number of elements per node:")
