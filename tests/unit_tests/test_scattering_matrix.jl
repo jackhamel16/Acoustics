@@ -14,7 +14,7 @@ include("../../src/includes.jl")
         test_quadrature_rule = gauss1rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
-        mesh_filename = "examples/test/sphere_1m_1266.msh"
+        mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         V_solution = zeros(ComplexF64, num_harmonics, pulse_mesh.num_elements)
         J_solution = zeros(ComplexF64, pulse_mesh.num_elements, num_harmonics)
@@ -136,7 +136,7 @@ include("../../src/includes.jl")
         test_quadrature_rule = gauss7rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
-        mesh_filename = "examples/test/rectangular_strip.msh"
+        mesh_filename = "examples/test/rectangular_strips/rectangular_strip.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         S_high = calculateScatteringMatrix(max_l, k_high, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         S_low = calculateScatteringMatrix(max_l, k_low, pulse_mesh, distance_to_edge_tol, near_singular_tol)
