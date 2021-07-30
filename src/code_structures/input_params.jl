@@ -12,6 +12,7 @@ using Parameters
 end
 
 @with_kw struct ACAParams
+    use_ACA::Bool = false
     num_levels::Int64 = 0
     compression_distance::Float64 = 0.0
     approximation_tol::Float64 = 0.0
@@ -20,17 +21,28 @@ end
 @with_kw struct InputParams
     mesh_filename::String = ""
     equation::String = ""
-    src_quadrature_rule::String = ""
-    test_quadrature_rule::String = ""
+    src_quadrature_string::String = ""
+    test_quadrature_string::String = ""
     excitation_params::ExcitationParams = ExcitationParams()
     distance_to_edge_tol::Float64 = 1e-12
     near_singular_tol::Float64 = 1.0
-    use_ACA::Bool = false
     ACA_params::ACAParams = ACAParams()
 end
 
 function parseACAParams(input_file_lines::AbstractArray{T,1}) where T <: AbstractString
-
+    ACA_idx = findall(x -> x == "\nACA:",input_file_lines)[1]
+    use_ACA = getAttribute(input_file_lines[ACA_idx+1]) == "yes"
+    if use_ACA == false
+        return(ACAParams())
+    else
+        num_levels = parse(Int64, getAttribute(input_file_lines[ACA_idx+2]))
+        compression_distance = parse(Float64, getAttribute(input_file_lines[ACA_idx+3]))
+        approximation_tol = parse(Float64, getAttribute(input_file_lines[ACA_idx+4]))
+        return(ACAParams(use_ACA=true,
+                         num_levels=num_levels,
+                         compression_distance=compression_distance,
+                         approximation_tol=approximation_tol))
+    end
 end #parseACAParams
 
 function parseExcitationParams(input_file_lines::AbstractArray{T,1}) where T <: AbstractString
@@ -71,18 +83,15 @@ function parseInputParams(inputs_filename::String)
     distance_to_edge_tol = parse(Float64, getAttribute(file_lines[5]))
     near_singular_tol = parse(Float64, getAttribute(file_lines[6]))
     excitation_params = parseExcitationParams(file_lines)
-    use_ACA = getAttribute(file_lines[12]) == "yes"
-    if use_ACA == true
-        #add ACA parsing here
-    end
-    return(mesh_filename,
-           equation,
-           src_quadrature_string,
-           test_quadrature_string,
-           distance_to_edge_tol,
-           near_singular_tol,
-           excitation_params,
-           use_ACA)
+    ACA_params = parseACAParams(file_lines)
+    return(InputParams(mesh_filename=mesh_filename,
+                       equation=equation,
+                       src_quadrature_string=src_quadrature_string,
+                       test_quadrature_string=test_quadrature_string,
+                       excitation_params=excitation_params,
+                       distance_to_edge_tol=distance_to_edge_tol,
+                       near_singular_tol=near_singular_tol,
+                       ACA_params=ACA_params))
 end # parseInputParams
 
 function getAttribute(input_file_line::AbstractString)
