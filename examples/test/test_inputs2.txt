@@ -16,4 +16,7 @@ ACA:
   number of levels: 3
   compression distance: 1.6
   approximation tolerance: 1e-6
-  
+Wigner Smith:
+  use WS solver: yes
+  max degree: 10
+  WS mode: 3

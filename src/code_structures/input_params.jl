@@ -18,62 +18,105 @@ end
     approximation_tol::Float64 = 0.0
 end
 
+@with_kw struct WignerSmithParams
+    solve_WS_mode::Bool = false
+    max_l::Int64 = 0
+    mode_idx::Int64 = 0
+end
+
 @with_kw struct InputParams
     mesh_filename::String = ""
     equation::String = ""
     src_quadrature_string::String = ""
     test_quadrature_string::String = ""
-    excitation_params::ExcitationParams = ExcitationParams()
     distance_to_edge_tol::Float64 = 1e-12
     near_singular_tol::Float64 = 1.0
+    excitation_params::ExcitationParams = ExcitationParams()
     ACA_params::ACAParams = ACAParams()
+
 end
 
 function parseACAParams(input_file_lines::AbstractArray{T,1}) where T <: AbstractString
-    ACA_idx = findall(x -> x == "\nACA:",input_file_lines)[1]
-    use_ACA = getAttribute(input_file_lines[ACA_idx+1]) == "yes"
-    if use_ACA == false
+    # parses the string elements of input_file_lines for the ACA settings provided
+    # in the input file
+    ACA_idxs = findall(x -> x == "\nACA:",input_file_lines)
+    if length(ACA_idxs) == 0
         return(ACAParams())
     else
-        num_levels = parse(Int64, getAttribute(input_file_lines[ACA_idx+2]))
-        compression_distance = parse(Float64, getAttribute(input_file_lines[ACA_idx+3]))
-        approximation_tol = parse(Float64, getAttribute(input_file_lines[ACA_idx+4]))
-        return(ACAParams(use_ACA=true,
-                         num_levels=num_levels,
-                         compression_distance=compression_distance,
-                         approximation_tol=approximation_tol))
+        ACA_idx = ACA_idxs[1]
+        use_ACA = getAttribute(input_file_lines[ACA_idx+1]) == "yes"
+        if use_ACA == false
+            return(ACAParams())
+        else
+            num_levels = parse(Int64, getAttribute(input_file_lines[ACA_idx+2]))
+            compression_distance = parse(Float64, getAttribute(input_file_lines[ACA_idx+3]))
+            approximation_tol = parse(Float64, getAttribute(input_file_lines[ACA_idx+4]))
+            return(ACAParams(use_ACA=true,
+                             num_levels=num_levels,
+                             compression_distance=compression_distance,
+                             approximation_tol=approximation_tol))
+        end
     end
 end #parseACAParams
 
 function parseExcitationParams(input_file_lines::AbstractArray{T,1}) where T <: AbstractString
-    excitation_idx = findall(x -> x == "\nexcitation:",input_file_lines)[1]
-    type = getAttribute(input_file_lines[excitation_idx+1])
-    lambda = parse(Float64, getAttribute(input_file_lines[excitation_idx+2]))
-    amplitude = parse(Float64, getAttribute(input_file_lines[excitation_idx+3]))
-    wavevector_raw = parse.(Float64, split(getAttribute(input_file_lines[excitation_idx+4]), ' '))
-    wavenumber = 2 * pi / lambda
-    wavevector = wavenumber .* wavevector_raw ./ norm(wavevector_raw)
-    if type == "sphericalwave"
-        l = parse(Int64, getAttribute(input_file_lines[excitation_idx+5]))
-        m = parse(Int64, getAttribute(input_file_lines[excitation_idx+6]))
-        return(ExcitationParams(type=type,
-                                lambda=lambda,
-                                amplitude=amplitude,
-                                wavenumber=wavenumber,
-                                wavevector=wavevector,
-                                l=l,
-                                m=m))
-    end
-    if type == "planewave"
-        return(ExcitationParams(type=type,
-                                lambda=lambda,
-                                amplitude=amplitude,
-                                wavenumber=wavenumber,
-                                wavevector=wavevector))
+    # parses the string elements of input_file_lines for the excitation settings
+    # provided in the input file
+    excitation_idxs = findall(x -> x == "\nexcitation:",input_file_lines)
+    if length(excitation_idxs) == 0
+        return(ExcitationParams())
+    else
+        excitation_idx = excitation_idxs[1]
+        type = getAttribute(input_file_lines[excitation_idx+1])
+        lambda = parse(Float64, getAttribute(input_file_lines[excitation_idx+2]))
+        amplitude = parse(Float64, getAttribute(input_file_lines[excitation_idx+3]))
+        wavevector_raw = parse.(Float64, split(getAttribute(input_file_lines[excitation_idx+4]), ' '))
+        wavenumber = 2 * pi / lambda
+        wavevector = wavenumber .* wavevector_raw ./ norm(wavevector_raw)
+        if type == "sphericalwave"
+            l = parse(Int64, getAttribute(input_file_lines[excitation_idx+5]))
+            m = parse(Int64, getAttribute(input_file_lines[excitation_idx+6]))
+            return(ExcitationParams(type=type,
+                                    lambda=lambda,
+                                    amplitude=amplitude,
+                                    wavenumber=wavenumber,
+                                    wavevector=wavevector,
+                                    l=l,
+                                    m=m))
+        elseif type == "planewave"
+            return(ExcitationParams(type=type,
+                                    lambda=lambda,
+                                    amplitude=amplitude,
+                                    wavenumber=wavenumber,
+                                    wavevector=wavevector))
+        end
     end
 end #parseExcitationParams
 
+function parseWignerSmithParams(input_file_lines::AbstractArray{T,1}) where T <: AbstractString
+    # parses the string elements of input_file_lines for the Wigner Smith settings
+    # provided in the input file
+    WS_idxs = findall(x -> x == "\nWigner Smith:",input_file_lines)
+    if length(WS_idxs) == 0
+        return(WignerSmithParams())
+    else
+        WS_idx = WS_idxs[1]
+        solve_WS_mode = getAttribute(input_file_lines[WS_idx+1]) == "yes"
+        if solve_WS_mode == false
+            return(WignerSmithParams())
+        else
+            max_l = parse(Int64, getAttribute(input_file_lines[WS_idx+2]))
+            mode_idx = parse(Int64, getAttribute(input_file_lines[WS_idx+3]))
+            return(WignerSmithParams(solve_WS_mode=solve_WS_mode,
+                                     max_l=max_l,
+                                     mode_idx=mode_idx))
+        end
+    end
+end #parseWignerSmithParams
+
 function parseInputParams(inputs_filename::String)
+    # Master parsing function.  Provided with the input filename as string, returns
+    # an InputParams instance containg all the information in inputs_filename
     file = open(inputs_filename, "r")
     file_lines = split(read(file, String), "\r")
     mesh_filename = getAttribute(file_lines[1])

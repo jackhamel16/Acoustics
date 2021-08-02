@@ -47,6 +47,14 @@ include("../../src/code_structures/input_params.jl")
         @test test_excitation_params.l == test_l
         @test test_excitation_params.m == test_m
     end # ExcitationParams tests
+    @testset "WignerSmithParams tests" begin
+        test_WS_params = WignerSmithParams(solve_WS_mode=true,
+                                           max_l=5,
+                                           mode_idx=2)
+        @test test_WS_params.solve_WS_mode == true
+        @test isapprox(test_WS_params.max_l, 5, rtol=1e-14)
+        @test isapprox(test_WS_params.mode_idx, 2, rtol=1e-14)
+    end # WignerSmithParams tests
     @testset "ACAParams tests" begin
         test_use_ACA = true
         test_num_levels = 2
@@ -72,6 +80,12 @@ include("../../src/code_structures/input_params.jl")
         test_ACA_params = parseACAParams(file_lines)
         sol_ACA_params = ACAParams(true, 3, 1.6, 1e-6)
         @test test_ACA_params == sol_ACA_params
+
+        inputs_filename = "examples/test/test_inputs3.txt"
+        file = open(inputs_filename, "r")
+        file_lines = split(read(file, String), "\r")
+        test_ACA_params = parseACAParams(file_lines)
+        @test test_ACA_params == ACAParams()
     end #parseACAParams
     @testset "parseExcitationParams tests" begin
         inputs_filename = "examples/test/test_inputs1.txt"
@@ -97,7 +111,39 @@ include("../../src/code_structures/input_params.jl")
         @test isapprox(excitation_params.wavevector, [ 2 * pi / 1.1, 0, 0], rtol=1e-14)
         @test isapprox(excitation_params.l, 2, rtol=1e-14)
         @test isapprox(excitation_params.m, 1, rtol=1e-14)
+
+        inputs_filename = "examples/test/test_inputs3.txt"
+        file = open(inputs_filename, "r")
+        file_lines = split(read(file, String), "\r")
+        excitation_params = parseExcitationParams(file_lines)
+        @test excitation_params.type == ""
+        @test isapprox(excitation_params.lambda, 0.0, rtol=1e-14)
+        @test isapprox(excitation_params.amplitude, 0.0, rtol=1e-14)
+        @test isapprox(excitation_params.wavenumber, 0.0, rtol=1e-14)
+        @test isapprox(excitation_params.wavevector, [0], rtol=1e-14)
+        @test isapprox(excitation_params.l, 0, rtol=1e-14)
+        @test isapprox(excitation_params.m, 0, rtol=1e-14)
     end # parseExcitationParams tests
+    @testset "parseWignerSmithParams tests" begin
+        inputs_filename = "examples/test/test_inputs1.txt"
+        file = open(inputs_filename, "r")
+        file_lines = split(read(file, String), "\r")
+        test_WS_params = parseWignerSmithParams(file_lines)
+        @test test_WS_params == WignerSmithParams()
+
+        inputs_filename = "examples/test/test_inputs2.txt"
+        file = open(inputs_filename, "r")
+        file_lines = split(read(file, String), "\r")
+        sol_WS_params = WignerSmithParams(true, 10, 3)
+        test_WS_params = parseWignerSmithParams(file_lines)
+        @test test_WS_params == sol_WS_params
+
+        inputs_filename = "examples/test/test_inputs3.txt"
+        file = open(inputs_filename, "r")
+        file_lines = split(read(file, String), "\r")
+        test_WS_params = parseWignerSmithParams(file_lines)
+        @test test_WS_params == WignerSmithParams()
+    end #parseACAParams
     @testset "parseInputParams tests" begin
         inputs_filename = "examples/test/test_inputs1.txt"
         test_input_params = parseInputParams(inputs_filename)
