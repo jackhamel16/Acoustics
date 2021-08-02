@@ -1,0 +1,15 @@
+mesh filename: gibberish.msh
+equation: sound soft IE
+source quadrature rule: gauss7
+test quadrature rule: gauss1
+distance to edge tolerance: 1e-10
+near singular tolerance: 2.2
+excitation:
+  type: planewave
+  lambda: 1.1
+  amplitude: -1.5
+  wavevector: 1.1 0 0
+ACA:
+  use ACA: no
+Wigner Smith:
+  use WS solver: no

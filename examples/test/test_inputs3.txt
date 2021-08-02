@@ -1,0 +1,7 @@
+mesh filename: gibberish.msh
+equation: sound soft IE
+source quadrature rule: gauss7
+test quadrature rule: gauss1
+distance to edge tolerance: 1e-10
+near singular tolerance: 2.2
+
