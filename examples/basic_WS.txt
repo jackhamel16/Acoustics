@@ -1,4 +1,4 @@
-mesh filename: gibberish3.msh
+mesh filename: examples/test/circular_plate_1m.msh
 equation: WS mode
 src quadrature rule: gauss7
 test quadrature rule: gauss7
@@ -8,4 +8,3 @@ Wigner Smith:
   lambda: 1.0
   max degree: 5
   WS mode: 3
-

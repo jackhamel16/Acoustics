@@ -2,7 +2,7 @@
 
 function solveSoftIE(pulse_mesh::PulseMesh,
                      excitation::Function,
-                     wavenumber::Complex{Float64},
+                     wavenumber::Number,
                      distance_to_edge_tol::Float64,
                      near_singular_tol::Float64,
                      return_z_rhs=false)

@@ -2,7 +2,7 @@
 
 using LinearAlgebra
 
-function scalarGreens(R::Float64, k::Complex{Float64})
+function scalarGreens(R::Float64, k::Number)
     exp(-im*k*abs(R))/(4*pi*abs(R))
 end
 
@@ -11,11 +11,11 @@ function scalarGreensKDeriv(R, k)
     -im*exp(-im*k*R)/(4*pi)
 end
 
-function scalarGreensNonSingular(R::Float64, k::Complex{Float64})
+function scalarGreensNonSingular(R::Float64, k::Number)
     (exp(-im*k*abs(R))-1)/(4*pi*abs(R))
 end
 
-function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Complex{Float64}, nhat::AbstractArray{Float64, 1})
+function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Number, nhat::AbstractArray{Float64, 1})
     R = norm(R_vec)
     grad_G = [-R_vec[1]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[1]*exp(-im*k*R)/(4*pi*R^2),
               -R_vec[2]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[2]*exp(-im*k*R)/(4*pi*R^2),
@@ -25,7 +25,7 @@ end
 
 @views function scalarGreensNormalDerivativeIntegration(pulse_mesh::PulseMesh,
                                  element_idx::Int64,
-                                 wavenumber::Complex{Float64},
+                                 wavenumber::Number,
                                  r_test::Array{Float64, 1},
                                  is_singular::Bool)
     @unpack nodes,
@@ -48,7 +48,7 @@ end
 
 @views function scalarGreensIntegration(pulse_mesh::PulseMesh,
                                  element_idx::Int64,
-                                 wavenumber::Complex{Float64},
+                                 wavenumber::Number,
                                  r_test::Array{Float64, 1},
                                  distance_to_edge_tol::Float64,
                                  near_singular_tol::Float64,
@@ -160,7 +160,7 @@ function scalarGreensSingularityIntegral(r_test::Array{Float64, 1},
     integral / (4*pi)
 end
 
-function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
+function scalarGreensNearSingularIntegral(wavenumber::Number,
                                           r_test::Array{Float64, 1},
                                           nodes::Array{Float64, 2},
                                           triangle_area::Float64,
@@ -179,7 +179,7 @@ function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
     singular_integral + non_singular_integral
 end
 
-@views function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
+@views function scalarGreensSingularIntegral(wavenumber::Number,
                                              r_test::Array{Float64, 1},
                                              nodes::Array{Float64, 2},
                                              area_quadrature_points::AbstractArray{Float64, 2},
@@ -208,7 +208,7 @@ end
 
 @views function scalarGreensKDerivIntegration(pulse_mesh::PulseMesh,
                                  element_idx::Int64,
-                                 wavenumber::Complex{Float64},
+                                 wavenumber::Number,
                                  r_test::Array{Float64, 1},
                                  is_singular::Bool)
     # This function encapsulates all possible integration routines for the
@@ -235,7 +235,7 @@ end
     end
 end
 
-@views function scalarGreensKDerivSingularIntegral(wavenumber::Complex{Float64},
+@views function scalarGreensKDerivSingularIntegral(wavenumber::Number,
                                                    r_test::Array{Float64, 1},
                                                    nodes::Array{Float64, 2},
                                                    area_quadrature_points::AbstractArray{Float64, 2},
