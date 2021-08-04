@@ -2,6 +2,7 @@
 # Only direct dependencies listed
 
 include("math.jl")
+include("code_structures/input_params.jl")
 include("code_structures/mesh.jl") # depends on gmsh.jl but included in src file
 include("code_structures/octree.jl") #dependencies: mesh.jl
 include("excitation.jl") # dependencies: math.jl

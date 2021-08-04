@@ -11,5 +11,3 @@ excitation:
   wavevector: 1.1 0 0
 ACA:
   use ACA: no
-Wigner Smith:
-  use WS solver: no

@@ -48,10 +48,7 @@ include("../../src/code_structures/input_params.jl")
         @test test_excitation_params.m == test_m
     end # ExcitationParams tests
     @testset "WignerSmithParams tests" begin
-        test_WS_params = WignerSmithParams(solve_WS_mode=true,
-                                           max_l=5,
-                                           mode_idx=2)
-        @test test_WS_params.solve_WS_mode == true
+        test_WS_params = WignerSmithParams(max_l=5, mode_idx=2)
         @test isapprox(test_WS_params.max_l, 5, rtol=1e-14)
         @test isapprox(test_WS_params.mode_idx, 2, rtol=1e-14)
     end # WignerSmithParams tests
@@ -108,7 +105,7 @@ include("../../src/code_structures/input_params.jl")
         @test isapprox(excitation_params.lambda, 1.1, rtol=1e-14)
         @test isapprox(excitation_params.amplitude, -1.5, rtol=1e-14)
         @test isapprox(excitation_params.wavenumber, 2 * pi / 1.1, rtol=1e-14)
-        @test isapprox(excitation_params.wavevector, [ 2 * pi / 1.1, 0, 0], rtol=1e-14)
+        @test isapprox(excitation_params.wavevector, [0], rtol=1e-14)
         @test isapprox(excitation_params.l, 2, rtol=1e-14)
         @test isapprox(excitation_params.m, 1, rtol=1e-14)
 
@@ -131,18 +128,11 @@ include("../../src/code_structures/input_params.jl")
         test_WS_params = parseWignerSmithParams(file_lines)
         @test test_WS_params == WignerSmithParams()
 
-        inputs_filename = "examples/test/test_inputs2.txt"
-        file = open(inputs_filename, "r")
-        file_lines = split(read(file, String), "\r")
-        sol_WS_params = WignerSmithParams(true, 10, 3)
-        test_WS_params = parseWignerSmithParams(file_lines)
-        @test test_WS_params == sol_WS_params
-
         inputs_filename = "examples/test/test_inputs3.txt"
         file = open(inputs_filename, "r")
         file_lines = split(read(file, String), "\r")
         test_WS_params = parseWignerSmithParams(file_lines)
-        @test test_WS_params == WignerSmithParams()
+        @test test_WS_params == WignerSmithParams(1, 2*pi, 5, 3)
     end #parseACAParams
     @testset "parseInputParams tests" begin
         inputs_filename = "examples/test/test_inputs1.txt"
@@ -161,6 +151,7 @@ include("../../src/code_structures/input_params.jl")
         @test isapprox(test_input_params.excitation_params.l, 0, rtol=1e-14)
         @test isapprox(test_input_params.excitation_params.m, 0, rtol=1e-14)
         @test test_input_params.ACA_params.use_ACA == false
+        @test test_input_params.WS_params == WignerSmithParams()
 
         inputs_filename = "examples/test/test_inputs2.txt"
         test_input_params = parseInputParams(inputs_filename)
@@ -174,12 +165,52 @@ include("../../src/code_structures/input_params.jl")
         @test isapprox(test_input_params.excitation_params.lambda, 1.1, rtol=1e-14)
         @test isapprox(test_input_params.excitation_params.amplitude, -1.5, rtol=1e-14)
         @test isapprox(test_input_params.excitation_params.wavenumber, 2 * pi / 1.1, rtol=1e-14)
-        @test isapprox(test_input_params.excitation_params.wavevector, [2 * pi / 1.1, 0, 0], rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.wavevector, [0], rtol=1e-14)
         @test isapprox(test_input_params.excitation_params.l, 2, rtol=1e-14)
         @test isapprox(test_input_params.excitation_params.m, 1, rtol=1e-14)
         @test test_input_params.ACA_params.use_ACA == true
         @test isapprox(test_input_params.ACA_params.num_levels, 3, rtol=1e-14)
         @test isapprox(test_input_params.ACA_params.compression_distance, 1.6, rtol=1e-14)
         @test isapprox(test_input_params.ACA_params.approximation_tol, 1e-6, rtol=1e-14)
+        @test test_input_params.WS_params == WignerSmithParams()
+
+        inputs_filename = "examples/test/test_inputs4.txt"
+        test_input_params = parseInputParams(inputs_filename)
+        @test test_input_params.mesh_filename == "gibberish4.msh"
+        @test test_input_params.equation == "sound soft CFIE"
+        @test isapprox(test_input_params.CFIE_weight, 0.5, rtol=1e-14)
+        @test test_input_params.src_quadrature_string == "gauss1"
+        @test test_input_params.test_quadrature_string == "gauss7"
+        @test test_input_params.distance_to_edge_tol == 1e-8
+        @test test_input_params.near_singular_tol == 2.0
+        @test test_input_params.excitation_params.type == "sphericalwave"
+        @test isapprox(test_input_params.excitation_params.lambda, 1.1, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.amplitude, -1.5, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.wavenumber, 2 * pi / 1.1, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.wavevector, [0], rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.l, 2, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.m, 1, rtol=1e-14)
+        @test test_input_params.ACA_params.use_ACA == true
+        @test isapprox(test_input_params.ACA_params.num_levels, 3, rtol=1e-14)
+        @test isapprox(test_input_params.ACA_params.compression_distance, 1.6, rtol=1e-14)
+        @test isapprox(test_input_params.ACA_params.approximation_tol, 1e-6, rtol=1e-14)
+        @test test_input_params.WS_params == WignerSmithParams()
+
+        inputs_filename = "examples/test/test_inputs3.txt"
+        test_input_params = parseInputParams(inputs_filename)
+        @test test_input_params.mesh_filename == "gibberish3.msh"
+        @test test_input_params.equation == "WS mode"
+        @test test_input_params.src_quadrature_string == "gauss7"
+        @test test_input_params.test_quadrature_string == "gauss7"
+        @test test_input_params.distance_to_edge_tol == 1e-12
+        @test test_input_params.near_singular_tol == 1.0
+        @test isapprox(test_input_params.excitation_params.lambda, 0, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.amplitude, 0, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.wavenumber, 0, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.wavevector, [0], rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.l, 0, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.m, 0, rtol=1e-14)
+        @test test_input_params.ACA_params == ACAParams()
+        @test test_input_params.WS_params == WignerSmithParams(1, 2*pi, 5, 3)
     end # parseInputParams tests
 end #input_params tests

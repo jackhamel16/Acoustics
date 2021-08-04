@@ -1,6 +1,7 @@
-mesh filename: gibberish2.msh
-equation: sound soft normal derivative IE
-source quadrature rule: gauss3
+mesh filename: gibberish4.msh
+equation: sound soft CFIE
+CFIE weight: 0.5
+source quadrature rule: gauss1
 test quadrature rule: gauss7
 distance to edge tolerance: 1e-8
 near singular tolerance: 2.0

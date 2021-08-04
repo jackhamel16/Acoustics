@@ -1,0 +1,11 @@
+mesh filename: examples/test/rectangle_plate_8elements_symmetric.msh
+equation: sound soft normal derivative IE
+source quadrature rule: gauss7
+test quadrature rule: gauss1
+distance to edge tolerance: 1e-12
+near singular tolerance: 1.0
+excitation:
+  type: planewave
+  lambda: 1.0
+  amplitude: 1.0
+  wavevector: 1 0 0

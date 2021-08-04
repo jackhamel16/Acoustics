@@ -143,12 +143,15 @@ end # fullMatvecACA
     # ACA_approximation_tol lower means higher rank approximations are used in ACA
     # returns an array of the unknowns named sources
     @unpack num_elements = pulse_mesh
+    println("Filling ACA Matrix...")
     octree = createOctree(num_levels, pulse_mesh)
     fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
                                   distance_to_edge_tol, near_singular_tol,
                                   compression_distance, ACA_approximation_tol)
+    println("Filling RHS...")
     rhs = zeros(ComplexF64, num_elements)
     rhsFill!(pulse_mesh, excitation, rhs)
+    println("Solving with ACA...")
     fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
     fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
     sources = zeros(ComplexF64, num_elements)
@@ -173,12 +176,15 @@ end #solveSoundSoftIEACA
     # ACA_approximation_tol lower means higher rank approximations are used in ACA
     # returns an array of the unknowns named sources
     @unpack num_elements = pulse_mesh
+    println("Filling ACA Matrix...")
     octree = createOctree(num_levels, pulse_mesh)
     fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
                                   distance_to_edge_tol, near_singular_tol,
                                   compression_distance, ACA_approximation_tol)
+    println("Filling RHS...")
     rhs = zeros(ComplexF64, num_elements)
     rhsFill!(pulse_mesh, excitation, rhs)
+    println("Solving with ACA...")
     fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
     fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
     sources = zeros(ComplexF64, num_elements)
