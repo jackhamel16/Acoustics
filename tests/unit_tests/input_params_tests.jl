@@ -174,6 +174,28 @@ include("../../src/code_structures/input_params.jl")
         @test isapprox(test_input_params.ACA_params.approximation_tol, 1e-6, rtol=1e-14)
         @test test_input_params.WS_params == WignerSmithParams()
 
+        inputs_filename = "examples/test/test_inputs4.txt"
+        test_input_params = parseInputParams(inputs_filename)
+        @test test_input_params.mesh_filename == "gibberish4.msh"
+        @test test_input_params.equation == "sound soft CFIE"
+        @test isapprox(test_input_params.CFIE_weight, 0.5, rtol=1e-14)
+        @test test_input_params.src_quadrature_string == "gauss1"
+        @test test_input_params.test_quadrature_string == "gauss7"
+        @test test_input_params.distance_to_edge_tol == 1e-8
+        @test test_input_params.near_singular_tol == 2.0
+        @test test_input_params.excitation_params.type == "sphericalwave"
+        @test isapprox(test_input_params.excitation_params.lambda, 1.1, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.amplitude, -1.5, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.wavenumber, 2 * pi / 1.1, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.wavevector, [0], rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.l, 2, rtol=1e-14)
+        @test isapprox(test_input_params.excitation_params.m, 1, rtol=1e-14)
+        @test test_input_params.ACA_params.use_ACA == true
+        @test isapprox(test_input_params.ACA_params.num_levels, 3, rtol=1e-14)
+        @test isapprox(test_input_params.ACA_params.compression_distance, 1.6, rtol=1e-14)
+        @test isapprox(test_input_params.ACA_params.approximation_tol, 1e-6, rtol=1e-14)
+        @test test_input_params.WS_params == WignerSmithParams()
+
         inputs_filename = "examples/test/test_inputs3.txt"
         test_input_params = parseInputParams(inputs_filename)
         @test test_input_params.mesh_filename == "gibberish3.msh"

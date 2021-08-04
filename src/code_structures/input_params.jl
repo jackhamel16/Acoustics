@@ -1,3 +1,4 @@
+# dependencies: none
 using LinearAlgebra
 using Parameters
 
@@ -28,6 +29,7 @@ end
 @with_kw struct InputParams
     mesh_filename::String = ""
     equation::String = ""
+    CFIE_weight::Float64 = 0.0
     src_quadrature_string::String = ""
     test_quadrature_string::String = ""
     distance_to_edge_tol::Float64 = 1e-12
@@ -116,17 +118,25 @@ function parseInputParams(inputs_filename::String)
     # an InputParams instance containg all the information in inputs_filename
     file = open(inputs_filename, "r")
     file_lines = split(read(file, String), "\r")
-    mesh_filename = getAttribute(file_lines[1])
-    equation = getAttribute(file_lines[2])
-    src_quadrature_string = getAttribute(file_lines[3])
-    test_quadrature_string = getAttribute(file_lines[4])
-    distance_to_edge_tol = parse(Float64, getAttribute(file_lines[5]))
-    near_singular_tol = parse(Float64, getAttribute(file_lines[6]))
+    line_idx = 1
+    mesh_filename = getAttribute(file_lines[line_idx])
+    equation = getAttribute(file_lines[line_idx+1])
+    if equation == "sound soft CFIE"
+        CFIE_weight = parse(Float64, getAttribute(file_lines[line_idx+2]))
+        line_idx += 1
+    else
+        CFIE_weight = 0.0
+    end
+    src_quadrature_string = getAttribute(file_lines[line_idx+2])
+    test_quadrature_string = getAttribute(file_lines[line_idx+3])
+    distance_to_edge_tol = parse(Float64, getAttribute(file_lines[line_idx+4]))
+    near_singular_tol = parse(Float64, getAttribute(file_lines[line_idx+5]))
     excitation_params = parseExcitationParams(file_lines)
     ACA_params = parseACAParams(file_lines)
     WS_params = parseWignerSmithParams(file_lines)
     return(InputParams(mesh_filename=mesh_filename,
                        equation=equation,
+                       CFIE_weight=CFIE_weight,
                        src_quadrature_string=src_quadrature_string,
                        test_quadrature_string=test_quadrature_string,
                        excitation_params=excitation_params,

@@ -1,4 +1,4 @@
-mesh filename: examples/test/circular_plate_1m.msh
+mesh filename: examples/test/rectangle_plate_8elements_symmetric.msh
 equation: sound soft IE
 source quadrature rule: gauss7
 test quadrature rule: gauss1

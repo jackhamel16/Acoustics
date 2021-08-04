@@ -1,4 +1,4 @@
-mesh filename: examples/test/circular_plate_1m.msh
+mesh filename: examples/test/rectangle_plate_8elements_symmetric.msh
 equation: WS mode
 src quadrature rule: gauss7
 test quadrature rule: gauss7
