@@ -25,13 +25,12 @@ sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWa
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
     mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
+    pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
-    @time sources = solveSoftCFIE(mesh_filename,
+    @time sources = solveSoftCFIE(pulse_mesh,
                     sphericalWaveExcitation,
                     sphericalWaveExcitationNormalDeriv,
                     wavenumber,
-                    src_quadrature_rule,
-                    test_quadrature_rule,
                     distance_to_edge_tol,
                     near_singular_tol,
                     softIE_weight)
@@ -65,7 +64,7 @@ savefig("sphere_convergence_results_softCFIE")
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-1.7740063461319375, -1.7491223638945013, 0] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-2.4131803618461456, -2.7143150389000463, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6

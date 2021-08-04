@@ -106,10 +106,15 @@ const gauss79rule = SArray{Tuple{4, 79}}(transpose([3.33333333333333314829616256
                      9.29756171556852972770457199658267e-01 1.05477192941400010894881233980414e-02 5.96961091490069983844790613147779e-02 3.57390938594998736066443711933971e-03
                      1.05477192941400010894881233980414e-02 5.96961091490069983844790613147779e-02 9.29756171556852972770457199658267e-01 3.57390938594998736066443711933971e-03
                      1.05477192941400010894881233980414e-02 9.29756171556852972770457199658267e-01 5.96961091490069983844790613147779e-02 3.57390938594998736066443711933971e-03]))
+const rule_lookup_dict = Dict("gauss1" => gauss1rule,
+                              "gauss7" => gauss7rule,
+                              "gauss13" => gauss13rule,
+                              "gauss79" => gauss79rule)
+
 @views function gaussQuadrature(scale_factor,
-                         func::Function,
-                         points::AbstractArray{Float64, 2},
-                         weights::AbstractArray{Float64, 1})
+                                func::Function,
+                                points::AbstractArray{Float64, 2},
+                                weights::AbstractArray{Float64, 1})
     num_points = length(weights)
     x, y, z = points[:, 1]
     quadrature_sum = weights[1] * func(x, y, z) # taken outside the loop to avoid type conversions/ambiguity
@@ -120,13 +125,4 @@ const gauss79rule = SArray{Tuple{4, 79}}(transpose([3.33333333333333314829616256
         end
     end
     scale_factor * quadrature_sum
-end
-
-@views function integrateTriangle(nodes::Array{Float64, 2},
-                           func::Function,
-                           quadrature_points::AbstractArray{Float64, 2},
-                           quadrature_weights::AbstractArray{Float64, 1})
-    num_points = size(quadrature_points)[1]
-    triangle_area = norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[2,:]))/2.0
-    gaussQuadrature(triangle_area, func, quadrature_points, quadrature_weights)
 end

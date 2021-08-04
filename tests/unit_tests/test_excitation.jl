@@ -157,4 +157,34 @@ include("../../src/excitation.jl")
         sph_wave_nd_test = sphericalWaveNormalDerivative(amplitude, wavenumber, position, l, m, normal)
         @test isapprox(sph_wave_nd_test, sol, rtol=1e-14)
     end
+    @testset "sphericalWaveKDerivative tests" begin
+        wavelength = 10.0
+        wavenumber = 2*pi/wavelength
+        position = [1.0,0.0,0.0]
+        l, m = 0, 0
+        test = sphericalWaveKDerivative(wavenumber, position, l, m)
+        solution = 0.456438961139459
+        @test isapprox(solution, test, rtol=1e-14)
+
+        wavelength = 4.2
+        wavenumber = 2*pi/wavelength
+        position = [1.0,0.25,-0.5]
+        l, m = 2, -1
+        test = sphericalWaveKDerivative(wavenumber, position, l, m)
+        solution = -0.23792269069355165+im*0.05948067267338791
+        @test isapprox(solution, test, rtol=1e-14)
+
+        wavelength = 20.0
+        wavenumber = 2*pi/wavelength
+        deltak = 0.01 * wavenumber
+        k_high = wavenumber + deltak/2
+        k_low = wavenumber - deltak/2
+        position = [1.0,0.25,-0.5]
+        l, m = 2, 2
+        field_high = sphericalWave(2*k_high, k_high, position, l, m)
+        field_low = sphericalWave(2*k_low, k_low, position, l, m)
+        approx_sol = (field_high - field_low) / deltak
+        test = sphericalWaveKDerivative(wavenumber, position, l, m)
+        @test isapprox(approx_sol, test, rtol=1e-5)
+    end # sphericalWaveKDerivative tests
 end

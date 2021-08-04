@@ -31,12 +31,13 @@ l, m = 0, 0
 
 # softIE modes occur when phi_inc is zero on sphere
 #     l,m=0 modes: 2, 1, 2/3
-num_freqs = 10
-max_lambda = 1.6
-min_lambda = 1.2
+num_freqs = 30
+max_lambda = 11
+min_lambda = 9
 lambdas = [i for i in range(max_lambda,stop=min_lambda,length=num_freqs)]
 num_elements = 1266
 mesh_filename = string("examples/test/sphere_1m_",num_elements,".msh")
+pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
 l2errors_softIE = Array{Float64, 1}(undef, num_freqs)
 l2errors_IENormalDeriv = Array{Float64, 1}(undef, num_freqs)
@@ -58,11 +59,9 @@ for run_idx in 1:num_freqs
     sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
 
     println("Running softIE")
-    @time sources_softIE, z_matrix_softIE = solveSoftIE(mesh_filename,
+    @time sources_softIE, z_matrix_softIE, rhs = solveSoftIE(pulse_mesh,
                     sphericalWaveExcitation,
                     wavenumber,
-                    src_quadrature_rule,
-                    test_quadrature_rule,
                     distance_to_edge_tol,
                     near_singular_tol,
                     true)
@@ -75,11 +74,9 @@ for run_idx in 1:num_freqs
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources_softIE))
 
     println("Running softIENormalDeriv")
-    @time sources_IENormalDeriv, z_matrix_IENormalDeriv = solveSoftIENormalDeriv(mesh_filename,
+    @time sources_IENormalDeriv, z_matrix_IENormalDeriv = solveSoftIENormalDeriv(pulse_mesh,
                     sphericalWaveExcitationNormalDeriv,
                     wavenumber,
-                    src_quadrature_rule,
-                    test_quadrature_rule,
                     true)
 
     real_filename = string("sources_real_softIENormalDeriv_sphere",num_elements)
@@ -90,12 +87,10 @@ for run_idx in 1:num_freqs
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources_IENormalDeriv))
 
     println("Running softCFIE")
-    @time sources_CFIE, z_matrix_CFIE = solveSoftCFIE(mesh_filename,
+    @time sources_CFIE, z_matrix_CFIE = solveSoftCFIE(pulse_mesh,
                     sphericalWaveExcitation,
                     sphericalWaveExcitationNormalDeriv,
                     wavenumber,
-                    src_quadrature_rule,
-                    test_quadrature_rule,
                     distance_to_edge_tol,
                     near_singular_tol,
                     softIE_weight,

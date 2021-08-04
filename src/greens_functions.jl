@@ -2,15 +2,20 @@
 
 using LinearAlgebra
 
-function scalarGreens(R::Float64, k::Complex{Float64})
+function scalarGreens(R::Float64, k::Number)
     exp(-im*k*abs(R))/(4*pi*abs(R))
 end
 
-function scalarGreensNonSingular(R::Float64, k::Complex{Float64})
+function scalarGreensKDeriv(R, k)
+    # derivative of 3D scalar Green's function w/ respect to k
+    -im*exp(-im*k*R)/(4*pi)
+end
+
+function scalarGreensNonSingular(R::Float64, k::Number)
     (exp(-im*k*abs(R))-1)/(4*pi*abs(R))
 end
 
-function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Complex{Float64}, nhat::AbstractArray{Float64, 1})
+function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Number, nhat::AbstractArray{Float64, 1})
     R = norm(R_vec)
     grad_G = [-R_vec[1]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[1]*exp(-im*k*R)/(4*pi*R^2),
               -R_vec[2]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[2]*exp(-im*k*R)/(4*pi*R^2),
@@ -20,7 +25,7 @@ end
 
 @views function scalarGreensNormalDerivativeIntegration(pulse_mesh::PulseMesh,
                                  element_idx::Int64,
-                                 wavenumber::Complex{Float64},
+                                 wavenumber::Number,
                                  r_test::Array{Float64, 1},
                                  is_singular::Bool)
     @unpack nodes,
@@ -31,18 +36,19 @@ end
             src_quadrature_points,
             src_quadrature_weights = pulse_mesh
     triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+    triangle_area = areas[element_idx]
     if is_singular == true
         return(0.5) # principal value of integral for r=r'
     else
         scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, normals[element_idx,:])
-        return(integrateTriangle(triangle_nodes, scalar_greens_nd_integrand,
+        return(gaussQuadrature(triangle_area, scalar_greens_nd_integrand,
                                  src_quadrature_points[element_idx], src_quadrature_weights))
     end
 end
 
 @views function scalarGreensIntegration(pulse_mesh::PulseMesh,
                                  element_idx::Int64,
-                                 wavenumber::Complex{Float64},
+                                 wavenumber::Number,
                                  r_test::Array{Float64, 1},
                                  distance_to_edge_tol::Float64,
                                  near_singular_tol::Float64,
@@ -55,10 +61,12 @@ end
     #    before doing purely numerical integration
     @unpack nodes,
             elements,
+            areas,
             src_quadrature_rule,
             src_quadrature_points,
             src_quadrature_weights = pulse_mesh
     triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+    triangle_area = areas[element_idx]
     max_edge_length = 0.0
     for edge_idx in 1:3
         edge_length = norm(triangle_nodes[edge_idx,:]-triangle_nodes[edge_idx%3+1,:])
@@ -73,10 +81,11 @@ end
                                      distance_to_edge_tol)
     elseif norm(r_test-centroid_src) > near_singular_tol*max_edge_length
         scalar_greens_integrand(x,y,z) = scalarGreens(norm([x,y,z]-r_test), wavenumber)
-        integrateTriangle(triangle_nodes, scalar_greens_integrand, src_quadrature_points[element_idx],
-                          src_quadrature_weights)
+        gaussQuadrature(triangle_area, scalar_greens_integrand,
+                        src_quadrature_points[element_idx], src_quadrature_weights)
     else
-        scalarGreensNearSingularIntegral(wavenumber, r_test, triangle_nodes,
+        scalarGreensNearSingularIntegral(wavenumber, r_test,
+                                         triangle_nodes, triangle_area,
                                          src_quadrature_points[element_idx],
                                          src_quadrature_weights, distance_to_edge_tol)
     end
@@ -151,36 +160,26 @@ function scalarGreensSingularityIntegral(r_test::Array{Float64, 1},
     integral / (4*pi)
 end
 
-function scalarGreensNearSingularIntegral(wavenumber::Complex{Float64},
+function scalarGreensNearSingularIntegral(wavenumber::Number,
                                           r_test::Array{Float64, 1},
                                           nodes::Array{Float64, 2},
+                                          triangle_area::Float64,
                                           quadrature_points::AbstractArray{Float64, 2},
                                           quadrature_weights::AbstractArray{Float64, 1},
                                           distance_to_edge_tol::Float64)
     # Used when r_test is close to source triangle, but not on it. Uses a
     # combination of analytical integration for the singular term and numerical
     # for the rest.
-    non_singular_integral = scalarGreensNonSingularIntegral(wavenumber, r_test, nodes,
-                                                            quadrature_points, quadrature_weights)
+    non_singular_integrand(x, y, z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
+                                                            wavenumber)
+    non_singular_integral = gaussQuadrature(triangle_area, non_singular_integrand,
+                                            quadrature_points, quadrature_weights)
     singular_integral = scalarGreensSingularityIntegral(r_test, nodes,
                                                         distance_to_edge_tol)
     singular_integral + non_singular_integral
 end
 
-function scalarGreensNonSingularIntegral(wavenumber::Complex{Float64},
-                                         r_test::Array{Float64, 1},
-                                         nodes::Array{Float64, 2},
-                                         quadrature_points::AbstractArray{Float64, 2},
-                                         quadrature_weights::AbstractArray{Float64, 1})
-    # Performs numerical integration of scalar Green's function with
-    # singularity removed (this doesnt have a dedicated unit test)
-    non_singular_integrand(x, y, z) = scalarGreensNonSingular(norm([x,y,z]-r_test),
-                                                            wavenumber)
-    integrateTriangle(nodes, non_singular_integrand, quadrature_points,
-                      quadrature_weights)
-end
-
-@views function scalarGreensSingularIntegral(wavenumber::Complex{Float64},
+@views function scalarGreensSingularIntegral(wavenumber::Number,
                                              r_test::Array{Float64, 1},
                                              nodes::Array{Float64, 2},
                                              area_quadrature_points::AbstractArray{Float64, 2},
@@ -196,11 +195,67 @@ end
     sub_elements = [4 2 3; 1 4 3; 1 2 4]
     quadrature_points = calculateQuadraturePoints(sub_nodes, sub_elements, area_quadrature_points)
     for triangle_idx in 1:3
-        total_integral += scalarGreensNonSingularIntegral(wavenumber,
-                                                 r_test,
-                                                 getTriangleNodes(triangle_idx, sub_elements, sub_nodes),
-                                                 quadrature_points[triangle_idx],
-                                                 quadrature_weights)
+        # integrate scalar greens function with singularity subtracted over sub triangles
+        non_singular_integrand(x, y, z) = scalarGreensNonSingular(norm([x,y,z]-r_test), wavenumber)
+        sub_element_area = calculateTriangleArea(sub_nodes[sub_elements[triangle_idx,:],:])
+        total_integral += gaussQuadrature(sub_element_area,
+                                          non_singular_integrand,
+                                          quadrature_points[triangle_idx],
+                                          quadrature_weights)
+    end
+    total_integral
+end
+
+@views function scalarGreensKDerivIntegration(pulse_mesh::PulseMesh,
+                                 element_idx::Int64,
+                                 wavenumber::Number,
+                                 r_test::Array{Float64, 1},
+                                 is_singular::Bool)
+    # This function encapsulates all possible integration routines for the
+    # scalar Green's function over a source triangle.
+    # distance_to_edge_tol is distance at which the projection of r_test must be
+    #    to an edge or extension to ignore that edge's contribution to the integral
+    # near_singular_tol is the number of max edge lengths away r_test can be
+    #    before doing purely numerical integration
+    @unpack nodes,
+            elements,
+            areas,
+            src_quadrature_rule,
+            src_quadrature_points,
+            src_quadrature_weights = pulse_mesh
+    triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+    triangle_area = areas[element_idx]
+    if is_singular == true
+        scalarGreensKDerivSingularIntegral(wavenumber, r_test, triangle_nodes,
+                                           src_quadrature_rule[1:3,:], src_quadrature_weights)
+    else
+        greens_k_deriv_integrand(x,y,z) = scalarGreensKDeriv(norm([x,y,z]-r_test), wavenumber)
+        gaussQuadrature(triangle_area, greens_k_deriv_integrand,
+                          src_quadrature_points[element_idx], src_quadrature_weights)
+    end
+end
+
+@views function scalarGreensKDerivSingularIntegral(wavenumber::Number,
+                                                   r_test::Array{Float64, 1},
+                                                   nodes::Array{Float64, 2},
+                                                   area_quadrature_points::AbstractArray{Float64, 2},
+                                                   quadrature_weights::AbstractArray{Float64, 1})
+    # Computes the integral of the scalar greens function for self-interactions
+    # i.e. r_test is in the source triangle described by nodes
+    sub_nodes = Array{Float64, 2}(undef, 4, 3)
+    sub_nodes[1:3,:] = nodes
+    sub_nodes[4,:] = r_test
+    sub_elements = [4 2 3; 1 4 3; 1 2 4]
+    quadrature_points = calculateQuadraturePoints(sub_nodes, sub_elements, area_quadrature_points)
+    total_integral = 0.0+im*0.0
+    for triangle_idx in 1:3
+        sub_element_nodes = getTriangleNodes(triangle_idx, sub_elements, sub_nodes)
+        sub_element_area = calculateTriangleArea(sub_element_nodes)
+        k_deriv_integrand(x, y, z) = scalarGreensKDeriv(norm([x,y,z]-r_test),
+                                                             wavenumber)
+        total_integral += gaussQuadrature(sub_element_area, k_deriv_integrand,
+                                            quadrature_points[triangle_idx],
+                                            quadrature_weights)
     end
     total_integral
 end

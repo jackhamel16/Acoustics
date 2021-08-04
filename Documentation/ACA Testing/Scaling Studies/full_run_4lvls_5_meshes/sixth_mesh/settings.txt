@@ -1,0 +1,16 @@
+
+excitation_amplitude = 1.0
+# lambda = 10.0
+# wavenumber = 2*pi / lambda + 0*im
+src_quadrature_rule = gauss7rule
+test_quadrature_rule = gauss1rule
+distance_to_edge_tol = 1e-12
+near_singular_tol = 1.0
+#set up sphere
+radius = 1.0
+l, m = 0, 0
+
+num_levels = 4
+compression_distance = 1.5
+ACA_approximation_tol = 1e-6
+gmres_tol = 1e-12
