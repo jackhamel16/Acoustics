@@ -31,7 +31,7 @@ if length(ARGS) == 1
 
     println("Parsing mesh in: ", mesh_filename, "...")
     pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-
+    println("Number of elements = ",pulse_mesh.num_elements)
     # Excitation building, skipped if running WS mode
     if excitation_params.type == "planewave"
         println("Excitation: Plavewave")
@@ -58,12 +58,13 @@ if length(ARGS) == 1
                                                                                                normal)
     end
 
+    run_time = 0.0
     # Determine which solver to run
     if equation == "sound soft IE"
         println("Equation: Sound Soft IE")
         if ACA_params.use_ACA == true
             println("Running with ACA...")
-            sources, octree, metrics = solveSoundSoftIEACA(pulse_mesh,
+            run_time = @elapsed sources, octree, metrics = solveSoundSoftIEACA(pulse_mesh,
                                                            ACA_params.num_levels,
                                                            excitationFunc,
                                                            excitation_params.wavenumber,
@@ -73,7 +74,7 @@ if length(ARGS) == 1
                                                            ACA_params.approximation_tol)
             printACAMetrics(metrics)
         else
-            sources = solveSoftIE(pulse_mesh,
+            run_time = @elapsed sources = solveSoftIE(pulse_mesh,
                                   excitationFunc,
                                   excitation_params.wavenumber,
                                   distance_to_edge_tol,
@@ -86,7 +87,7 @@ if length(ARGS) == 1
         if ACA_params.use_ACA == true
             println("ACA not implemented for this equation yet")
         else
-            sources = solveSoftIENormalDeriv(pulse_mesh,
+            run_time = @elapsed sources = solveSoftIENormalDeriv(pulse_mesh,
                                              excitationFuncNormalDeriv,
                                              excitation_params.wavenumber)
         end
@@ -97,7 +98,7 @@ if length(ARGS) == 1
         if ACA_params.use_ACA == true
             println("ACA not implemented for this equation yet")
         else
-            sources = solveSoftCFIE(pulse_mesh,
+            run_time = @elapsed sources = solveSoftCFIE(pulse_mesh,
                                     excitationFunc,
                                     excitationFuncNormalDeriv,
                                     excitation_params.wavenumber,
@@ -112,12 +113,13 @@ if length(ARGS) == 1
         if inputs.src_quadrature_string != inputs.test_quadrature_string
             println("When running at a WS mode, test and src quadrature rules must be identical. Change settings and rerun.")
         else
-            sources = solveWSMode(WS_params.max_l, WS_params.mode_idx,
+            run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idx,
                                   WS_params.wavenumber, pulse_mesh,
                                   distance_to_edge_tol, near_singular_tol)
             exportSourcesBundled(mesh_filename, sources)
         end
     end
+    println("Total Runtime = ", run_time, " seconds")
 
 elseif length(ARGS) > 1
     println("Please provide only one input filename as argument")
