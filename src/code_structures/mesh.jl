@@ -1,22 +1,9 @@
+using LinearAlgebra
 using Parameters
 
 include("../../packages/gmsh.jl")
 
-# @with_kw struct PulseMesh
-#     num_elements::Int64 = 0
-#     nodes::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-#     elements::AbstractArray{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
-#     areas::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
-#     normals::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-#     src_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-#     test_quadrature_rule::AbstractArray{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
-#     src_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
-#     src_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
-#     test_quadrature_points::AbstractArray{Array{Float64, 2}} = Array{Array{Float64, 2}}(undef, 0)
-#     test_quadrature_weights::AbstractArray{Float64, 1} = Array{Float64, 1}(undef, 0)
-# end
-
-@with_kw struct PulseMesh
+@with_kw mutable struct PulseMesh
     num_elements::Int64 = 0
     nodes::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
     elements::Array{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
@@ -28,6 +15,8 @@ include("../../packages/gmsh.jl")
     src_quadrature_weights::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
     test_quadrature_points::Array{Array{Float64, 2},1} = Array{Array{Float64, 2},1}(undef, 0)
     test_quadrature_weights::Array{Float64, 1} = Array{Float64, 1}(undef, 0)
+    Z_factors::LU{T,Array{T,2}} where T = lu(ones(1,1))
+    RHS::Array{T,1} where T = Array{ComplexF64, 1}(undef, 0)
 end
 
 @views function calculateQuadraturePoints(nodes::AbstractArray{Float64, 2},
@@ -83,6 +72,7 @@ end
                                src_quadrature_rule::AbstractArray{Float64, 2},
                                test_quadrature_rule::AbstractArray{Float64, 2})
     # Builds a PulseMesh object based the mesh at mesh_filename
+    # leaves Z_factors and RHS as defaults to be filled in other WS or solve routines
     num_coord_dims = 3
     nodes_per_triangle = 3
 
@@ -122,7 +112,9 @@ end
               calculateQuadraturePoints(nodes, elements, src_quadrature_rule[1:3,:]),
               src_quadrature_rule[4, :],
               calculateQuadraturePoints(nodes, elements, test_quadrature_rule[1:3,:]),
-              test_quadrature_rule[4, :])
+              test_quadrature_rule[4, :],
+              lu(ones(1,1)),
+              Array{ComplexF64, 1}(undef, 0))
 end
 
 @views function barycentric2Cartesian(nodes::AbstractArray{Float64, 2},

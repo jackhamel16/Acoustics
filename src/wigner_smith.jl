@@ -1,3 +1,8 @@
+# Dependencies: scattering_matrix.jl solve.jl
+
+using LinearAlgebra
+using Parameters
+
 @views function calculateWSMatrix(S_matrix::AbstractArray{ComplexF64,2},
                                   dSdk_matrix::AbstractArray{ComplexF64,2})
     return(im*adjoint(S_matrix)*dSdk_matrix)
@@ -9,6 +14,8 @@ end # function calculateWSMatrix
                                   distance_to_edge_tol,
                                   near_singular_tol)
     num_harmonics = max_l^2 + 2*max_l + 1
+    Z_matrix = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
+    pulse_mesh.Z_factors = lu(Z_matrix)
     S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh,
                                   distance_to_edge_tol, near_singular_tol)
     dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber,

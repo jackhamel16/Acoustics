@@ -30,6 +30,8 @@ include("../../src/includes.jl")
             end
         end
         no_coupling_matrix = [1 0 0 0; 0 0 0 1; 0 0 1 0; 0 1 0 0] # mag of zero in spots corresponding to coupling between different harmonics
+        # test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        pulse_mesh.Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test Array{ComplexF64, 2} == typeof(test_S)
         @test size(test_S) == (num_harmonics, num_harmonics)
@@ -50,6 +52,8 @@ include("../../src/includes.jl")
         mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
+        # test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        pulse_mesh.Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test size(test_S) == (num_harmonics, num_harmonics)
         @test isapprox(test_S, transpose(test_S), rtol=1e-6)
@@ -67,7 +71,7 @@ include("../../src/includes.jl")
         # near_singular_tol = 1.0
         # mesh_filename = "examples/test/rectangle_plate_10m.msh"
         # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        #
+        # pulse_mesh.Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         # test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         # @test size(test_S) == (num_harmonics, num_harmonics)
         # @test isapprox(test_S, transpose(test_S), rtol=1e-4)
@@ -88,6 +92,7 @@ include("../../src/includes.jl")
         @unpack num_elements = pulse_mesh
         Z = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
         Z_factors = lu(Z)
+        pulse_mesh.Z_factors = Z_factors
         dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
         Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
         Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
@@ -118,9 +123,15 @@ include("../../src/includes.jl")
         near_singular_tol = 1.0
         mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        Z_high = lu(calculateZMatrix(pulse_mesh, k_high, distance_to_edge_tol, near_singular_tol))
+        Z_low = lu(calculateZMatrix(pulse_mesh, k_low, distance_to_edge_tol, near_singular_tol))
+        pulse_mesh.Z_factors = Z_high
         S_high = calculateScatteringMatrix(max_l, k_high, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        pulse_mesh.Z_factors = Z_low
         S_low = calculateScatteringMatrix(max_l, k_low, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         solution_dSdk = (S_high - S_low) / deltak
+        Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
+        pulse_mesh.Z_factors = Z_factors
         test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.15e-3)
@@ -138,9 +149,15 @@ include("../../src/includes.jl")
         near_singular_tol = 1.0
         mesh_filename = "examples/test/rectangular_strips/rectangular_strip.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        Z_high = lu(calculateZMatrix(pulse_mesh, k_high, distance_to_edge_tol, near_singular_tol))
+        Z_low = lu(calculateZMatrix(pulse_mesh, k_low, distance_to_edge_tol, near_singular_tol))
+        pulse_mesh.Z_factors = Z_high
         S_high = calculateScatteringMatrix(max_l, k_high, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        pulse_mesh.Z_factors = Z_low
         S_low = calculateScatteringMatrix(max_l, k_low, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         solution_dSdk = (S_high - S_low) / deltak
+        Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
+        pulse_mesh.Z_factors = Z_factors
         test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.4e-4)
