@@ -17,14 +17,14 @@ softIE_weight = 0.5
 radius = 1.0
 l, m = 0, 0
 
-num_elements = [1266, 3788, 8010, 19034]
+num_elements = [1266, 3788]#, 8010, 19034]
 l2errors = Array{Float64, 1}(undef, 0)
 
 sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
 sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
-    mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
+    mesh_filename = string("examples/test/spheres/sphere_1m_",num_elements[run_idx],".msh")
     pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
     @time sources = solveSoftCFIE(pulse_mesh,

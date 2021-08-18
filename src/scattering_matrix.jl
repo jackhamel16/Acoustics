@@ -1,5 +1,8 @@
+# Dependencies: solve.jl
+
 @views function calculateScatteringMatrix(max_l::Int64, wavenumber, pulse_mesh::PulseMesh, distance_to_edge_tol, near_singular_tol)
-    @unpack num_elements = pulse_mesh
+    @unpack num_elements,
+            Z_factors = pulse_mesh
     num_harmonics = max_l^2 + 2*max_l + 1
     S_matrix = zeros(ComplexF64, num_harmonics, num_harmonics)
     for tl=0:max_l
@@ -11,8 +14,6 @@
             S_matrix[t_idx, p_idx] = (-1)^tm
         end
     end
-    Z_matrix = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
-    Z_factors = lu(Z_matrix)
     Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
     Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
     harmonic_idx = 1
@@ -23,15 +24,13 @@
             harmonic_idx += 1
         end
     end
-    # Vs_trans, Js, Z_factors = calculateVJMatrices(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
     S_matrix += im/(2*wavenumber) * Vs_trans * Js
     return(S_matrix)
 end
 
 @views function calculateScatteringMatrixDerivative(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, distance_to_edge_tol, near_singular_tol)
-    @unpack num_elements = pulse_mesh
-    Z_matrix = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
-    Z_factors = lu(Z_matrix)
+    @unpack num_elements,
+            Z_factors = pulse_mesh
     dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
     Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
     Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
@@ -54,6 +53,7 @@ end
 end
 
 @views function calculateVlm(pulse_mesh::PulseMesh, wavenumber, l, m)
+    # calculates the rhs vector for a spherical wave excitation of degree l and order m
     @unpack num_elements = pulse_mesh
     sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(2 * wavenumber,
                                                                     real(wavenumber),
@@ -66,6 +66,8 @@ end
 end
 
 @views function calculateVlmKDeriv(pulse_mesh::PulseMesh, wavenumber, l, m)
+    # calculates the derivative with respect to k of the rhs vector for a
+    # spherical wave excitation of degree l and order m
     @unpack num_elements = pulse_mesh
     dVlmdk = zeros(ComplexF64, num_elements)
     sphericalWaveKDerivIntegrand(x,y,z) = sphericalWaveKDerivative(wavenumber, [x,y,z], l, m)
@@ -74,6 +76,8 @@ end
 end
 
 @views function calculateZKDerivMatrix(pulse_mesh::PulseMesh, wavenumber)
+    # Computes the derivative with respect to k of the Z matrix using sound-soft
+    # IE to construct the scattering matrix
     @unpack num_elements = pulse_mesh
     testIntegrand(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh,
                                                                                 src_idx,
@@ -86,6 +90,7 @@ end
 end
 
 @views function calculateZMatrix(pulse_mesh::PulseMesh, wavenumber, distance_to_edge_tol, near_singular_tol)
+    # Computes the Z matrix using sound-soft IE to construct the scattering matrix
     @unpack num_elements = pulse_mesh
     testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                    wavenumber,
