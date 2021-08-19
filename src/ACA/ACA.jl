@@ -139,3 +139,58 @@ end # computeZEntry
     Z_entry = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idx)
     return(Z_entry)
 end
+
+@views function computedZdkEntrySoundSoft(pulse_mesh::PulseMesh,
+                                       test_node::Node,
+                                       src_node::Node,
+                                       wavenumber,
+                                       test_idx::Int64,
+                                       src_idx::Int64)
+    # Computes an entry of the matrix dZ/dk for an interaction between a src element
+    #   in src_node and test element in test_node localted at src_idx and test_idx.
+    #   Assumes you are computing a sub-matrix of dZ/dk for all elements between test_node and src_node.
+    #   test_idx and src_idx are local element idxs for elements contained in test_node and
+    #   src_node, respectively.  The function assumes test_idx and src_idx are valid indices
+    #   (i.e. not larger than the total number of elements in test_node or src_node)
+    # Returns the requested entry of the sub-dZ/dk matrix
+    global_test_idx = test_node.element_idxs[test_idx]
+    global_src_idx = src_node.element_idxs[src_idx]
+    @unpack areas,
+            test_quadrature_points,
+            test_quadrature_weights = pulse_mesh
+    is_singular = global_test_idx == global_src_idx
+    testIntegrand(x,y,z) = scalarGreensKDerivIntegration(pulse_mesh,
+                                                         global_src_idx,
+                                                         wavenumber,
+                                                         [x,y,z],
+                                                         is_singular)
+    Z_entry = gaussQuadrature(areas[global_test_idx],
+                              testIntegrand,
+                              test_quadrature_points[global_test_idx],
+                              test_quadrature_weights)::ComplexF64
+    return(Z_entry)
+end
+
+function computeZJMatVec(pulse_mesh::PulseMesh,
+                         octree::Octree,
+                         J_vec::AbstractArray{T,1}) where T
+    @unpack num_elements = pulse_mesh
+    @unpack leaf_node_idxs,
+            nodes = octree
+
+    leaf_nodes = octree.nodes[octree.leaf_node_idxs]
+    num_leaves = length(leaf_nodes)
+    V_vec = zeros(ComplexF64, num_elements)
+    for local_test_node_idx = 1:num_leaves
+        global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
+        test_node = octree.nodes[global_test_node_idx]
+        for local_src_node_idx = 1:num_leaves
+            global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
+            src_node = octree.nodes[global_src_node_idx]
+            sub_Z = test_node.node2node_Z_matrices[local_src_node_idx]
+            sub_J = J_vec[src_node.element_idxs]
+            V_vec[test_node.element_idxs] += subMatvecACA(sub_Z, sub_J)
+        end
+    end
+    return(V_vec)
+end # computeZJMatVec

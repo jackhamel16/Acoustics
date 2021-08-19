@@ -155,7 +155,8 @@ end # fullMatvecACA
     fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
     fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
     sources = zeros(ComplexF64, num_elements)
-    gmres!(sources, fullMatvecLinearMap, rhs, reltol=gmres_tol, maxiter=gmres_max_iters)
+    num_iters = gmres!(sources, fullMatvecLinearMap, rhs, reltol=gmres_tol, maxiter=gmres_max_iters, log=true)[2]
+    println("GMRES ", string(num_iters))
     return((sources, octree, computeACAMetrics(num_elements, octree)))
     # return(computeACAMetrics(num_elements, octree))
 end #solveSoundSoftIEACA
@@ -188,7 +189,8 @@ end #solveSoundSoftIEACA
     fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
     fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
     sources = zeros(ComplexF64, num_elements)
-    gmres!(sources, fullMatvecLinearMap, rhs)
+    num_iters = gmres!(sources, fullMatvecLinearMap, rhs, log=true)[2]
+    println("GMRES ", string(num_iters))
     return((sources, octree, computeACAMetrics(num_elements, octree)))
     # return(computeACAMetrics(num_elements, octree))
 end #solveSoundSoftIEACA
