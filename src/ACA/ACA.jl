@@ -117,7 +117,7 @@ end #computeRHSContributionACA
                               test_quadrature_points[test_ele_idx],
                               test_quadrature_weights)::ComplexF64
     return(Z_entry)
-end # computeZEntry
+end # computeZEntrySoundSoft
 
 @views function computeZEntrySoundSoft(pulse_mesh::PulseMesh,
                                        test_node::Node,
@@ -138,7 +138,7 @@ end # computeZEntry
     global_src_idx = src_node.element_idxs[src_idx]
     Z_entry = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idx)
     return(Z_entry)
-end
+end # computeZEntrySoundSoft
 
 @views function computedZdkEntrySoundSoft(pulse_mesh::PulseMesh,
                                        test_node::Node,
@@ -169,28 +169,4 @@ end
                               test_quadrature_points[global_test_idx],
                               test_quadrature_weights)::ComplexF64
     return(Z_entry)
-end
-
-function computeZJMatVec(pulse_mesh::PulseMesh,
-                         octree::Octree,
-                         J_vec::AbstractArray{T,1}) where T
-    @unpack num_elements = pulse_mesh
-    @unpack leaf_node_idxs,
-            nodes = octree
-
-    leaf_nodes = octree.nodes[octree.leaf_node_idxs]
-    num_leaves = length(leaf_nodes)
-    V_vec = zeros(ComplexF64, num_elements)
-    for local_test_node_idx = 1:num_leaves
-        global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
-        test_node = octree.nodes[global_test_node_idx]
-        for local_src_node_idx = 1:num_leaves
-            global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
-            src_node = octree.nodes[global_src_node_idx]
-            sub_Z = test_node.node2node_Z_matrices[local_src_node_idx]
-            sub_J = J_vec[src_node.element_idxs]
-            V_vec[test_node.element_idxs] += subMatvecACA(sub_Z, sub_J)
-        end
-    end
-    return(V_vec)
-end # computeZJMatVec
+end # computedZdkEntrySoundSoft

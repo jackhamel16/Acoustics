@@ -104,7 +104,7 @@ function printACAMetrics(metrics::ACAMetrics, output_file::IOStream)
     println(output_file, "    Compression Ratio = ", metrics.compression_ratio)
 end
 
-@views function fullMatvecACA(pulse_mesh::PulseMesh, octree::Octree, J::AbstractArray{T,1})::Array{T,1} where T
+@views function fullMatvecACA(pulse_mesh::PulseMesh, octree::Octree, J::AbstractArray{T,1}, use_dZdk=false)::Array{T,1} where T
     # This function implicitly computes Z*J=V for the entire Z matrix using the
     #   sub-Z matrices computed directly or compressed as U and V for interactions
     #   between the elements in nodes of the octree.
@@ -112,14 +112,27 @@ end
     V = zeros(ComplexF64, num_elements)
     leaf_nodes = octree.nodes[octree.leaf_node_idxs]
     num_nodes = length(leaf_nodes)
-    for test_node_idx = 1:num_nodes
-        test_node = leaf_nodes[test_node_idx]
-        for src_node_idx = 1:num_nodes
-            src_node = leaf_nodes[src_node_idx]
-            sub_J = J[src_node.element_idxs]
-            sub_Z = test_node.node2node_Z_matrices[src_node_idx] # this produces type instability, but unavoidable
-            sub_V = subMatvecACA(sub_Z, sub_J)
-            V[test_node.element_idxs] += sub_V
+    if use_dZdk == false
+        for test_node_idx = 1:num_nodes
+            test_node = leaf_nodes[test_node_idx]
+            for src_node_idx = 1:num_nodes
+                src_node = leaf_nodes[src_node_idx]
+                sub_J = J[src_node.element_idxs]
+                sub_Z = test_node.node2node_Z_matrices[src_node_idx] # this produces type instability, but unavoidable
+                sub_V = subMatvecACA(sub_Z, sub_J)
+                V[test_node.element_idxs] += sub_V
+            end
+        end
+    else
+        for test_node_idx = 1:num_nodes
+            test_node = leaf_nodes[test_node_idx]
+            for src_node_idx = 1:num_nodes
+                src_node = leaf_nodes[src_node_idx]
+                sub_J = J[src_node.element_idxs]
+                sub_Z = test_node.node2node_dZdk_matrices[src_node_idx] # this produces type instability, but unavoidable
+                sub_V = subMatvecACA(sub_Z, sub_J)
+                V[test_node.element_idxs] += sub_V
+            end
         end
     end
     return(V)

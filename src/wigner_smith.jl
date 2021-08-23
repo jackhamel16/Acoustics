@@ -25,6 +25,27 @@ end # function calculateWSMatrix
     return(Q)
 end # function calculateWSMatrix
 
+@views function calculateWSMatrixACA(max_l::Int64,
+                                  wavenumber,
+                                  pulse_mesh::PulseMesh,
+                                  octree::Octree,
+                                  distance_to_edge_tol,
+                                  near_singular_tol,
+                                  compression_distance,
+                                  ACA_approximation_tol)
+    num_harmonics = max_l^2 + 2*max_l + 1
+    fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol,
+                                  near_singular_tol, compression_distance, ACA_approximation_tol)
+    fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
+                                     compression_distance, ACA_approximation_tol)
+    S = calculateScatteringMatrixACA(max_l, wavenumber, pulse_mesh, octree,
+                                  distance_to_edge_tol, near_singular_tol)
+    dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber,
+                                                  pulse_mesh, octree)
+    Q = calculateWSMatrix(S, dSdk)
+    return(Q)
+end # function calculateWSMatrix
+
 @views function solveWSMode(max_l::Int64,
                             mode_idx::Int64,
                             wavenumber,

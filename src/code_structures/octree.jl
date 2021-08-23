@@ -11,6 +11,7 @@ mutable struct Node
     bounds::Array{Array{Float64,1},1}
     centroid::Array{Float64,1}
     node2node_Z_matrices::Array{Any,1}
+    node2node_dZdk_matrices::Array{Any,1}
 end
 
 @with_kw mutable struct Octree
@@ -21,20 +22,20 @@ end
 end
 
 # copy functions are used in calculateScatteringMatrixDerivativeACA
-Base.copy(n::Node) = Node(n.octree_level, n.parent_idx, n.children_idxs,
-                          n.element_idxs, n.bounds, n.centroid,
-                          n.node2node_Z_matrices)
-
-function Base.copy(nodes::Array{Node,1})
-    nodes_copy = Array{Node,1}(undef, length(nodes))
-    for node_idx = 1:length(nodes)
-        nodes_copy[node_idx] = copy(nodes[node_idx])
-    end
-    return(nodes_copy)
-end
-
-Base.copy(o::Octree) = Octree(o.num_levels, o.top_node_idx,
-                              o.leaf_node_idxs, copy(o.nodes))
+# Base.copy(n::Node) = Node(n.octree_level, n.parent_idx, n.children_idxs,
+#                           n.element_idxs, n.bounds, n.centroid,
+#                           n.node2node_Z_matrices)
+#
+# function Base.copy(nodes::Array{Node,1})
+#     nodes_copy = Array{Node,1}(undef, length(nodes))
+#     for node_idx = 1:length(nodes)
+#         nodes_copy[node_idx] = copy(nodes[node_idx])
+#     end
+#     return(nodes_copy)
+# end
+#
+# Base.copy(o::Octree) = Octree(o.num_levels, o.top_node_idx,
+#                               o.leaf_node_idxs, copy(o.nodes))
 
 @views function computeNodeBounds(half_edge_length, node_centroid::Array{Float64,1})
     # Computes the boundaries of the node given half the length of a node edge
@@ -78,9 +79,8 @@ end
                     end
                 end
                 if isempty(child_element_idxs) == false
-                    no_children_idxs = []
-                    no_Z_matrices = []
-                    child_node = Node(child_level, parent_idx, no_children_idxs, child_element_idxs, child_bounds, child_centroid, no_Z_matrices)
+                    no_children_idxs, no_Z_matrices, no_dZdk_matrices = [], [], []
+                    child_node = Node(child_level, parent_idx, no_children_idxs, child_element_idxs, child_bounds, child_centroid, no_Z_matrices, no_dZdk_matrices)
                     push!(children_nodes, child_node)
                 end
                 child_idx += 1
@@ -218,12 +218,12 @@ end
                                                             test_idx, src_idx)
                 compressed_sub_Z = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
                                                     ACA_approximation_tol, num_rows, num_cols)
-                append!(test_node.node2node_Z_matrices, [compressed_sub_Z])
+                append!(test_node.node2node_dZdk_matrices, [compressed_sub_Z])
             else # use direct Z calculation
                 # sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
                 sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
                 nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftTestIntegrand, sub_Z_matrix)
-                append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
+                append!(test_node.node2node_dZdk_matrices, [sub_Z_matrix])
             end # if-else
         end
     end
@@ -249,7 +249,7 @@ end
     end
     level1_half_edge_length = (1+buffer/2)*max_distance
     level1_bounds = computeNodeBounds(level1_half_edge_length, level1_centroid)
-    level1_node = Node(level1, no_parent_idx, no_children_idxs, all_ele_idxs, level1_bounds, level1_centroid, no_Z_matrices)
+    level1_node = Node(level1, no_parent_idx, no_children_idxs, all_ele_idxs, level1_bounds, level1_centroid, no_Z_matrices, no_Z_matrices)
     level1_node_idx = 1
     return(Octree(num_levels, level1_node_idx, no_leaves, [level1_node]))
 end # initializeOctree

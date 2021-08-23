@@ -84,11 +84,8 @@ end
     return(term1 + term2 + term3)
 end
 
-@views function calculateScatteringMatrixDerivativeACA(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, octree::Octree, distance_to_edge_tol, near_singular_tol)
+@views function calculateScatteringMatrixDerivativeACA(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, octree::Octree)
     @unpack num_elements = pulse_mesh
-    dZdk_octree = copy(octree)
-    fillOctreedZdkMatricesSoundSoft!(pulse_mesh, dZdk_octree, wavenumber,
-                                     compression_distance, ACA_approximation_tol) # could maybe speed this up not having to recheck whether to compress or not
     Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
     Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
     dVsdk_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
@@ -104,7 +101,7 @@ end
             println("GMRES ", string(num_iters))
             Js[:,harmonic_idx] = sources
             dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
-            dZdk_times_Js[:,harmonic_idx] = computeZJMatVec(pulse_mesh, dZdk_octree, Js[:,num_harmonics])
+            dZdk_times_Js[:,harmonic_idx] = fullMatvecACA(pulse_mesh, octree, Js[:,harmonic_idx], true)
             harmonic_idx += 1
         end
     end
