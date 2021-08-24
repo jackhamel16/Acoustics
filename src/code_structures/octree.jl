@@ -21,22 +21,6 @@ end
     nodes::Array{Node,1} = []
 end
 
-# copy functions are used in calculateScatteringMatrixDerivativeACA
-# Base.copy(n::Node) = Node(n.octree_level, n.parent_idx, n.children_idxs,
-#                           n.element_idxs, n.bounds, n.centroid,
-#                           n.node2node_Z_matrices)
-#
-# function Base.copy(nodes::Array{Node,1})
-#     nodes_copy = Array{Node,1}(undef, length(nodes))
-#     for node_idx = 1:length(nodes)
-#         nodes_copy[node_idx] = copy(nodes[node_idx])
-#     end
-#     return(nodes_copy)
-# end
-#
-# Base.copy(o::Octree) = Octree(o.num_levels, o.top_node_idx,
-#                               o.leaf_node_idxs, copy(o.nodes))
-
 @views function computeNodeBounds(half_edge_length, node_centroid::Array{Float64,1})
     # Computes the boundaries of the node given half the length of a node edge
     # (assumes node is a cube) and the centroid of the node. Returns array of
@@ -184,10 +168,10 @@ end # fillOctreeNodes!
 end
 
 @views function fillOctreedZdkMatricesSoundSoft!(pulse_mesh::PulseMesh,
-                                              octree::Octree,
-                                              wavenumber,
-                                              compression_distance,
-                                              ACA_approximation_tol)
+                                                 octree::Octree,
+                                                 wavenumber,
+                                                 compression_distance,
+                                                 ACA_approximation_tol)
     # Computes the sub dZ/dk matrices for interactions between nodes using ACA if the nodes
     #   are sufficiently far apart or directly computing the sub-Z matrix if too close
     # octree is the Octree object for which the sub-Z matrices will be computed and stored in
@@ -220,7 +204,6 @@ end
                                                     ACA_approximation_tol, num_rows, num_cols)
                 append!(test_node.node2node_dZdk_matrices, [compressed_sub_Z])
             else # use direct Z calculation
-                # sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
                 sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
                 nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftTestIntegrand, sub_Z_matrix)
                 append!(test_node.node2node_dZdk_matrices, [sub_Z_matrix])

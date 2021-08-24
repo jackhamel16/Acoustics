@@ -66,6 +66,32 @@ end # function calculateWSMatrix
                              near_singular_tol)
 end # function solveWSMode
 
+@views function solveWSModeACA(max_l::Int64,
+                               mode_idx::Int64,
+                               wavenumber,
+                               pulse_mesh::PulseMesh,
+                               distance_to_edge_tol,
+                               near_singular_tol,
+                               num_levels,
+                               compression_distance,
+                               ACA_approximation_tol)
+    # Solves sound-soft IE with an incident field for the WS mode indicated by mode_idx
+    #   using ACA
+    octree = createOctree(num_levels, pulse_mesh)
+    Q = calculateWSMatrixACA(max_l, wavenumber, pulse_mesh, octree, distance_to_edge_tol,
+                             near_singular_tol, compression_distance, ACA_approximation_tol)
+    eigen_Q = eigen(Q)
+    mode_vector = eigen_Q.vectors[:,mode_idx]
+    excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
+    println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
+    writeWSTimeDelays(eigen_Q.values)
+    sources_WS = solveSoundSoftIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
+                                     wavenumber, distance_to_edge_tol, near_singular_tol,
+                                     compression_distance, ACA_approximation_tol)
+    metrics = computeACAMetrics(pulse_mesh.num_elements, octree)
+    return(sources_WS, octree, metrics)
+end # function solveWSMode
+
 function sphericalWaveWSMode(x, y, z, max_l::Int64, wavenumber, mode_vector::AbstractArray{T,1}) where T
     # sums spherical incident waves weighted by eigenvector elements of the desired WS mode
     excitation_amplitude = 2 * real(wavenumber)

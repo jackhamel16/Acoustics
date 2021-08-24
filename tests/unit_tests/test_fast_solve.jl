@@ -188,10 +188,9 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J[1], rtol=0.13e-6)
+        @test isapprox(sol_J, test_J[1], rtol=0.13e-6) # not exact because of GMRES
         @test typeof(test_J[2]) == Octree
         @test typeof(test_J[3]) == ACAMetrics
 
@@ -207,9 +206,7 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
-        # sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.15e-6)
 
         wavenumber = 1.0+0.0im
@@ -241,9 +238,7 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
-        # sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.34e-6)
 
         wavenumber = 1.0+0.0im
@@ -258,7 +253,6 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.21e-3)

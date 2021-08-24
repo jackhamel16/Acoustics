@@ -121,7 +121,6 @@ include("../../src/ACA/ACA.jl")
         sol_octree = initializeOctree(sol_num_levels, small_buffer, ele_centroids)
         sol_top_node_idx = 1
         fillOctreeNodes!(sol_top_node_idx, sol_octree, ele_centroids)
-        # test_octree = createOctree(sol_num_levels, ele_centroids)
         test_octree = createOctree(sol_num_levels, pulse_mesh)
         @test isapprox(test_octree.num_levels, sol_octree.num_levels, rtol=1e-15)
         @test isapprox(test_octree.top_node_idx, sol_octree.top_node_idx, rtol=1e-15)

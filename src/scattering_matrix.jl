@@ -150,19 +150,19 @@ end
     return(dZdk_matrix)
 end
 
-@views function calculateZKDerivMatrixACA(pulse_mesh::PulseMesh, wavenumber)
-    # Computes the derivative with respect to k of the Z matrix using sound-soft
-    # IE to construct the scattering matrix
-    @unpack num_elements = pulse_mesh
-    testIntegrand(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh,
-                                                                                src_idx,
-                                                                                wavenumber,
-                                                                                r_test,
-                                                                                is_singular)
-    dZdk_matrix = zeros(ComplexF64, num_elements, num_elements)
-    matrixFill!(pulse_mesh, testIntegrand, dZdk_matrix)
-    return(dZdk_matrix)
-end
+# @views function calculateZKDerivMatrixACA(pulse_mesh::PulseMesh, wavenumber)
+#     # Computes the derivative with respect to k of the Z matrix using sound-soft
+#     # IE to construct the scattering matrix
+#     @unpack num_elements = pulse_mesh
+#     testIntegrand(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh,
+#                                                                                 src_idx,
+#                                                                                 wavenumber,
+#                                                                                 r_test,
+#                                                                                 is_singular)
+#     dZdk_matrix = zeros(ComplexF64, num_elements, num_elements)
+#     matrixFill!(pulse_mesh, testIntegrand, dZdk_matrix)
+#     return(dZdk_matrix)
+# end
 
 @views function calculateZMatrix(pulse_mesh::PulseMesh, wavenumber, distance_to_edge_tol, near_singular_tol)
     # Computes the Z matrix using sound-soft IE to construct the scattering matrix

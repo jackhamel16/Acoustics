@@ -113,10 +113,24 @@ if length(ARGS) == 1
         if inputs.src_quadrature_string != inputs.test_quadrature_string
             println("When running at a WS mode, test and src quadrature rules must be identical. Change settings and rerun.")
         else
-            run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idx,
-                                  WS_params.wavenumber, pulse_mesh,
-                                  distance_to_edge_tol, near_singular_tol)
-            exportSourcesBundled(mesh_filename, sources)
+            if ACA_params.use_ACA == true
+                println("Running with ACA...")
+                run_time = @elapsed sources, octree, metrics = solveWSModeACA(WS_params.max_l,
+                                                                              WS_params.mode_idx,
+                                                                              excitation_params.wavenumber,
+                                                                              pulse_mesh,
+                                                                              distance_to_edge_tol,
+                                                                              near_singular_tol,
+                                                                              ACA_params.num_levels,
+                                                                              ACA_params.compression_distance,
+                                                                              ACA_params.approximation_tol)
+                printACAMetrics(metrics)
+            else
+                run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idx,
+                                      WS_params.wavenumber, pulse_mesh,
+                                      distance_to_edge_tol, near_singular_tol)
+                exportSourcesBundled(mesh_filename, sources)
+            end
         end
     end
     println("Total Runtime = ", run_time, " seconds")
