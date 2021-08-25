@@ -117,7 +117,7 @@ end #computeRHSContributionACA
                               test_quadrature_points[test_ele_idx],
                               test_quadrature_weights)::ComplexF64
     return(Z_entry)
-end # computeZEntry
+end # computeZEntrySoundSoft
 
 @views function computeZEntrySoundSoft(pulse_mesh::PulseMesh,
                                        test_node::Node,
@@ -138,4 +138,35 @@ end # computeZEntry
     global_src_idx = src_node.element_idxs[src_idx]
     Z_entry = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idx)
     return(Z_entry)
-end
+end # computeZEntrySoundSoft
+
+@views function computedZdkEntrySoundSoft(pulse_mesh::PulseMesh,
+                                          test_node::Node,
+                                          src_node::Node,
+                                          wavenumber,
+                                          test_idx::Int64,
+                                          src_idx::Int64)
+    # Computes an entry of the matrix dZ/dk for an interaction between a src element
+    #   in src_node and test element in test_node localted at src_idx and test_idx.
+    #   Assumes you are computing a sub-matrix of dZ/dk for all elements between test_node and src_node.
+    #   test_idx and src_idx are local element idxs for elements contained in test_node and
+    #   src_node, respectively.  The function assumes test_idx and src_idx are valid indices
+    #   (i.e. not larger than the total number of elements in test_node or src_node)
+    # Returns the requested entry of the sub-dZ/dk matrix
+    global_test_idx = test_node.element_idxs[test_idx]
+    global_src_idx = src_node.element_idxs[src_idx]
+    @unpack areas,
+            test_quadrature_points,
+            test_quadrature_weights = pulse_mesh
+    is_singular = global_test_idx == global_src_idx
+    testIntegrand(x,y,z) = scalarGreensKDerivIntegration(pulse_mesh,
+                                                         global_src_idx,
+                                                         wavenumber,
+                                                         [x,y,z],
+                                                         is_singular)
+    Z_entry = gaussQuadrature(areas[global_test_idx],
+                              testIntegrand,
+                              test_quadrature_points[global_test_idx],
+                              test_quadrature_weights)::ComplexF64
+    return(Z_entry)
+end # computedZdkEntrySoundSoft

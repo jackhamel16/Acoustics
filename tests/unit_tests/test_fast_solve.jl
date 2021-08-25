@@ -82,18 +82,28 @@ include("../../src/ACA/fast_solve.jl")
         num_levels = 3
         octree = createOctree(num_levels, pulse_mesh)
         fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
+        fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber, compression_distance, ACA_tol)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                        wavenumber,
                                                        r_test,
                                                        distance_to_edge_tol,
                                                        near_singular_tol,
                                                        is_singular)
+        testIntegrand2(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh, src_idx,
+                                                      wavenumber,
+                                                      r_test,
+                                                      is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        dZdk_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
         matrixFill!(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand2, dZdk_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
+        sol_V_dZdk = dZdk_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
+        test_V_dZdk = fullMatvecACA(pulse_mesh, octree, rand_J, true)
         @test isapprox(test_V, sol_V, rtol=1e-14)
+        @test isapprox(test_V_dZdk, sol_V_dZdk, rtol=1e-14)
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -107,18 +117,28 @@ include("../../src/ACA/fast_solve.jl")
         num_levels = 3
         octree = createOctree(num_levels, pulse_mesh)
         fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
+        fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber, compression_distance, ACA_tol)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                        wavenumber,
                                                        r_test,
                                                        distance_to_edge_tol,
                                                        near_singular_tol,
                                                        is_singular)
+        testIntegrand2(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh, src_idx,
+                                                      wavenumber,
+                                                      r_test,
+                                                      is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        dZdk_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
         matrixFill!(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand2, dZdk_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
+        sol_V_dZdk = dZdk_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
+        test_V_dZdk = fullMatvecACA(pulse_mesh, octree, rand_J, true)
         @test isapprox(test_V, sol_V, rtol=1e-12)
+        @test isapprox(test_V_dZdk, sol_V_dZdk, rtol=0.22e-9)
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -132,18 +152,28 @@ include("../../src/ACA/fast_solve.jl")
         num_levels = 3
         octree = createOctree(num_levels, pulse_mesh)
         fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
+        fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber, compression_distance, ACA_tol)
         testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
                                                        wavenumber,
                                                        r_test,
                                                        distance_to_edge_tol,
                                                        near_singular_tol,
                                                        is_singular)
+        testIntegrand2(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh, src_idx,
+                                                      wavenumber,
+                                                      r_test,
+                                                      is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        dZdk_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
         matrixFill!(pulse_mesh, testIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand2, dZdk_matrix)
         rand_J = randn(ComplexF64, pulse_mesh.num_elements)
         sol_V = z_matrix * rand_J
+        sol_V_dZdk = dZdk_matrix * rand_J
         test_V = fullMatvecACA(pulse_mesh, octree, rand_J)
+        test_V_dZdk = fullMatvecACA(pulse_mesh, octree, rand_J, true)
         @test isapprox(test_V, sol_V, rtol=0.6e-5)
+        @test isapprox(test_V_dZdk, sol_V_dZdk, rtol=0.4e-3)
     end # fullMatvecACA tests
     @testset "solveSoundSoftIEACA tests" begin
         wavenumber = 1.0+0.0im
@@ -158,10 +188,9 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(sol_J, test_J[1], rtol=0.13e-6)
+        @test isapprox(sol_J, test_J[1], rtol=0.13e-6) # not exact because of GMRES
         @test typeof(test_J[2]) == Octree
         @test typeof(test_J[3]) == ACAMetrics
 
@@ -177,9 +206,7 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
-        # sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.15e-6)
 
         wavenumber = 1.0+0.0im
@@ -211,9 +238,7 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
-        # sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.34e-6)
 
         wavenumber = 1.0+0.0im
@@ -228,7 +253,6 @@ include("../../src/ACA/fast_solve.jl")
         l, m = 0, 0
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         num_levels = 3
-        # octree = createOctree(num_levels, pulse_mesh)
         test_J = solveSoundSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.21e-3)

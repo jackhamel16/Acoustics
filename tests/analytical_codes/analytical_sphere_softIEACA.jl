@@ -23,7 +23,7 @@ ACA_approximation_tol = 1e-6
 gmres_tol = 1e-12
 
 # note: make sure lowest lambda does not encrouch on resonances
-num_elements = [1266, 3788, 8010, 19034, 39610, 70118]
+num_elements = [1266, 3788]#, 8010]#, 19034]#, 39610, 70118]
 
 edges_per_wavelength = 350 # hold ratio of lambda to edge length constant
 sphere_area = pi * radius^2
@@ -40,7 +40,7 @@ all_times = Array{Float64, 1}(undef, length(num_elements))
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
     sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumbers[run_idx]), [x_test,y_test,z_test], l, m)
-    mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
+    mesh_filename = string("examples/test/spheres/sphere_1m_",num_elements[run_idx],".msh")
     pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
     run_time = @elapsed sources, octree, metrics = solveSoundSoftIEACA(pulse_mesh,
@@ -102,16 +102,16 @@ savefig("sphere_runtime_results_softIEACA")
 println("Run Time Slope = ", time_slope)
 
 #Check if convergence rate is correct
-# convergence_rates = [-1.4091981672046228, -1.4007949737755323, -1.3258954178113702] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
-# expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
-# convergence_error = abs((expected_convergence_rate - error_slope)/expected_convergence_rate)
-# tolerance = 1e-6
-# if convergence_error > tolerance
-#     println("TEST FAILED:")
-#     println("Convergence rate not within ", tolerance, " of expected rate of ", expected_convergence_rate)
-# else
-#     println("TEST PASSED")
-# end
+convergence_rates = [-1.3854511237344034, -1.3849746914982537, -1.3337331769502527] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
+convergence_error = abs((expected_convergence_rate - error_slope)/expected_convergence_rate)
+tolerance = 1e-6
+if convergence_error > tolerance
+    println("TEST FAILED:")
+    println("Convergence rate not within ", tolerance, " of expected rate of ", expected_convergence_rate)
+else
+    println("TEST PASSED")
+end
 
 #output data
 output_file = open("sphere_convergence_data_softIEACA.txt", "w")

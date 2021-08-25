@@ -16,7 +16,7 @@ include("../../src/includes.jl")
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
 
-        mesh_filename = "examples/simple/circular_plate_1m.msh"
+        mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
         planeWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = planeWaveNormalDerivative(excitation_amplitude, wavevector, [x_test,y_test,z_test], normal)

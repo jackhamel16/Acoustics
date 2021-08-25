@@ -1,4 +1,4 @@
-mesh filename: examples/simple/slotted_cylinder/big_slotted_cylinder_r1_h2_12268.msh
+mesh filename: examples/simple/slotted_cylinder/big_slotted_cylinder_r1_h2_3152.msh
 equation: sound soft IE
 source quadrature rule: gauss7
 test quadrature rule: gauss1
@@ -11,7 +11,7 @@ excitation:
   wavevector: -1 0 0
 ACA:
   use ACA: yes
-  number of levels: 5
+  number of levels: 3
   compression distance: 1.5
   approximation tolerance: 1e-5
   
