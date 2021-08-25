@@ -12,4 +12,4 @@ ACA:
 Wigner Smith:
   lambda: 1.0
   max degree: 5
-  WS mode: 3
+  WS mode: 36

@@ -14,13 +14,17 @@ end # function calculateWSMatrix
                                   distance_to_edge_tol,
                                   near_singular_tol)
     num_harmonics = max_l^2 + 2*max_l + 1
+    println("Filling Z Matrix...")
     Z_matrix = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
     pulse_mesh.Z_factors = lu(Z_matrix)
+    println("Calculating Scattering Matrix...")
     S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh,
                                   distance_to_edge_tol, near_singular_tol)
+    println("Calculating Scattering Matrix Derivative...")
     dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber,
                                                pulse_mesh, distance_to_edge_tol,
                                                near_singular_tol)
+    println("Calculating Wigner-Smith Matrix...")
     Q = calculateWSMatrix(S, dSdk)
     return(Q)
 end # function calculateWSMatrix
@@ -34,14 +38,18 @@ end # function calculateWSMatrix
                                   compression_distance,
                                   ACA_approximation_tol)
     num_harmonics = max_l^2 + 2*max_l + 1
+    println("Filling Z and dZ/dk matrices...")
     fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol,
                                   near_singular_tol, compression_distance, ACA_approximation_tol)
     fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
                                      compression_distance, ACA_approximation_tol)
+    println("Calculating Scattering Matrix...")
     S = calculateScatteringMatrixACA(max_l, wavenumber, pulse_mesh, octree,
                                   distance_to_edge_tol, near_singular_tol)
+    println("Calculating Scattering Matrix Derivative...")
     dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber,
                                                   pulse_mesh, octree)
+    println("Calculating Wigner-Smith Matrix...")
     Q = calculateWSMatrix(S, dSdk)
     return(Q)
 end # function calculateWSMatrix
@@ -59,6 +67,7 @@ end # function calculateWSMatrix
     excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
     println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
     writeWSTimeDelays(eigen_Q.values)
+    println("Solving at WS Mode ", mode_idx,"...")
     sources_WS = solveSoftIE(pulse_mesh,
                              excitationWSMode,
                              wavenumber,
@@ -85,6 +94,7 @@ end # function solveWSMode
     excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
     println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
     writeWSTimeDelays(eigen_Q.values)
+    println("Solving at WS Mode ", mode_idx,"...")
     sources_WS = solveSoundSoftIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
                                      wavenumber, distance_to_edge_tol, near_singular_tol,
                                      compression_distance, ACA_approximation_tol)

@@ -117,7 +117,7 @@ if length(ARGS) == 1
                 println("Running with ACA...")
                 run_time = @elapsed sources, octree, metrics = solveWSModeACA(WS_params.max_l,
                                                                               WS_params.mode_idx,
-                                                                              excitation_params.wavenumber,
+                                                                              WS_params.wavenumber,
                                                                               pulse_mesh,
                                                                               distance_to_edge_tol,
                                                                               near_singular_tol,
