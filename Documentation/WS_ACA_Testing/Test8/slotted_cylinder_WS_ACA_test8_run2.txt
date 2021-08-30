@@ -1,15 +1,13 @@
-mesh filename: examples/simple/slotted_cylinder/slotted_cylinder_r1_h5_3152.msh
+mesh filename: Documentation/WS_ACA_Testing/Test8/big_slotted_cylinder_r1_h2_3436.msh
 equation: WS mode
 source quadrature rule: gauss7
 test quadrature rule: gauss7
 distance to edge tolerance: 1e-12
 near singular tolerance: 1.0
-excitation:
-  type: sphericalwave
-  lambda: 1.6
-  amplitude: 1.0
-  l: 1
-  m: 0
+Wigner Smith:
+  lambda: 1.62
+  max degree: 8
+  WS mode: 81
 ACA:
   use ACA: yes
   number of levels: 3

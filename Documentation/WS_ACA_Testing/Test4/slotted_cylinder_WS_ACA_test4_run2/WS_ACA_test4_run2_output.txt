@@ -1,0 +1,191 @@
+Parsing input parameters in: Documentation/WS_ACA_testing/Test4/slotted_cylinder_WS_ACA_test4_run2.txt...
+Parsing mesh in: Documentation/WS_ACA_Testing/Test4/slotPi_slotted_cylinder_r1_h2_3448.msh...
+Number of elements = 3176
+Equation: WS Mode
+Running with ACA...
+Filling Z and dZ/dk matrices...
+Calculating Scattering Matrix...
+GMRES Converged after 1091 iterations.
+GMRES Converged after 1183 iterations.
+GMRES Converged after 811 iterations.
+GMRES Converged after 1144 iterations.
+GMRES Converged after 1055 iterations.
+GMRES Converged after 928 iterations.
+GMRES Converged after 1017 iterations.
+GMRES Converged after 904 iterations.
+GMRES Converged after 958 iterations.
+GMRES Converged after 1025 iterations.
+GMRES Converged after 880 iterations.
+GMRES Converged after 1030 iterations.
+GMRES Converged after 887 iterations.
+GMRES Converged after 996 iterations.
+GMRES Converged after 915 iterations.
+GMRES Converged after 1024 iterations.
+GMRES Converged after 1099 iterations.
+GMRES Converged after 909 iterations.
+GMRES Converged after 1046 iterations.
+GMRES Converged after 949 iterations.
+GMRES Converged after 1017 iterations.
+GMRES Converged after 954 iterations.
+GMRES Converged after 1072 iterations.
+GMRES Converged after 935 iterations.
+GMRES Converged after 1148 iterations.
+GMRES Converged after 1177 iterations.
+GMRES Converged after 944 iterations.
+GMRES Converged after 1023 iterations.
+GMRES Converged after 986 iterations.
+GMRES Converged after 1068 iterations.
+GMRES Converged after 936 iterations.
+GMRES Converged after 1053 iterations.
+GMRES Converged after 1016 iterations.
+GMRES Converged after 957 iterations.
+GMRES Converged after 919 iterations.
+GMRES Converged after 1131 iterations.
+GMRES Converged after 1217 iterations.
+GMRES Converged after 978 iterations.
+GMRES Converged after 1026 iterations.
+GMRES Converged after 1030 iterations.
+GMRES Converged after 1074 iterations.
+GMRES Converged after 1028 iterations.
+GMRES Converged after 1027 iterations.
+GMRES Converged after 1028 iterations.
+GMRES Converged after 1122 iterations.
+GMRES Converged after 1024 iterations.
+GMRES Converged after 1021 iterations.
+GMRES Converged after 1018 iterations.
+GMRES Converged after 1162 iterations.
+GMRES Converged after 1223 iterations.
+GMRES Converged after 1040 iterations.
+GMRES Converged after 1047 iterations.
+GMRES Converged after 974 iterations.
+GMRES Converged after 1037 iterations.
+GMRES Converged after 1093 iterations.
+GMRES Converged after 1147 iterations.
+GMRES Converged after 1017 iterations.
+GMRES Converged after 1152 iterations.
+GMRES Converged after 1029 iterations.
+GMRES Converged after 1054 iterations.
+GMRES Converged after 913 iterations.
+GMRES Converged after 993 iterations.
+GMRES Converged after 1033 iterations.
+GMRES Converged after 1143 iterations.
+GMRES Converged after 1176 iterations.
+GMRES Converged after 1075 iterations.
+GMRES Converged after 968 iterations.
+GMRES Converged after 971 iterations.
+GMRES Converged after 989 iterations.
+GMRES Converged after 1028 iterations.
+GMRES Converged after 1033 iterations.
+GMRES Converged after 1130 iterations.
+GMRES Converged after 1088 iterations.
+GMRES Converged after 1007 iterations.
+GMRES Converged after 1043 iterations.
+GMRES Converged after 949 iterations.
+GMRES Converged after 1035 iterations.
+GMRES Converged after 939 iterations.
+GMRES Converged after 971 iterations.
+GMRES Converged after 1055 iterations.
+GMRES Converged after 1249 iterations.
+Calculating Scattering Matrix Derivative...
+GMRES Converged after 1091 iterations.
+GMRES Converged after 1183 iterations.
+GMRES Converged after 811 iterations.
+GMRES Converged after 1144 iterations.
+GMRES Converged after 1055 iterations.
+GMRES Converged after 928 iterations.
+GMRES Converged after 1017 iterations.
+GMRES Converged after 904 iterations.
+GMRES Converged after 958 iterations.
+GMRES Converged after 1025 iterations.
+GMRES Converged after 880 iterations.
+GMRES Converged after 1030 iterations.
+GMRES Converged after 887 iterations.
+GMRES Converged after 996 iterations.
+GMRES Converged after 915 iterations.
+GMRES Converged after 1024 iterations.
+GMRES Converged after 1099 iterations.
+GMRES Converged after 909 iterations.
+GMRES Converged after 1046 iterations.
+GMRES Converged after 949 iterations.
+GMRES Converged after 1017 iterations.
+GMRES Converged after 954 iterations.
+GMRES Converged after 1072 iterations.
+GMRES Converged after 935 iterations.
+GMRES Converged after 1148 iterations.
+GMRES Converged after 1177 iterations.
+GMRES Converged after 944 iterations.
+GMRES Converged after 1023 iterations.
+GMRES Converged after 986 iterations.
+GMRES Converged after 1068 iterations.
+GMRES Converged after 936 iterations.
+GMRES Converged after 1053 iterations.
+GMRES Converged after 1016 iterations.
+GMRES Converged after 957 iterations.
+GMRES Converged after 919 iterations.
+GMRES Converged after 1131 iterations.
+GMRES Converged after 1217 iterations.
+GMRES Converged after 978 iterations.
+GMRES Converged after 1026 iterations.
+GMRES Converged after 1030 iterations.
+GMRES Converged after 1074 iterations.
+GMRES Converged after 1028 iterations.
+GMRES Converged after 1027 iterations.
+GMRES Converged after 1028 iterations.
+GMRES Converged after 1122 iterations.
+GMRES Converged after 1024 iterations.
+GMRES Converged after 1021 iterations.
+GMRES Converged after 1018 iterations.
+GMRES Converged after 1162 iterations.
+GMRES Converged after 1223 iterations.
+GMRES Converged after 1040 iterations.
+GMRES Converged after 1047 iterations.
+GMRES Converged after 974 iterations.
+GMRES Converged after 1037 iterations.
+GMRES Converged after 1093 iterations.
+GMRES Converged after 1147 iterations.
+GMRES Converged after 1017 iterations.
+GMRES Converged after 1152 iterations.
+GMRES Converged after 1029 iterations.
+GMRES Converged after 1054 iterations.
+GMRES Converged after 913 iterations.
+GMRES Converged after 993 iterations.
+GMRES Converged after 1033 iterations.
+GMRES Converged after 1143 iterations.
+GMRES Converged after 1176 iterations.
+GMRES Converged after 1075 iterations.
+GMRES Converged after 968 iterations.
+GMRES Converged after 971 iterations.
+GMRES Converged after 989 iterations.
+GMRES Converged after 1028 iterations.
+GMRES Converged after 1033 iterations.
+GMRES Converged after 1130 iterations.
+GMRES Converged after 1088 iterations.
+GMRES Converged after 1007 iterations.
+GMRES Converged after 1043 iterations.
+GMRES Converged after 949 iterations.
+GMRES Converged after 1035 iterations.
+GMRES Converged after 939 iterations.
+GMRES Converged after 971 iterations.
+GMRES Converged after 1055 iterations.
+GMRES Converged after 1249 iterations.
+Calculating Wigner-Smith Matrix...
+Wigner-Smith Time Delay = -0.0009622377322933878 - 7.630402235663643e-9im
+Solving at WS Mode 81...
+Filling RHS...
+Solving with ACA...
+GMRES Converged after 1259 iterations.
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 61.07692307692308
+      Min = 2
+      Max = 117
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 11.752394636015326
+      Min = 2
+      Max = 28
+  Compression Metrics:
+    Percentage of Matrices Compressed = 77.2189349112426
+    Compression Ratio = 0.5626323488823608
+Total Runtime = 3552.891193699 seconds
