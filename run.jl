@@ -125,6 +125,7 @@ if length(ARGS) == 1
                                                                               ACA_params.compression_distance,
                                                                               ACA_params.approximation_tol)
                 printACAMetrics(metrics)
+                exportSourcesBundled(mesh_filename, sources)
             else
                 run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idx,
                                       WS_params.wavenumber, pulse_mesh,
