@@ -12,7 +12,7 @@ excitation:
   m: 1
 ACA:
   use ACA: yes
-  number of levels: 4
+  number of levels: 3
   compression distance: 1.5
   approximation tolerance: 1e-5
   
