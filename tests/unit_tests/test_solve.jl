@@ -26,11 +26,13 @@ include("../../src/includes.jl")
                         wavenumber,
                         distance_to_edge_tol,
                         near_singular_tol)
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         sourcesIEnd = solveSoftIENormalDeriv(pulse_mesh,
                         planeWaveExcitationNormalDeriv,
                         wavenumber)
         soft_IE_only = 1.0
         soft_IE_nd_only = 0.0
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         sourcesCFIE_soft_IE_only = solveSoftCFIE(pulse_mesh,
                         planeWaveExcitation,
                         planeWaveExcitationNormalDeriv,
@@ -38,6 +40,7 @@ include("../../src/includes.jl")
                         distance_to_edge_tol,
                         near_singular_tol,
                         soft_IE_only)
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         sourcesCFIE_soft_IE_nd_only = solveSoftCFIE(pulse_mesh,
                         planeWaveExcitation,
                         planeWaveExcitationNormalDeriv,
