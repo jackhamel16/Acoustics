@@ -1,0 +1,18 @@
+mesh filename: Documentation/WS_ACA_Testing/Test9/cylinder_r1_h2_3201.msh
+equation: sound soft IE
+source quadrature rule: gauss7
+test quadrature rule: gauss7
+distance to edge tolerance: 1e-12
+near singular tolerance: 1.0
+excitation:
+  type: sphericalwave
+  lambda: 1.2
+  amplitude: 1.0
+  l: 1
+  m: 1
+ACA:
+  use ACA: yes
+  number of levels: 4
+  compression distance: 1.5
+  approximation tolerance: 1e-5
+  

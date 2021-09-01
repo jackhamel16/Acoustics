@@ -1,0 +1,28 @@
+Parsing input parameters in: .\Documentation\WS_ACA_Testing\Test9\cylinder_ACA_test9_run6dot5.txt...
+Parsing mesh in: Documentation/WS_ACA_Testing/Test9/cylinder_r1_h2_6206.msh...
+Number of elements = 6034
+Excitation: Sphericalwave
+Equation: Sound Soft IE
+Running with ACA...
+Filling RHS...
+  RHS fill time: 1.1285632
+Filling ACA Matrix...
+  Matrix fill time: 246.5465501
+Solving with ACA...
+GMRES Converged after 712 iterations.
+  Solve time: 38.110755599
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 45.36842105263158
+      Min = 1
+      Max = 71
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 10.523870107839574
+      Min = 1
+      Max = 21
+  Compression Metrics:
+    Percentage of Matrices Compressed = 93.31222793826672
+    Compression Ratio = 0.5125921897228268
+Total Runtime = 289.724416899 seconds
