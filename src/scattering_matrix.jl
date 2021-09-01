@@ -25,7 +25,7 @@
         end
     end
     S_matrix += im/(2*wavenumber) * Vs_trans * Js
-    return(S_matrix)
+    return(S_matrix, Js)
 end
 
 @views function calculateScatteringMatrixACA(max_l::Int64, wavenumber, pulse_mesh::PulseMesh, octree::Octree, distance_to_edge_tol, near_singular_tol)
@@ -57,21 +57,21 @@ end
         end
     end
     S_matrix += im/(2*wavenumber) * Vs_trans * Js
-    return(S_matrix)
+    return(S_matrix, Js)
 end
 
-@views function calculateScatteringMatrixDerivative(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, distance_to_edge_tol, near_singular_tol)
+@views function calculateScatteringMatrixDerivative(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, Js::Array{ComplexF64,2}, distance_to_edge_tol, near_singular_tol)
     @unpack num_elements,
             Z_factors = pulse_mesh
     dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
     Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
-    Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
+    # Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
     dVsdk_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
     harmonic_idx = 1
     for l = 0:max_l
         for m=-l:l
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
-            Js[:,harmonic_idx] = Z_factors \ Vs_trans[harmonic_idx,:]
+            # Js[:,harmonic_idx] = Z_factors \ Vs_trans[harmonic_idx,:]
             dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
             harmonic_idx += 1
         end
@@ -84,22 +84,22 @@ end
     return(term1 + term2 + term3)
 end
 
-@views function calculateScatteringMatrixDerivativeACA(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, octree::Octree)
+@views function calculateScatteringMatrixDerivativeACA(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, Js::Array{ComplexF64,2}, octree::Octree)
     @unpack num_elements = pulse_mesh
     Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
-    Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
+    # Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
     dVsdk_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
     dZdk_times_Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
     harmonic_idx = 1
     for l = 0:max_l
         for m=-l:l
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
-            fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
-            fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
-            sources = zeros(ComplexF64, num_elements)
-            num_iters = gmres!(sources, fullMatvecLinearMap, Vs_trans[harmonic_idx,:], log=true)[2]
-            println("GMRES ", string(num_iters))
-            Js[:,harmonic_idx] = sources
+            # fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
+            # fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
+            # sources = zeros(ComplexF64, num_elements)
+            # num_iters = gmres!(sources, fullMatvecLinearMap, Vs_trans[harmonic_idx,:], log=true)[2]
+            # println("GMRES ", string(num_iters))
+            # Js[:,harmonic_idx] = sources
             dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
             dZdk_times_Js[:,harmonic_idx] = fullMatvecACA(pulse_mesh, octree, Js[:,harmonic_idx], true)
             harmonic_idx += 1

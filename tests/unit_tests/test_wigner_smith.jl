@@ -124,8 +124,8 @@ include("../../src/includes.jl")
         Q_sca_sca_d = im/8/wavenumber^2 * adjoint(Js)*(conj.(transpose(Vs_trans))*dVsdk_trans - conj.(transpose(dVsdk_trans))*Vs_trans)*Js
         sol_Q = Q_sca_inc+Q_inc_sca+Q_sca_sca_i+Q_sca_sca_d
 
-        S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)#, Z_factors)
-        dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)#, Z_factors)
+        S, Js = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)#, Z_factors)
+        dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, Js, distance_to_edge_tol, near_singular_tol)#, Z_factors)
         test_Q = calculateWSMatrix(S, dSdk)
         @test isapprox(sol_Q, test_Q, rtol=0.13e-7)
     end # calculateWSMatrix tests

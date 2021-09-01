@@ -18,11 +18,11 @@ end # function calculateWSMatrix
     Z_matrix = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
     pulse_mesh.Z_factors = lu(Z_matrix)
     println("Calculating Scattering Matrix...")
-    S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh,
+    S, Js = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh,
                                   distance_to_edge_tol, near_singular_tol)
     println("Calculating Scattering Matrix Derivative...")
     dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber,
-                                               pulse_mesh, distance_to_edge_tol,
+                                               pulse_mesh, Js, distance_to_edge_tol,
                                                near_singular_tol)
     println("Calculating Wigner-Smith Matrix...")
     Q = calculateWSMatrix(S, dSdk)
@@ -44,11 +44,11 @@ end # function calculateWSMatrix
     fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
                                      compression_distance, ACA_approximation_tol)
     println("Calculating Scattering Matrix...")
-    S = calculateScatteringMatrixACA(max_l, wavenumber, pulse_mesh, octree,
+    S, Js = calculateScatteringMatrixACA(max_l, wavenumber, pulse_mesh, octree,
                                   distance_to_edge_tol, near_singular_tol)
     println("Calculating Scattering Matrix Derivative...")
     dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber,
-                                                  pulse_mesh, octree)
+                                                  pulse_mesh, Js, octree)
     println("Calculating Wigner-Smith Matrix...")
     Q = calculateWSMatrix(S, dSdk)
     return(Q)
