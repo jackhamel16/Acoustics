@@ -178,47 +178,47 @@ include("../../src/includes.jl")
         @test isapprox(test_Q, reconstructed_Q, rtol = 0.3e-2)
 
         ##### DONT RUN REGULARLY AS THIS IS VERY SLOW #####
-        max_l = 13
-        lambda = 1
-        wavenumber = 2*pi/lambda + 0.0im
-        num_harmonics = max_l^2 + 2*max_l + 1
-        src_quadrature_rule = gauss7rule
-        test_quadrature_rule = gauss7rule
-        distance_to_edge_tol = 1e-12
-        near_singular_tol = 1.0
-        mesh_filename = "examples/test/circular_plate_fine.msh"
-        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-
-        test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(test_Q, adjoint(test_Q), rtol=0.45e-1) # Q should be Hermitian
-        test_eigen_Q = eigen(test_Q)
-        @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
-        @test isapprox(sum(abs.(real.(test_eigen_Q.values))), sum(abs.(test_eigen_Q.values)), rtol=0.13e-3) # test eigenvalues are real
-        real_values = real.(test_eigen_Q.values)
-        @test isapprox(real_values, sort(real_values), rtol=1e-14) # test eigenvalues ordered least to greatest
-        reconstructed_Q = test_eigen_Q.vectors * diagm(test_eigen_Q.values) * adjoint(test_eigen_Q.vectors)
-        @test isapprox(test_Q, reconstructed_Q, rtol = 0.12e-1)
-
-        max_l = 17
-        lambda = 2
-        wavenumber = 2*pi/lambda + 0.0im
-        num_harmonics = max_l^2 + 2*max_l + 1
-        src_quadrature_rule = gauss7rule
-        test_quadrature_rule = gauss7rule
-        distance_to_edge_tol = 1e-12
-        near_singular_tol = 1.0
-        mesh_filename = "examples/test/rectangular_strips/rectangular_strip_fine.msh"
-        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-
-        test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
-        @test isapprox(test_Q, adjoint(test_Q), rtol=0.5e-6) # Q should be Hermitian
-        test_eigen_Q = eigen(test_Q)
-        @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
-        @test isapprox(sum(abs.(real.(test_eigen_Q.values))), sum(abs.(test_eigen_Q.values)), rtol=1e-14) # test eigenvalues are real
-        real_values = real.(test_eigen_Q.values)
-        @test isapprox(real_values, sort(real_values), rtol=1e-14) # test eigenvalues ordered least to greatest
-        reconstructed_Q = test_eigen_Q.vectors * diagm(test_eigen_Q.values) * adjoint(test_eigen_Q.vectors)
-        @test isapprox(test_Q, reconstructed_Q, rtol = 0.5e-5)
+        # max_l = 13
+        # lambda = 1
+        # wavenumber = 2*pi/lambda + 0.0im
+        # num_harmonics = max_l^2 + 2*max_l + 1
+        # src_quadrature_rule = gauss7rule
+        # test_quadrature_rule = gauss7rule
+        # distance_to_edge_tol = 1e-12
+        # near_singular_tol = 1.0
+        # mesh_filename = "examples/test/circular_plate_fine.msh"
+        # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        #
+        # test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        # @test isapprox(test_Q, adjoint(test_Q), rtol=0.45e-1) # Q should be Hermitian
+        # test_eigen_Q = eigen(test_Q)
+        # @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
+        # @test isapprox(sum(abs.(real.(test_eigen_Q.values))), sum(abs.(test_eigen_Q.values)), rtol=0.13e-3) # test eigenvalues are real
+        # real_values = real.(test_eigen_Q.values)
+        # @test isapprox(real_values, sort(real_values), rtol=1e-14) # test eigenvalues ordered least to greatest
+        # reconstructed_Q = test_eigen_Q.vectors * diagm(test_eigen_Q.values) * adjoint(test_eigen_Q.vectors)
+        # @test isapprox(test_Q, reconstructed_Q, rtol = 0.12e-1)
+        #
+        # max_l = 17
+        # lambda = 2
+        # wavenumber = 2*pi/lambda + 0.0im
+        # num_harmonics = max_l^2 + 2*max_l + 1
+        # src_quadrature_rule = gauss7rule
+        # test_quadrature_rule = gauss7rule
+        # distance_to_edge_tol = 1e-12
+        # near_singular_tol = 1.0
+        # mesh_filename = "examples/test/rectangular_strips/rectangular_strip_fine.msh"
+        # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        #
+        # test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        # @test isapprox(test_Q, adjoint(test_Q), rtol=0.5e-6) # Q should be Hermitian
+        # test_eigen_Q = eigen(test_Q)
+        # @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
+        # @test isapprox(sum(abs.(real.(test_eigen_Q.values))), sum(abs.(test_eigen_Q.values)), rtol=1e-14) # test eigenvalues are real
+        # real_values = real.(test_eigen_Q.values)
+        # @test isapprox(real_values, sort(real_values), rtol=1e-14) # test eigenvalues ordered least to greatest
+        # reconstructed_Q = test_eigen_Q.vectors * diagm(test_eigen_Q.values) * adjoint(test_eigen_Q.vectors)
+        # @test isapprox(test_Q, reconstructed_Q, rtol = 0.5e-5)
         ##########
 
         max_l = 4
