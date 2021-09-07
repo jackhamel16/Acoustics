@@ -269,6 +269,51 @@ end #solveSoundSoftIEACA
     return(sources)
 end #solveSoundSoftIEACA
 
+@views function solveSoundSoftCFIEACA(pulse_mesh::PulseMesh,
+                                      num_levels::Int64,
+                                      excitation::Function,
+                                      wavenumber,
+                                      distance_to_edge_tol,
+                                      near_singular_tol,
+                                      compression_distance,
+                                      ACA_approximation_tol)
+    # Solves for the surface unknowns for the problem geometry described by pulse_mesh
+    #   and excitation using ACA when suitable using the sound-soft CFIE
+    # num_levels determines the number of levels in the octree for ACA
+    # distance_to_edge_tol and near_singular_tol are paramters for integration routines
+    # compression_distance determines when to use ACA (see lower lvl func descriptions)
+    # ACA_approximation_tol lower means higher rank approximations are used in ACA
+    # returns an array of the unknowns named sources
+    @unpack num_elements = pulse_mesh
+
+    println("Filling RHS...")
+    rhs = zeros(ComplexF64, num_elements)
+    rhs_fill_time = @elapsed rhsFill!(pulse_mesh, excitation, rhs)
+    println("  RHS fill time: ", rhs_fill_time)
+
+    println("Filling ACA Matrix...")
+    matrix_fill_time = @elapsed begin
+        octree = createOctree(num_levels, pulse_mesh)
+        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
+                                      distance_to_edge_tol, near_singular_tol,
+                                      compression_distance, ACA_approximation_tol)
+    end
+    println("  Matrix fill time: ", matrix_fill_time)
+
+    println("Solving with ACA...")
+    solve_time = @elapsed begin
+        fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
+        fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
+        sources = zeros(ComplexF64, num_elements)
+        num_iters = gmres!(sources, fullMatvecLinearMap, rhs, log=true)[2]
+        println("GMRES ", string(num_iters))
+    end
+    println("  Solve time: ", solve_time)
+
+    return((sources, octree, computeACAMetrics(num_elements, octree)))
+    # return(computeACAMetrics(num_elements, octree))
+end #solveSoundSoftIEACA
+
 @views function subMatvecACA(sub_Z::AbstractArray{T,2}, sub_J::AbstractArray{T,1})::Array{T,1} where T
     # computes the matrix-vector product between sub_Z and sub_J when sub_Z is
     #   not decomposed

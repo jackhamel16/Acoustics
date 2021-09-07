@@ -1,0 +1,12 @@
+mesh filename: examples/test/spheres/sphere_1m_3788.msh
+equation: sound soft CFIE
+CFIE weight: 0.5
+source quadrature rule: gauss7
+test quadrature rule: gauss1
+distance to edge tolerance: 1e-12
+near singular tolerance: 1.0
+excitation:
+  type: planewave
+  lambda: 1.0
+  amplitude: 1.
+  wavevector: 0 1 0.5

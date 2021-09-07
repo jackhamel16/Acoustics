@@ -88,8 +88,9 @@ include("../../src/greens_functions.jl")
         rhs = zeros(ComplexF64, num_elements)
         rhsFill!(pulse_mesh1, fieldFunc, rhs)
         @test isapprox(rhs, rhs_solution, rtol=1e-15)
+    end # rhsFill! tests
 
-        # The following tests are for passing an integrand that requires normal vectors
+    @testset "rhsNormalDeriv! tests" begin
         amplitude = 1.0
         wavevector = [0.0, 0.0, 1/10+im*0]
         nodes_global = [0.0 0.0 1.5; 1.0 0.0 1.5; 0.0 1.0 1.5]
@@ -108,7 +109,7 @@ include("../../src/greens_functions.jl")
                                                          pulse_mesh1.test_quadrature_points[1][:],
                                                          normals[1,:])
         rhs = zeros(ComplexF64, num_elements)
-        rhsFill!(pulse_mesh1, fieldFuncND, rhs, true)
+        rhsNormalDerivFill!(pulse_mesh1, fieldFuncND, rhs)
         @test isapprox(rhs[1], rhs_solution, rtol=1e-15)
 
         amplitude = 1.0
@@ -129,9 +130,9 @@ include("../../src/greens_functions.jl")
                                                          pulse_mesh1.test_quadrature_points[1][:],
                                                          normals[1,:])
         rhs = zeros(ComplexF64, num_elements)
-        rhsFill!(pulse_mesh1, fieldFuncND, rhs, true)
+        rhsNormalDerivFill!(pulse_mesh1, fieldFuncND, rhs)
         @test isapprox(rhs[1], rhs_solution, rtol=1e-15)
-    end
+    end # rhsNormalDeriv! Tests
 
     @testset "matrixFill! tests" begin
         #first test is for non-singular elements with 1 point rule

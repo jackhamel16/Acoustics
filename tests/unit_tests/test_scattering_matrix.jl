@@ -201,7 +201,7 @@ include("../../src/includes.jl")
         end
         solution_dSdk = -im/(2*wavenumber^2)*Vs_trans*Js + im/(2*wavenumber)*dVsdk_trans*Js +
                         im/(2*wavenumber)*(Vs_trans/Z_factors)*(transpose(dVsdk_trans)-dZdk*Js)
-        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, Js, distance_to_edge_tol, near_singular_tol)
         @test isapprox(solution_dSdk, test_dSdk, rtol=1e-5)
 
         max_l = 10
@@ -225,7 +225,15 @@ include("../../src/includes.jl")
         solution_dSdk = (S_high - S_low) / deltak
         Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         pulse_mesh.Z_factors = Z_factors
-        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
+        harmonic_idx = 1
+        for l = 0:max_l
+            for m=-l:l
+                Js[:,harmonic_idx] = Z_factors \ calculateVlm(pulse_mesh, wavenumber, l, m)
+                harmonic_idx += 1
+            end
+        end
+        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, Js, distance_to_edge_tol, near_singular_tol)
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.15e-3)
 
@@ -251,7 +259,15 @@ include("../../src/includes.jl")
         solution_dSdk = (S_high - S_low) / deltak
         Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         pulse_mesh.Z_factors = Z_factors
-        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        Js = Array{ComplexF64}(undef, pulse_mesh.num_elements, num_harmonics)
+        harmonic_idx = 1
+        for l = 0:max_l
+            for m=-l:l
+                Js[:,harmonic_idx] = Z_factors \ calculateVlm(pulse_mesh, wavenumber, l, m)
+                harmonic_idx += 1
+            end
+        end
+        test_dSdk = calculateScatteringMatrixDerivative(max_l, num_harmonics, wavenumber, pulse_mesh, Js, distance_to_edge_tol, near_singular_tol)
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.4e-4)
     end # calculateScatteringMatrixDerivative tests
@@ -293,7 +309,7 @@ include("../../src/includes.jl")
         end
         solution_dSdk = -im/(2*wavenumber^2)*Vs_trans*Js + im/(2*wavenumber)*dVsdk_trans*Js +
                         im/(2*wavenumber)*(Vs_trans/Z_factors)*(transpose(dVsdk_trans)-dZdk*Js)
-        test_dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber, pulse_mesh, octree)
+        test_dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber, pulse_mesh, Js, octree)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.4e-5)
 
         max_l = 10
@@ -325,7 +341,15 @@ include("../../src/includes.jl")
         S_low, test_Js = calculateScatteringMatrix(max_l, k_low, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         solution_dSdk = (S_high - S_low) / deltak
         Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
-        test_dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber, pulse_mesh, octree)
+        Js = Array{ComplexF64}(undef, pulse_mesh.num_elements, num_harmonics)
+        harmonic_idx = 1
+        for l = 0:max_l
+            for m=-l:l
+                Js[:,harmonic_idx] = Z_factors \ calculateVlm(pulse_mesh, wavenumber, l, m)
+                harmonic_idx += 1
+            end
+        end
+        test_dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber, pulse_mesh, Js, octree)
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.11e-3)
 
@@ -357,7 +381,15 @@ include("../../src/includes.jl")
         solution_dSdk = (S_high - S_low) / deltak
         Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         pulse_mesh.Z_factors = Z_factors
-        test_dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber, pulse_mesh, octree)
+        Js = Array{ComplexF64}(undef, pulse_mesh.num_elements, num_harmonics)
+        harmonic_idx = 1
+        for l = 0:max_l
+            for m=-l:l
+                Js[:,harmonic_idx] = Z_factors \ calculateVlm(pulse_mesh, wavenumber, l, m)
+                harmonic_idx += 1
+            end
+        end
+        test_dSdk = calculateScatteringMatrixDerivativeACA(max_l, num_harmonics, wavenumber, pulse_mesh, Js, octree)
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.4e-4)
     end # calculateScatteringMatrixDerivativeACA tests

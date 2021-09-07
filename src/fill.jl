@@ -13,27 +13,37 @@ function rhsFill!(pulse_mesh::PulseMesh,
             normals,
             test_quadrature_points,
             test_quadrature_weights = pulse_mesh
-    if normal_derivative == true # need to redefine function passed to quadrature with normal
-        for element_idx in 1:num_elements
-            triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
-            triangle_area = areas[element_idx]
-            fieldFuncNormal(x,y,z) = fieldFunc(x,y,z,normals[element_idx,:])
-            rhs[element_idx] += -1 * gaussQuadrature(triangle_area,
-                                                     fieldFuncNormal,
-                                                     test_quadrature_points[element_idx],
-                                                     test_quadrature_weights)
-        end
-    else
-        for element_idx in 1:num_elements
-            triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
-            triangle_area = areas[element_idx]
-            rhs[element_idx] += -1 * gaussQuadrature(triangle_area,
-                                                     fieldFunc,
-                                                     test_quadrature_points[element_idx],
-                                                     test_quadrature_weights)
-        end
+    for element_idx in 1:num_elements
+        triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+        triangle_area = areas[element_idx]
+        rhs[element_idx] += -1 * gaussQuadrature(triangle_area,
+                                                 fieldFunc,
+                                                 test_quadrature_points[element_idx],
+                                                 test_quadrature_weights)
     end
 end
+
+function rhsNormalDerivFill!(pulse_mesh::PulseMesh,
+                 fieldFunc::Function,
+                 rhs::AbstractArray{ComplexF64, 1})
+    @unpack num_elements,
+            elements,
+            areas,
+            nodes,
+            normals,
+            test_quadrature_points,
+            test_quadrature_weights = pulse_mesh
+    for element_idx in 1:num_elements
+        triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+        triangle_area = areas[element_idx]
+        fieldFuncNormal(x,y,z) = fieldFunc(x,y,z,normals[element_idx,:])
+        rhs[element_idx] += -1 * gaussQuadrature(triangle_area,
+                                                 fieldFuncNormal,
+                                                 test_quadrature_points[element_idx],
+                                                 test_quadrature_weights)
+    end
+end
+
 
 function matrixFill!(pulse_mesh::PulseMesh,
                     testIntegrand::Function,
