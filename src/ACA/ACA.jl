@@ -140,6 +140,46 @@ end # computeZEntrySoundSoft
     return(Z_entry)
 end # computeZEntrySoundSoft
 
+@views function computeZEntrySoundSoftCFIE(pulse_mesh::PulseMesh,
+                                       test_node::Node,
+                                       src_node::Node,
+                                       wavenumber,
+                                       distance_to_edge_tol,
+                                       near_singular_tol,
+                                       test_idx::Int64,
+                                       src_idx::Int64)
+    # Alternative implementation of computeZEntrySoundSoft that can be wrapped up to give to
+    #   computeMatrixACA easily. Rather than pass in global element idxs, the function assumes
+    #   you are computing a sub-matrix of Z for all elements between test_node and src_node.
+    #   test_idx and src_idx are local element idxs for elements contained in test_node and
+    #   src_node, respectively.  The function assumes test_idx and src_idx are valid indices
+    #   (i.e. not larger than the total number of elements in test_node or src_node)
+    # Returns the requested entry of the sub-Z matrix
+    global_test_idx = test_node.element_idxs[test_idx]
+    global_src_idx = src_node.element_idxs[src_idx]
+    @unpack areas,
+            test_quadrature_points,
+            test_quadrature_weights = pulse_mesh
+    is_singular = test_ele_idx == src_ele_idx
+    testIntegrand(x,y,z) = scalarGreensIntegration(pulse_mesh,
+                                                   src_ele_idx,
+                                                   wavenumber,
+                                                   [x,y,z],
+                                                   distance_to_edge_tol,
+                                                   near_singular_tol,
+                                                   is_singular) +
+                           scalarGreensNormalDerivativeIntegration(pulse_mesh,
+                                                                   src_idx,
+                                                                   wavenumber,
+                                                                   r_test,
+                                                                   is_singular)
+    Z_entry = gaussQuadrature(areas[test_ele_idx],
+                              testIntegrand,
+                              test_quadrature_points[test_ele_idx],
+                              test_quadrature_weights)::ComplexF64
+    return(Z_entry)
+end # computeZEntrySoundSoft
+
 @views function computedZdkEntrySoundSoft(pulse_mesh::PulseMesh,
                                           test_node::Node,
                                           src_node::Node,

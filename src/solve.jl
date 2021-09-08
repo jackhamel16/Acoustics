@@ -99,13 +99,14 @@ function solveSoftCFIE(pulse_mesh::PulseMesh,
         matrixFill!(pulse_mesh, testIntegrandNormalDerivative, z_matrix_nd)
         z_matrix = zeros(ComplexF64, num_elements, num_elements)
         matrixFill!(pulse_mesh, testIntegrand, z_matrix)
-        avg_z_nd = sum(abs.(z_matrix_nd))./length(z_matrix_nd)
-        avg_z = sum(abs.(z_matrix))./length(z_matrix)
-        nd_scale_factor = im*avg_z / avg_z_nd # probably shouldn't be here long term
-        println("avg nd Z value = ", avg_z_nd)
-        println("avg Z value = ", avg_z)
-        println("normal derivative scale factor = ", nd_scale_factor,"\n")
-        Z_factors = lu(softIE_weight * z_matrix + (1-softIE_weight) * nd_scale_factor * z_matrix_nd)
+        # avg_z_nd = sum(abs.(z_matrix_nd))./length(z_matrix_nd)
+        # avg_z = sum(abs.(z_matrix))./length(z_matrix)
+        # nd_scale_factor = im*avg_z / avg_z_nd # probably shouldn't be here long term
+        # println("avg nd Z value = ", avg_z_nd)
+        # println("avg Z value = ", avg_z)
+        # println("normal derivative scale factor = ", nd_scale_factor,"\n")
+        # Z_factors = lu(softIE_weight * z_matrix + (1-softIE_weight) * nd_scale_factor * z_matrix_nd)
+        Z_factors = lu(softIE_weight * z_matrix + (1-softIE_weight) * im * z_matrix_nd)
         pulse_mesh.Z_factors = Z_factors
     end
     println("  Matrix fill time: ", matrix_fill_time)
@@ -116,7 +117,8 @@ function solveSoftCFIE(pulse_mesh::PulseMesh,
         rhsNormalDerivFill!(pulse_mesh, excitation_normal_derivative, rhs_nd)
         rhs = zeros(ComplexF64, num_elements)
         rhsFill!(pulse_mesh, excitation, rhs)
-        RHS = softIE_weight * rhs + (1-softIE_weight) * nd_scale_factor * rhs_nd
+        # RHS = softIE_weight * rhs + (1-softIE_weight) * nd_scale_factor * rhs_nd
+        RHS = softIE_weight * rhs + (1-softIE_weight) * im * rhs_nd
         pulse_mesh.RHS = RHS
     end
     println("  RHS fill time: ", rhs_fill_time)
