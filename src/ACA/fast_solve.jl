@@ -272,7 +272,9 @@ end #solveSoundSoftIEACA
 @views function solveSoundSoftCFIEACA(pulse_mesh::PulseMesh,
                                       num_levels::Int64,
                                       excitation::Function,
+                                      excitation_normal_deriv::Function,
                                       wavenumber,
+                                      softIE_weight,
                                       distance_to_edge_tol,
                                       near_singular_tol,
                                       compression_distance,
@@ -286,15 +288,22 @@ end #solveSoundSoftIEACA
     # returns an array of the unknowns named sources
     @unpack num_elements = pulse_mesh
 
-    println("Filling RHS...")
-    rhs = zeros(ComplexF64, num_elements)
-    rhs_fill_time = @elapsed rhsFill!(pulse_mesh, excitation, rhs)
+    rhs_fill_time = @elapsed begin
+        println("Filling RHS...")
+        println("doing right thing")
+        rhs_func(x,y,z) = softIE_weight * excitation(x,y,z)
+        rhs_nd_func(x,y,z,normal) = (1-softIE_weight) * im * excitation_normal_deriv(x,y,z,normal)
+        rhs = zeros(ComplexF64, num_elements)
+        rhsFill!(pulse_mesh, rhs_func, rhs)
+        rhsNormalDerivFill!(pulse_mesh, rhs_nd_func, rhs)
+        pulse_mesh.RHS = rhs
+    end
     println("  RHS fill time: ", rhs_fill_time)
 
     println("Filling ACA Matrix...")
     matrix_fill_time = @elapsed begin
         octree = createOctree(num_levels, pulse_mesh)
-        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
+        fillOctreeZMatricesSoundSoftCFIE!(pulse_mesh, octree, wavenumber, softIE_weight,
                                       distance_to_edge_tol, near_singular_tol,
                                       compression_distance, ACA_approximation_tol)
     end

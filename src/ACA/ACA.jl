@@ -160,22 +160,22 @@ end # computeZEntrySoundSoft
     @unpack areas,
             test_quadrature_points,
             test_quadrature_weights = pulse_mesh
-    is_singular = test_ele_idx == src_ele_idx
+    is_singular = global_test_idx == global_src_idx
     testIntegrand(x,y,z) = scalarGreensIntegration(pulse_mesh,
-                                                   src_ele_idx,
+                                                   global_src_idx,
                                                    wavenumber,
                                                    [x,y,z],
                                                    distance_to_edge_tol,
                                                    near_singular_tol,
                                                    is_singular) +
                            scalarGreensNormalDerivativeIntegration(pulse_mesh,
-                                                                   src_idx,
+                                                                   global_src_idx,
                                                                    wavenumber,
-                                                                   r_test,
+                                                                   [x,y,z],
                                                                    is_singular)
-    Z_entry = gaussQuadrature(areas[test_ele_idx],
+    Z_entry = gaussQuadrature(areas[global_test_idx],
                               testIntegrand,
-                              test_quadrature_points[test_ele_idx],
+                              test_quadrature_points[global_test_idx],
                               test_quadrature_weights)::ComplexF64
     return(Z_entry)
 end # computeZEntrySoundSoft

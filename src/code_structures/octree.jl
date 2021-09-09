@@ -170,6 +170,7 @@ end
 @views function fillOctreeZMatricesSoundSoftCFIE!(pulse_mesh::PulseMesh,
                                               octree::Octree,
                                               wavenumber,
+                                              softIE_weight,
                                               distance_to_edge_tol,
                                               near_singular_tol,
                                               compression_distance,
@@ -182,9 +183,11 @@ end
     # ACA_approximation_tol determines how accurately the compressed matrices represent Z
     # returns nothing
     z_entry_datatype = ComplexF64
-    soundSoftCFIETestIntegrand(r_test, global_src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, global_src_idx,
+    soundSoftCFIETestIntegrand(r_test, global_src_idx, is_singular) = softIE_weight *
+                                                                      scalarGreensIntegration(pulse_mesh, global_src_idx,
                                                                           wavenumber, r_test, distance_to_edge_tol,
                                                                           near_singular_tol, is_singular) +
+                                                                      (1-softIE_weight) * im *
                                                                       scalarGreensNormalDerivativeIntegration(pulse_mesh,
                                                                           global_src_idx, wavenumber, r_test, is_singular)
     num_leaves = length(octree.leaf_node_idxs)
