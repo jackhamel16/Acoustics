@@ -4,8 +4,7 @@ using LinearAlgebra
 
 function rhsFill!(pulse_mesh::PulseMesh,
                  fieldFunc::Function,
-                 rhs::AbstractArray{ComplexF64, 1},
-                 normal_derivative=false)
+                 rhs::AbstractArray{ComplexF64, 1})
     @unpack num_elements,
             elements,
             areas,

@@ -140,34 +140,36 @@ end # computeZEntrySoundSoft
     return(Z_entry)
 end # computeZEntrySoundSoft
 
-@views function computeZEntrySoundSoftCFIE(pulse_mesh::PulseMesh,
+@views function computeZEntrySoftCFIE(pulse_mesh::PulseMesh,
                                        test_node::Node,
                                        src_node::Node,
                                        wavenumber,
+                                       softIE_weight,
                                        distance_to_edge_tol,
                                        near_singular_tol,
                                        test_idx::Int64,
                                        src_idx::Int64)
-    # Alternative implementation of computeZEntrySoundSoft that can be wrapped up to give to
-    #   computeMatrixACA easily. Rather than pass in global element idxs, the function assumes
-    #   you are computing a sub-matrix of Z for all elements between test_node and src_node.
-    #   test_idx and src_idx are local element idxs for elements contained in test_node and
-    #   src_node, respectively.  The function assumes test_idx and src_idx are valid indices
-    #   (i.e. not larger than the total number of elements in test_node or src_node)
-    # Returns the requested entry of the sub-Z matrix
+    # Computes the sound soft CFIE Z matrix values for the interaction between a test
+    #   element in test_node and src element in src_node.  The element is determined by
+    #   test_idx (local to test_node) and src_idx (local to src_node). The function
+    #   assumes test_idx and src_idx are valid indices (i.e. not larger than the total
+    #   number of elements in test_node and src_node, respectively)
+    # Returns the requested entry of the Z matrix
     global_test_idx = test_node.element_idxs[test_idx]
     global_src_idx = src_node.element_idxs[src_idx]
     @unpack areas,
             test_quadrature_points,
             test_quadrature_weights = pulse_mesh
     is_singular = global_test_idx == global_src_idx
-    testIntegrand(x,y,z) = scalarGreensIntegration(pulse_mesh,
+    testIntegrand(x,y,z) = softIE_weight *
+                           scalarGreensIntegration(pulse_mesh,
                                                    global_src_idx,
                                                    wavenumber,
                                                    [x,y,z],
                                                    distance_to_edge_tol,
                                                    near_singular_tol,
                                                    is_singular) +
+                            (1-softIE_weight) * im *
                            scalarGreensNormalDerivativeIntegration(pulse_mesh,
                                                                    global_src_idx,
                                                                    wavenumber,

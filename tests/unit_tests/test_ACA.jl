@@ -134,6 +134,55 @@ include("../../src/ACA/ACA.jl")
         test_Z_entry = computeZEntrySoundSoft(pulse_mesh, octree.nodes[1], octree.nodes[1], wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
         @test isapprox(test_Z_entry, z_matrix[test_idx, src_idx], rtol=1e-14)
     end # computeZEntrySoundSoft tests
+    @testset "computeZEntrySoftCFIE tests" begin
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        softIE_weight = 0.5
+
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        testIntegrand(r_test, src_idx, is_singular) = softIE_weight * scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular) +
+                                                      (1-softIE_weight) * im *
+                                                      scalarGreensNormalDerivativeIntegration(pulse_mesh,
+                                                        src_idx, wavenumber, r_test, is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
+        num_levels = 1
+        octree = createOctree(num_levels, pulse_mesh)
+        test_idx = 1
+        src_idx = 1
+        test_node = octree.nodes[1]
+        src_node = octree.nodes[1]
+        global_test_idx = test_node.element_idxs[test_idx]
+        global_src_idx = src_node.element_idxs[src_idx]
+        test_Z_entry = computeZEntrySoftCFIE(pulse_mesh, test_node, src_node, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
+        @test isapprox(test_Z_entry, z_matrix[global_test_idx, global_src_idx], rtol=1e-14)
+        test_idx = 2
+        src_idx = 5
+        global_test_idx = test_node.element_idxs[test_idx]
+        global_src_idx = src_node.element_idxs[src_idx]
+        test_Z_entry = computeZEntrySoftCFIE(pulse_mesh, test_node, src_node, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
+        @test isapprox(test_Z_entry, z_matrix[global_test_idx, global_src_idx], rtol=1e-14)
+
+        num_levels = 3
+        octree = createOctree(num_levels, pulse_mesh)
+        test_idx = 1
+        src_idx = 1
+        test_node = octree.nodes[7]
+        src_node = octree.nodes[9]
+        global_test_idx = test_node.element_idxs[test_idx]
+        global_src_idx = src_node.element_idxs[src_idx]
+        test_Z_entry = computeZEntrySoftCFIE(pulse_mesh, test_node, src_node, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
+        @test isapprox(test_Z_entry, z_matrix[global_test_idx, global_src_idx], rtol=1e-14)
+    end # computeZEntrySoftCFIE tests
     @testset "computedZdkEntrySoundSoft tests" begin
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule

@@ -139,7 +139,7 @@ end
     return(V)
 end # fullMatvecACA
 
-@views function solveSoundSoftIEACA(pulse_mesh::PulseMesh,
+@views function solveSoftIEACA(pulse_mesh::PulseMesh,
                                     num_levels::Int64,
                                     excitation::Function,
                                     wavenumber,
@@ -185,9 +185,9 @@ end # fullMatvecACA
 
     return((sources, octree, computeACAMetrics(num_elements, octree)))
     # return(computeACAMetrics(num_elements, octree))
-end #solveSoundSoftIEACA
+end #solveSoftIEACA
 
-@views function solveSoundSoftIEACA(pulse_mesh::PulseMesh,
+@views function solveSoftIEACA(pulse_mesh::PulseMesh,
                                     num_levels::Int64,
                                     excitation::Function,
                                     wavenumber,
@@ -204,11 +204,6 @@ end #solveSoundSoftIEACA
     # returns an array of the unknowns named sources
     @unpack num_elements = pulse_mesh
 
-    println("Filling RHS...")
-    rhs = zeros(ComplexF64, num_elements)
-    rhs_fill_time = @elapsed rhsFill!(pulse_mesh, excitation, rhs)
-    println("  RHS fill time: ", rhs_fill_time)
-
     println("Filling ACA Matrix...")
     matrix_fill_time = @elapsed begin
         octree = createOctree(num_levels, pulse_mesh)
@@ -218,29 +213,28 @@ end #solveSoundSoftIEACA
     end
     println("  Matrix fill time: ", matrix_fill_time)
 
-    println("Solving with ACA...")
-    solve_time = @elapsed begin
-        fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
-        fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
-        sources = zeros(ComplexF64, num_elements)
-        num_iters = gmres!(sources, fullMatvecLinearMap, rhs, log=true)[2]
-        println("GMRES ", string(num_iters))
-    end
-    println("  Solve time: ", solve_time)
-
+    sources = solveSoftIEACA(pulse_mesh,
+                             octree,
+                             num_levels,
+                             excitation,
+                             wavenumber,
+                             distance_to_edge_tol,
+                             near_singular_tol,
+                             compression_distance,
+                             ACA_approximation_tol)
     return((sources, octree, computeACAMetrics(num_elements, octree)))
     # return(computeACAMetrics(num_elements, octree))
-end #solveSoundSoftIEACA
+end #solveSoftIEACA
 
-@views function solveSoundSoftIEACA(pulse_mesh::PulseMesh,
-                                    octree::Octree,
-                                    num_levels::Int64,
-                                    excitation::Function,
-                                    wavenumber,
-                                    distance_to_edge_tol,
-                                    near_singular_tol,
-                                    compression_distance,
-                                    ACA_approximation_tol)
+@views function solveSoftIEACA(pulse_mesh::PulseMesh,
+                               octree::Octree,
+                               num_levels::Int64,
+                               excitation::Function,
+                               wavenumber,
+                               distance_to_edge_tol,
+                               near_singular_tol,
+                               compression_distance,
+                               ACA_approximation_tol)
     # Solves for the surface unknowns for the problem geometry described by pulse_mesh
     #   and excitation using ACA when suitable
     # num_levels determines the number of levels in the octree for ACA
@@ -267,9 +261,9 @@ end #solveSoundSoftIEACA
     println("Solve time: ", solve_time)
 
     return(sources)
-end #solveSoundSoftIEACA
+end #solveSoftIEACA
 
-@views function solveSoundSoftCFIEACA(pulse_mesh::PulseMesh,
+@views function solveSoftCFIEACA(pulse_mesh::PulseMesh,
                                       num_levels::Int64,
                                       excitation::Function,
                                       excitation_normal_deriv::Function,
@@ -288,18 +282,6 @@ end #solveSoundSoftIEACA
     # returns an array of the unknowns named sources
     @unpack num_elements = pulse_mesh
 
-    rhs_fill_time = @elapsed begin
-        println("Filling RHS...")
-        println("doing right thing")
-        rhs_func(x,y,z) = softIE_weight * excitation(x,y,z)
-        rhs_nd_func(x,y,z,normal) = (1-softIE_weight) * im * excitation_normal_deriv(x,y,z,normal)
-        rhs = zeros(ComplexF64, num_elements)
-        rhsFill!(pulse_mesh, rhs_func, rhs)
-        rhsNormalDerivFill!(pulse_mesh, rhs_nd_func, rhs)
-        pulse_mesh.RHS = rhs
-    end
-    println("  RHS fill time: ", rhs_fill_time)
-
     println("Filling ACA Matrix...")
     matrix_fill_time = @elapsed begin
         octree = createOctree(num_levels, pulse_mesh)
@@ -308,6 +290,53 @@ end #solveSoundSoftIEACA
                                       compression_distance, ACA_approximation_tol)
     end
     println("  Matrix fill time: ", matrix_fill_time)
+
+    sources = solveSoftCFIEACA(pulse_mesh,
+                                     octree,
+                                          num_levels,
+                                          excitation,
+                                          excitation_normal_deriv,
+                                          wavenumber,
+                                          softIE_weight,
+                                          distance_to_edge_tol,
+                                          near_singular_tol,
+                                          compression_distance,
+                                          ACA_approximation_tol)
+
+    return((sources, octree, computeACAMetrics(num_elements, octree)))
+end #solveSoftIEACA
+
+@views function solveSoftCFIEACA(pulse_mesh::PulseMesh,
+                                 octree::Octree,
+                                      num_levels::Int64,
+                                      excitation::Function,
+                                      excitation_normal_deriv::Function,
+                                      wavenumber,
+                                      softIE_weight,
+                                      distance_to_edge_tol,
+                                      near_singular_tol,
+                                      compression_distance,
+                                      ACA_approximation_tol)
+    # Solves for the surface unknowns for the problem geometry described by pulse_mesh
+    #   and excitation using ACA when suitable using the sound-soft CFIE
+    # num_levels determines the number of levels in the octree for ACA
+    # distance_to_edge_tol and near_singular_tol are paramters for integration routines
+    # compression_distance determines when to use ACA (see lower lvl func descriptions)
+    # ACA_approximation_tol lower means higher rank approximations are used in ACA
+    # returns an array of the unknowns named sources
+    # this version assumes the octree is created and sub-Zs are filled.
+    @unpack num_elements = pulse_mesh
+
+    rhs_fill_time = @elapsed begin
+        println("Filling RHS...")
+        rhs_nd_func(x,y,z,normal) = (1-softIE_weight) * im * excitation_normal_deriv(x,y,z,normal)
+        rhs_func(x,y,z) = softIE_weight * excitation(x,y,z)
+        rhs = zeros(ComplexF64, num_elements)
+        rhsNormalDerivFill!(pulse_mesh, rhs_nd_func, rhs)
+        rhsFill!(pulse_mesh, rhs_func, rhs)
+        pulse_mesh.RHS = rhs
+    end
+    println("  RHS fill time: ", rhs_fill_time)
 
     println("Solving with ACA...")
     solve_time = @elapsed begin
@@ -319,9 +348,8 @@ end #solveSoundSoftIEACA
     end
     println("  Solve time: ", solve_time)
 
-    return((sources, octree, computeACAMetrics(num_elements, octree)))
-    # return(computeACAMetrics(num_elements, octree))
-end #solveSoundSoftIEACA
+    return(sources)
+end #solveSoftCFIEACA
 
 @views function subMatvecACA(sub_Z::AbstractArray{T,2}, sub_J::AbstractArray{T,1})::Array{T,1} where T
     # computes the matrix-vector product between sub_Z and sub_J when sub_Z is

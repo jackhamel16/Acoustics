@@ -64,7 +64,7 @@ if length(ARGS) == 1
         println("Equation: Sound Soft IE")
         if ACA_params.use_ACA == true
             println("Running with ACA...")
-            run_time = @elapsed sources, octree, metrics = solveSoundSoftIEACA(pulse_mesh,
+            run_time = @elapsed sources, octree, metrics = solveSoftIEACA(pulse_mesh,
                                                            ACA_params.num_levels,
                                                            excitationFunc,
                                                            excitation_params.wavenumber,
