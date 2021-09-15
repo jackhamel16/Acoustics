@@ -293,7 +293,7 @@ include("../../src/ACA/fast_solve.jl")
         softIE_weight = 0.5
         mesh_filename = "examples/test/rectangular_strips/rectangular_strip.msh"
         pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        l, m = 0, 0
+        l, m = 1,-1
         excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
         excitation_normal_deriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(1.0, wavenumber, [x_test,y_test,z_test], l, m, normal)
         sol_J = solveSoftCFIE(pulse_mesh, excitation, excitation_normal_deriv, wavenumber, distance_to_edge_tol, near_singular_tol, softIE_weight)
@@ -319,6 +319,24 @@ include("../../src/ACA/fast_solve.jl")
                                       compression_distance, ACA_approximation_tol)
         test_J = solveSoftCFIEACA(pulse_mesh, octree, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J, rtol=0.13e-7)
+
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        softIE_weight = 0.5
+        mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        l, m = 0, 0
+        excitation(x_test, y_test, z_test) = sphericalWave(1.0, real(wavenumber), [x_test,y_test,z_test], l, m)
+        excitation_normal_deriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(1.0, wavenumber, [x_test,y_test,z_test], l, m, normal)
+        sol_J = solveSoftCFIE(pulse_mesh, excitation, excitation_normal_deriv, wavenumber, distance_to_edge_tol, near_singular_tol, softIE_weight)
+        num_levels = 3
+        compression_distance = 1.5
+        ACA_approximation_tol = 1e-5
+        test_J = solveSoftCFIEACA(pulse_mesh, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
+        @test isapprox(sol_J, test_J[1], rtol=0.88e-6)
     end # solveSoftCFIEACA tests
     @testset "subMatvecACA tests" begin
         sub_Z = zeros(5,5)

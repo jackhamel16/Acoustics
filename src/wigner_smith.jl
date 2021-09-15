@@ -43,6 +43,7 @@ end # function calculateWSMatrix
                                   near_singular_tol, compression_distance, ACA_approximation_tol)
     fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
                                      compression_distance, ACA_approximation_tol)
+    # mkdir("scattering_matrix_GMRES_residuals")
     println("Calculating Scattering Matrix...")
     S, Js = calculateScatteringMatrixACA(max_l, wavenumber, pulse_mesh, octree,
                                   distance_to_edge_tol, near_singular_tol)
@@ -75,7 +76,7 @@ end # function calculateWSMatrix
                              near_singular_tol)
 end # function solveWSModeSoft
 
-@views function solveWSModeSoftSoftACA(max_l::Int64,
+@views function solveWSModeSoftACA(max_l::Int64,
                                mode_idx::Int64,
                                wavenumber,
                                pulse_mesh::PulseMesh,

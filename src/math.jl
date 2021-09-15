@@ -1,5 +1,7 @@
 using GSL
+using IterativeSolvers
 using LinearAlgebra
+using Plots
 using SpecialFunctions
 
 function convertSpherical2Cartesian(spherical_coords::AbstractArray{T, 1}) where T
@@ -7,6 +9,16 @@ function convertSpherical2Cartesian(spherical_coords::AbstractArray{T, 1}) where
 	y = spherical_coords[1]*sin(spherical_coords[2])*sin(spherical_coords[3])
 	z = spherical_coords[1]*cos(spherical_coords[2])
 	return([x, y, z])
+end
+
+function outputGMRESResiduals(history::ConvergenceHistory, filename::String)
+    output_file = open(string(filename,".txt"), "w")
+    for iter_idx = 1:history.iters
+        println(output_file, iter_idx, " ", history[:resnorm][iter_idx])
+    end
+    close(output_file)
+    Plots.plot(history[:resnorm], title=filename, xlabel="Iteration", ylabel="Residual", yaxis=:log)
+    savefig(filename)
 end
 
 function sphericalHarmonics(theta::Float64, phi::Float64, lmax::Int64)
