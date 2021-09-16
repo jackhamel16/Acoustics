@@ -2,10 +2,10 @@ using Test
 
 include("../../src/quadrature.jl")
 include("../../src/code_structures/mesh.jl")
-include("../../src/greens_functions.jl")
 include("../../src/code_structures/octree.jl")
-include("../../src/ACA/fast_solve.jl")
+include("../../src/greens_functions.jl")
 include("../../src/fill.jl")
+include("../../src/ACA/ACA_fill.jl")
 
 include("../../src/ACA/ACA.jl")
 
@@ -101,67 +101,5 @@ include("../../src/ACA/ACA.jl")
         computeMatrixEntry(test_idx,src_idx)=computeZEntrySoundSoft(pulse_mesh, test_node, src_node, wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
         test_U, test_V = computeMatrixACA(func_return_type, computeMatrixEntry, approximation_tol, length(test_node.element_idxs), length(src_node.element_idxs))
         @test isapprox(test_U*test_V, sol_sub_Z, rtol=1e-15)
-    end #computeRHSContributionACA
-    @testset "computeZEntrySoundSoft tests" begin
-        wavenumber = 1.0+0.0im
-        src_quadrature_rule = gauss7rule
-        test_quadrature_rule = gauss7rule
-        distance_to_edge_tol = 1e-12
-        near_singular_tol = 1.0
-
-        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
-        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
-                                                       wavenumber,
-                                                       r_test,
-                                                       distance_to_edge_tol,
-                                                       near_singular_tol,
-                                                       is_singular)
-        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
-        global_test_idx = 1
-        global_src_idx = 1
-        test_Z_entry = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idx)
-        @test isapprox(test_Z_entry, z_matrix[global_test_idx, global_src_idx], rtol=1e-14)
-        global_test_idx = 2
-        global_src_idx = 5
-        test_Z_entry = computeZEntrySoundSoft(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol, global_test_idx, global_src_idx)
-        @test isapprox(test_Z_entry, z_matrix[global_test_idx, global_src_idx], rtol=1e-14)
-        num_levels = 1
-        octree = createOctree(num_levels, pulse_mesh)
-        test_idx = 1
-        src_idx = 1
-        test_Z_entry = computeZEntrySoundSoft(pulse_mesh, octree.nodes[1], octree.nodes[1], wavenumber, distance_to_edge_tol, near_singular_tol, test_idx, src_idx)
-        @test isapprox(test_Z_entry, z_matrix[test_idx, src_idx], rtol=1e-14)
-    end # computeZEntrySoundSoft tests
-    @testset "computedZdkEntrySoundSoft tests" begin
-        wavenumber = 1.0+0.0im
-        src_quadrature_rule = gauss7rule
-        test_quadrature_rule = gauss7rule
-        distance_to_edge_tol = 1e-12
-        near_singular_tol = 1.0
-
-        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
-        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        num_levels = 1
-        octree = createOctree(num_levels, pulse_mesh)
-        testIntegrand(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh, src_idx,
-                                                       wavenumber,
-                                                       r_test,
-                                                       is_singular)
-        dzdk_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill!(pulse_mesh, testIntegrand, dzdk_matrix)
-        global_test_idx = 1
-        global_src_idx = 1
-        test_dZdk_entry = computedZdkEntrySoundSoft(pulse_mesh, octree.nodes[1], octree.nodes[1], wavenumber, global_test_idx, global_src_idx)
-        @test isapprox(test_dZdk_entry, dzdk_matrix[global_test_idx, global_src_idx], rtol=1e-14)
-        global_test_idx = 2
-        global_src_idx = 5
-        test_dZdk_entry = computedZdkEntrySoundSoft(pulse_mesh, octree.nodes[1], octree.nodes[1], wavenumber, global_test_idx, global_src_idx)
-        @test isapprox(test_dZdk_entry, dzdk_matrix[global_test_idx, global_src_idx], rtol=1e-14)
-        test_idx = 1
-        src_idx = 1
-        test_dZdk_entry = computedZdkEntrySoundSoft(pulse_mesh, octree.nodes[1], octree.nodes[1], wavenumber, test_idx, src_idx)
-        @test isapprox(test_dZdk_entry, dzdk_matrix[test_idx, src_idx], rtol=1e-14)
-    end # computedZdkEntrySoundSoft tests
+    end # computeMatrixACA
 end # ACA tests

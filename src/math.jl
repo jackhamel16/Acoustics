@@ -1,5 +1,11 @@
+################################################################################
+# This file contains various implementations of mathematical functions.
+################################################################################
+
 using GSL
+using IterativeSolvers
 using LinearAlgebra
+using Plots
 using SpecialFunctions
 
 function convertSpherical2Cartesian(spherical_coords::AbstractArray{T, 1}) where T
@@ -9,11 +15,21 @@ function convertSpherical2Cartesian(spherical_coords::AbstractArray{T, 1}) where
 	return([x, y, z])
 end
 
-function sphericalHarmonics(theta::Float64, phi::Float64, lmax::Int64)
+function outputGMRESResiduals(history::ConvergenceHistory, filename::String)
+    # Writes in two columns to an output file the iteration index (left) and
+    #   residual (right) as well as a plot of the same information from GMRES.
+    output_file = open(string(filename,".txt"), "w")
+    for iter_idx = 1:history.iters
+        println(output_file, iter_idx, " ", history[:resnorm][iter_idx])
+    end
+    close(output_file)
+    Plots.plot(history[:resnorm], title=filename, xlabel="Iteration", ylabel="Residual", yaxis=:log)
+    savefig(filename)
+end
 
+function sphericalHarmonics(theta::Float64, phi::Float64, lmax::Int64)
     # Obtain the legendre polynomial and its array.
     # This function gives legendre polynomial for  0 <= l <= lmax,  and  0 <= m <= l
-
 	cos_theta = cos(theta);
 
     (Leg, dLeg) = sf_legendre_deriv_array(GSL_SF_LEGENDRE_SPHARM, lmax, cos_theta);

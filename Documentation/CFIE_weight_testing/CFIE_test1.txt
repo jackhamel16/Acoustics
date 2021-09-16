@@ -1,17 +1,13 @@
 mesh filename: examples/test/rectangle_plate_8elements_symmetric.msh
-equation: sound soft IE
+equation: sound soft CFIE
+CFIE weight: 0.5
 source quadrature rule: gauss7
 test quadrature rule: gauss1
 distance to edge tolerance: 1e-12
 near singular tolerance: 1.0
 excitation:
   type: sphericalwave
-  lambda: 4.0
+  lambda: 20
   amplitude: 1.5
   l: 1
   m: 1
-ACA:
-  use ACA: yes
-  number of levels: 3
-  compression_distance: 1.5
-  approximation tolerance: 1e-6

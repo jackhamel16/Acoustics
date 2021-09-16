@@ -261,7 +261,7 @@ include("../../src/includes.jl")
         test_Q = calculateWSMatrixACA(max_l, wavenumber, pulse_mesh, octree, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_Q, test_Q, rtol=0.27e-6)
     end # calculateWSMatrixACA tests
-    @testset "solveWSMode tests" begin
+    @testset "solveWSModeSoft tests" begin
         # this isnt a great test as the solution is copied from the output
         # therefore it, at best, only tells me if I changed something in the code
         max_l = 2
@@ -275,11 +275,11 @@ include("../../src/includes.jl")
         near_singular_tol = 1.0
         mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources = solveWSMode(max_l, mode_idx, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        test_sources = solveWSModeSoft(max_l, mode_idx, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test isapprox(test_sources[1], -0.5313576866296218 - 0.21990746085878485im, rtol=1e-14)
         @test isapprox(test_sources[468], -0.6792050632304026 - 0.28109552129052373im, rtol=1e-14)
-    end # calculateWSMatrix tests
-    @testset "solveWSModeACA tests" begin
+    end # solveWSModeSoft tests
+    @testset "solveWSModeSoftACA tests" begin
         # this isnt a great test as the solution is copied from the output of non-ACA solve
         # therefore it, at best, only tells me if I changed something in the code
         max_l = 2
@@ -296,10 +296,34 @@ include("../../src/includes.jl")
         ACA_approximation_tol = 1e-5
         mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources = solveWSModeACA(max_l, mode_idx, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
+        test_sources = solveWSModeSoftACA(max_l, mode_idx, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
         @test isapprox(test_sources[1][1], -0.5313576866296218 - 0.21990746085878485im, rtol=1e-5)
         @test isapprox(test_sources[1][468], -0.6792050632304026 - 0.28109552129052373im, rtol=0.8e-6)
-    end # calculateWSMatrix tests
+    end # solveWSModeSoftACA tests
+    @testset "solveWSModeSoftCFIEACA tests" begin
+        # this isnt a great test as the solution is copied from the output of non-ACA solve
+        # therefore it, at best, only tells me if I changed something in the code
+        max_l = 2
+        mode_idx = 1
+        lambda = 10
+        wavenumber = 2*pi/lambda + 0.0im
+        num_harmonics = max_l^2 + 2*max_l + 1
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        softIE_weight = 0.5
+        num_levels = 3
+        compression_distance = 1.5
+        ACA_approximation_tol = 1e-5
+        mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"#"examples/test/circular_plate_1m.msh"
+        pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        test_sources = solveWSModeSoftCFIEACA(max_l, mode_idx, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol, softIE_weight, num_levels, compression_distance, ACA_approximation_tol)
+        pulse_mesh_IE = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        test_sources_IE = solveWSModeSoftACA(max_l, mode_idx, wavenumber, pulse_mesh_IE, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
+        @test_skip isapprox(test_sources[1][1], -0.5313576866296218 - 0.21990746085878485im, rtol=1e-5)
+        @test_skip isapprox(test_sources[1][468], -0.6792050632304026 - 0.28109552129052373im, rtol=0.8e-6)
+    end # solveWSModeSoftCFIEACA tests
     @testset "sphericalWaveWSMode tests" begin
         wavenumber = 2.0
         max_l = 0
@@ -319,4 +343,25 @@ include("../../src/includes.jl")
         test_wave = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
         @test isapprox(sol_wave, test_wave, rtol=1e-14)
     end # sphericalWaveWSMode tests
+    @testset "sphericalWaveNormalDerivWSMode tests" begin
+        wavenumber = 2.0
+        max_l = 0
+        mode_vector = [1]
+        normal = [1.0, 0.5, 0.25]
+        x, y, z = 1.0, 1.0, 1.0
+        sol_wave = sphericalWaveNormalDerivative(2*wavenumber, wavenumber, [x,y,z], 0, 0, normal)
+        test_wave = sphericalWaveNormalDerivWSMode(x, y, z, max_l, wavenumber, normal, mode_vector)
+        @test isapprox(sol_wave, test_wave, rtol=1e-14)
+
+        wavenumber = 2.0
+        max_l = 1
+        mode_vector = [1, 0, 0, 0.5+0.2im]
+        normal = [1.0, 0.5, 0]
+        x, y, z = 1.0, 1.0, 1.0
+        sol_wave = 0
+        sol_wave += 1 * sphericalWaveNormalDerivative(2*wavenumber, wavenumber, [x,y,z], 0, 0, normal)
+        sol_wave += (0.5+0.2im) * sphericalWaveNormalDerivative(2*wavenumber, wavenumber, [x,y,z], 1, 1, normal)
+        test_wave = sphericalWaveNormalDerivWSMode(x, y, z, max_l, wavenumber, normal, mode_vector)
+        @test isapprox(sol_wave, test_wave, rtol=1e-14)
+    end # sphericalWaveNormalDerivWSMode tests
 end

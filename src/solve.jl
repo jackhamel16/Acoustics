@@ -1,5 +1,11 @@
 # dependencies: fill.jl greens_functions.jl mesh.jl
 
+################################################################################
+# This file contains functions that solve various acoustic integral equations  #
+# for the equivalent sources that exist on the surface of a scatterer w/o ACA  #
+# See documentation section 3                                                  #
+################################################################################
+
 function solveSoftIE(pulse_mesh::PulseMesh,
                      excitation::Function,
                      wavenumber::Number,
@@ -43,7 +49,7 @@ function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
     @unpack num_elements = pulse_mesh
     println("Filling RHS...")
     RHS = zeros(ComplexF64, num_elements)
-    rhs_fill_time = @elapsed rhsFill!(pulse_mesh, excitation_normal_derivative, RHS, true)
+    rhs_fill_time = @elapsed rhsNormalDerivFill!(pulse_mesh, excitation_normal_derivative, RHS)
     pulse_mesh.RHS = RHS
     println("  RHS fill time: ", rhs_fill_time)
 
@@ -81,46 +87,38 @@ function solveSoftCFIE(pulse_mesh::PulseMesh,
 
     @unpack num_elements = pulse_mesh
     matrix_fill_time = @elapsed begin
-        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh,
-                                                            src_idx,
-                                                            wavenumber,
-                                                            r_test,
+        testIntegrand(r_test, src_idx, is_singular) = softIE_weight *
+                                                      scalarGreensIntegration(pulse_mesh,
+                                                            src_idx, wavenumber, r_test,
                                                             distance_to_edge_tol,
-                                                            near_singular_tol,
-                                                            is_singular)
-        testIntegrandNormalDerivative(r_test, src_idx, is_singular) =
-                                scalarGreensNormalDerivativeIntegration(pulse_mesh,
-                                                                        src_idx,
-                                                                        wavenumber,
-                                                                        r_test,
-                                                                        is_singular)
+                                                            near_singular_tol, is_singular) +
+                                                      (1-softIE_weight) * im *
+                                                      scalarGreensNormalDerivativeIntegration(pulse_mesh,
+                                                                                              src_idx,
+                                                                                              wavenumber,
+                                                                                              r_test,
+                                                                                              is_singular)
         println("Filling Matrix...")
-        z_matrix_nd = zeros(ComplexF64, num_elements, num_elements)
-        matrixFill!(pulse_mesh, testIntegrandNormalDerivative, z_matrix_nd)
         z_matrix = zeros(ComplexF64, num_elements, num_elements)
         matrixFill!(pulse_mesh, testIntegrand, z_matrix)
-        avg_z_nd = sum(abs.(z_matrix_nd))./length(z_matrix_nd)
-        avg_z = sum(abs.(z_matrix))./length(z_matrix)
-        nd_scale_factor = im*avg_z / avg_z_nd # probably shouldn't be here long term
-        Z_factors = lu(softIE_weight * z_matrix + (1-softIE_weight) * nd_scale_factor * z_matrix_nd)
-        pulse_mesh.Z_factors = Z_factors
+        pulse_mesh.Z_factors = lu(z_matrix)
     end
     println("  Matrix fill time: ", matrix_fill_time)
 
     rhs_fill_time = @elapsed begin
         println("Filling RHS...")
-        rhs_nd = zeros(ComplexF64, num_elements)
-        rhsFill!(pulse_mesh, excitation_normal_derivative, rhs_nd, true)
+        rhs_nd_func(x,y,z,normal) = (1-softIE_weight) * im * excitation_normal_derivative(x,y,z,normal)
+        rhs_func(x,y,z) = softIE_weight * excitation(x,y,z)
         rhs = zeros(ComplexF64, num_elements)
-        rhsFill!(pulse_mesh, excitation, rhs)
-        RHS = softIE_weight * rhs + (1-softIE_weight) * nd_scale_factor * rhs_nd
-        pulse_mesh.RHS = RHS
+        rhsNormalDerivFill!(pulse_mesh, rhs_nd_func, rhs)
+        rhsFill!(pulse_mesh, rhs_func, rhs)
+        pulse_mesh.RHS = rhs
     end
     println("  RHS fill time: ", rhs_fill_time)
 
     println("Solving...")
     solve_time = @elapsed source_vec = pulse_mesh.Z_factors \ pulse_mesh.RHS
     println("  Solve time: ", solve_time)
-    
+
     return(source_vec)
 end

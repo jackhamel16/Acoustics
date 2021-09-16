@@ -64,7 +64,7 @@ if length(ARGS) == 1
         println("Equation: Sound Soft IE")
         if ACA_params.use_ACA == true
             println("Running with ACA...")
-            run_time = @elapsed sources, octree, metrics = solveSoundSoftIEACA(pulse_mesh,
+            run_time = @elapsed sources, octree, metrics = solveSoftIEACA(pulse_mesh,
                                                            ACA_params.num_levels,
                                                            excitationFunc,
                                                            excitation_params.wavenumber,
@@ -96,7 +96,17 @@ if length(ARGS) == 1
     elseif equation == "sound soft CFIE"
         println("Equation: Sound Soft CFIE")
         if ACA_params.use_ACA == true
-            println("ACA not implemented for this equation yet")
+            run_time = @elapsed sources, octree, metrics = solveSoftCFIEACA(pulse_mesh,
+                                                  ACA_params.num_levels,
+                                                  excitationFunc,
+                                                  excitationFuncNormalDeriv,
+                                                  excitation_params.wavenumber,
+                                                  inputs.CFIE_weight,
+                                                  distance_to_edge_tol,
+                                                  near_singular_tol,
+                                                  ACA_params.compression_distance,
+                                                  ACA_params.approximation_tol)
+        printACAMetrics(metrics)
         else
             run_time = @elapsed sources = solveSoftCFIE(pulse_mesh,
                                     excitationFunc,
@@ -115,12 +125,38 @@ if length(ARGS) == 1
         else
             if ACA_params.use_ACA == true
                 println("Running with ACA...")
-                run_time = @elapsed sources, octree, metrics = solveWSModeACA(WS_params.max_l,
+                run_time = @elapsed sources, octree, metrics = solveWSModeSoftACA(WS_params.max_l,
                                                                               WS_params.mode_idx,
                                                                               WS_params.wavenumber,
                                                                               pulse_mesh,
                                                                               distance_to_edge_tol,
                                                                               near_singular_tol,
+                                                                              ACA_params.num_levels,
+                                                                              ACA_params.compression_distance,
+                                                                              ACA_params.approximation_tol)
+                printACAMetrics(metrics)
+                exportSourcesBundled(mesh_filename, sources)
+            else
+                run_time = @elapsed sources = solveWSModeSoft(WS_params.max_l, WS_params.mode_idx,
+                                      WS_params.wavenumber, pulse_mesh,
+                                      distance_to_edge_tol, near_singular_tol)
+                exportSourcesBundled(mesh_filename, sources)
+            end
+        end
+    elseif equation == "WS mode CFIE"
+        println("Equation: WS Mode CFIE") # this mode only runs sound soft IE right now
+        if inputs.src_quadrature_string != inputs.test_quadrature_string
+            println("When running at a WS mode, test and src quadrature rules must be identical. Change settings and rerun.")
+        else
+            if ACA_params.use_ACA == true
+                println("Running with ACA...")
+                run_time = @elapsed sources, octree, metrics = solveWSModeSoftCFIEACA(WS_params.max_l,
+                                                                              WS_params.mode_idx,
+                                                                              WS_params.wavenumber,
+                                                                              pulse_mesh,
+                                                                              distance_to_edge_tol,
+                                                                              near_singular_tol,
+                                                                              inputs.CFIE_weight,
                                                                               ACA_params.num_levels,
                                                                               ACA_params.compression_distance,
                                                                               ACA_params.approximation_tol)

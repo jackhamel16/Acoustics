@@ -121,7 +121,7 @@ function parseInputParams(inputs_filename::String)
     line_idx = 1
     mesh_filename = getAttribute(file_lines[line_idx])
     equation = getAttribute(file_lines[line_idx+1])
-    if equation == "sound soft CFIE"
+    if (equation == "sound soft CFIE" || equation == "WS mode CFIE")
         CFIE_weight = parse(Float64, getAttribute(file_lines[line_idx+2]))
         line_idx += 1
     else
