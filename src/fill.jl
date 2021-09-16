@@ -1,5 +1,10 @@
 # dependencies: mesh.jl quadrature.jl octree.jl
 
+################################################################################
+# This file contains the functions that fill the Z matrix and V (rhs) vectors  #
+# to be used in non-ACA solve functions for any of the integral equations.     #
+################################################################################
+
 using LinearAlgebra
 
 function rhsFill!(pulse_mesh::PulseMesh,
@@ -20,7 +25,7 @@ function rhsFill!(pulse_mesh::PulseMesh,
                                                  test_quadrature_points[element_idx],
                                                  test_quadrature_weights)
     end
-end
+end # function rhsFill!
 
 function rhsNormalDerivFill!(pulse_mesh::PulseMesh,
                  fieldFunc::Function,
@@ -41,8 +46,7 @@ function rhsNormalDerivFill!(pulse_mesh::PulseMesh,
                                                  test_quadrature_points[element_idx],
                                                  test_quadrature_weights)
     end
-end
-
+end # function rhsNormalDerivFill!
 
 function matrixFill!(pulse_mesh::PulseMesh,
                     testIntegrand::Function,
@@ -65,35 +69,4 @@ function matrixFill!(pulse_mesh::PulseMesh,
                                                            test_quadrature_weights)
         end
     end
-end
-
-@views function nodeMatrixFill!(pulse_mesh::PulseMesh,
-                        test_node::Node,
-                        src_node::Node,
-                        testIntegrand::Function,
-                        sub_z_matrix::AbstractArray{ComplexF64, 2})
-    # Directly computes the sub-Z matrix for interactions between elements in test_node
-    #   and src_node.
-    # Results stored in sub_z_matrix
-    @unpack elements,
-            areas,
-            nodes,
-            test_quadrature_points,
-            test_quadrature_weights = pulse_mesh
-    num_src_elements = length(src_node.element_idxs)
-    num_test_elements = length(test_node.element_idxs)
-    for local_src_idx in 1:num_src_elements
-        global_src_idx = src_node.element_idxs[local_src_idx]
-        for local_test_idx in 1:num_test_elements
-            global_test_idx = test_node.element_idxs[local_test_idx]
-            is_singular = (global_src_idx == global_test_idx)
-            test_tri_nodes = getTriangleNodes(global_test_idx, elements, nodes)
-            src_tri_nodes = getTriangleNodes(global_src_idx, elements, nodes)
-            testIntegrandXYZ(x,y,z) = testIntegrand([x,y,z], global_src_idx, is_singular)
-            sub_z_matrix[local_test_idx, local_src_idx] = gaussQuadrature(areas[global_test_idx],
-                                                           testIntegrandXYZ,
-                                                           test_quadrature_points[global_test_idx],
-                                                           test_quadrature_weights)
-        end
-    end
-end
+end # function matrixFill!

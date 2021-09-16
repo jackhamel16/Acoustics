@@ -30,7 +30,6 @@ include("../../src/includes.jl")
             end
         end
         no_coupling_matrix = [1 0 0 0; 0 0 0 1; 0 0 1 0; 0 1 0 0] # mag of zero in spots corresponding to coupling between different harmonics
-        # test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         pulse_mesh.Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         test_S, test_Js = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test Array{ComplexF64, 2} == typeof(test_S)
@@ -52,8 +51,6 @@ include("../../src/includes.jl")
         near_singular_tol = 1.0
         mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-
-        # test_S = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         pulse_mesh.Z_factors = lu(calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol))
         test_S, test_Js = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test size(test_S) == (num_harmonics, num_harmonics)
@@ -79,6 +76,7 @@ include("../../src/includes.jl")
         # @test isapprox(test_S, transpose(test_S), rtol=1e-4)
         # @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.8e-1)
     end # calculateScatteringMatrix tests
+
     @testset "calculateScatteringMatrixACA tests" begin
         max_l = 1
         lambda=20.0
@@ -172,6 +170,7 @@ include("../../src/includes.jl")
         # @test isapprox(1, abs(det(test_S) * det(adjoint(test_S))), rtol=0.8e-1)
 
     end # calculateScatteringMatrixACA tests
+
     @testset "calculateScatteringMatrixDerivative tests" begin
         max_l = 1
         wavenumber = 1.0 + 0.0im
@@ -271,6 +270,7 @@ include("../../src/includes.jl")
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.4e-4)
     end # calculateScatteringMatrixDerivative tests
+
     @testset "calculateScatteringMatrixDerivativeACA tests" begin
         max_l = 1
         wavenumber = 1.0 + 0.0im
@@ -393,6 +393,7 @@ include("../../src/includes.jl")
         @test size(test_dSdk) == (num_harmonics, num_harmonics)
         @test isapprox(solution_dSdk, test_dSdk, rtol=0.4e-4)
     end # calculateScatteringMatrixDerivativeACA tests
+
     @testset "calculateVlm tests" begin
         wavenumber = 0.5 + 0.0im
         src_quadrature_rule = gauss7rule

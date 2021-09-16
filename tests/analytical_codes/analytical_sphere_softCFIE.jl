@@ -67,7 +67,7 @@ println("Convergence rate = ", slope)
 convergence_rates = [-2.464481839389643, -2.8225094408712224, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
-tolerance = 1e-1
+tolerance = 1e-6
 if convergence_error > tolerance
     println("TEST FAILED:")
     println("Convergence rate not within ", tolerance, " of expected rate of ", expected_convergence_rate)

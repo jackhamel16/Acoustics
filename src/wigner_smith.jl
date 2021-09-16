@@ -1,5 +1,13 @@
 # Dependencies: scattering_matrix.jl solve.jl
 
+################################################################################
+# This file serves two purposes:                                               #
+#     1) To compute the Wigner-Smith matrix, Q, with or without ACA.           #
+#     2) To diagonalize Q and use the time-delays to build an excitation and   #
+#        solve any of the avilable integral equations with that excitation     #
+#        with or without using ACA.                                            #
+################################################################################
+
 using LinearAlgebra
 using Parameters
 
@@ -113,8 +121,8 @@ end # function solveWSModeSoftACA
                                num_levels,
                                compression_distance,
                                ACA_approximation_tol)
-    # Solves sound-soft IE with an incident field for the WS mode indicated by mode_idx
-    #   using ACA
+    # Solves sound-soft CFIE with an incident field for the WS mode indicated by
+    #   mode_idx using ACA
     octree = createOctree(num_levels, pulse_mesh)
     Q = calculateWSMatrixACA(max_l, wavenumber, pulse_mesh, octree, distance_to_edge_tol,
                              near_singular_tol, compression_distance, ACA_approximation_tol)
@@ -134,7 +142,7 @@ end # function solveWSModeSoftACA
 end # function solveWSModeSoftCFIEACA
 
 function sphericalWaveWSMode(x, y, z, max_l::Int64, wavenumber, mode_vector::AbstractArray{T,1}) where T
-    # sums spherical incident waves weighted by eigenvector elements of the desired WS mode
+    # Sums spherical incident waves weighted by eigenvector elements of the desired WS mode
     excitation_amplitude = 2 * real(wavenumber)
     total_wave = 0
     harmonic_idx = 1
@@ -148,7 +156,8 @@ function sphericalWaveWSMode(x, y, z, max_l::Int64, wavenumber, mode_vector::Abs
 end # function sphericalWaveWSMode
 
 function sphericalWaveNormalDerivWSMode(x, y, z, max_l::Int64, wavenumber, normal::Array{Float64,1}, mode_vector::AbstractArray{T,1}) where T
-    # sums normal derivatives of spherical incident waves weighted by eigenvector elements of the desired WS mode
+    # sums normal derivatives of spherical incident waves weighted by eigenvector
+    #   elements of the desired WS mode
     excitation_amplitude = 2 * real(wavenumber)
     total_wave = 0
     harmonic_idx = 1

@@ -52,5 +52,5 @@ include("../../src/includes.jl")
         @test false==isapprox(sourcesCFIE_soft_IE_only, sourcesIEnd, rtol=1e-12)
         @test isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIEnd, rtol=1e-12)
         @test false==isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIE, rtol=1e-12)
-    end
+    end #solveSoftCFIE tests
 end

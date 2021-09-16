@@ -1,4 +1,13 @@
-# dependencies: fill.jl greens_functions.jl mesh.jl ACA.jl octree.jl
+# dependencies: ACA_fill.jl fill.jl mesh.jl ACA.jl octree.jl math.jl
+
+################################################################################
+# This file serves two purposes:
+#     1) Provide a struct and functions to compute, store and output metrics
+#        from a full solve using ACA
+#     2) Provide functions to solve each available integral equation using ACA
+#        functions to compute matvecs using the sub-Z matrices in ACA
+################################################################################
+
 using LinearAlgebra
 using IterativeSolvers
 using LinearMaps
@@ -19,6 +28,9 @@ struct ACAMetrics
 end
 
 @views function computeACAMetrics(num_elements, octree::Octree)
+    # This function computes a bunch of interesting metrics and stores them in
+    #   an instance of ACAMetrics
+    # Returns an instance of ACAMetics
     num_nodes = length(octree.leaf_node_idxs)
     num_eles_per_node = Array{Int64, 1}(undef, num_nodes)
     ranks = []
@@ -67,9 +79,10 @@ end
                       avg_num_eles,
                       min_num_eles,
                       max_num_eles))
-end # ACAMetrics
+end # function ACAMetrics
 
 function printACAMetrics(metrics::ACAMetrics)
+    # Prints metrics to std out
     println("Displaying ACA Metrics:")
     println("  Octree Metrics:")
     println("    Number of elements per node:")
@@ -82,9 +95,9 @@ function printACAMetrics(metrics::ACAMetrics)
     println("      Min = ", metrics.min_rank)
     println("      Max = ", metrics.max_rank)
     println("  Compression Metrics:")
-    println("    Percentage of Matrices Compressed = ", 100*metrics.percentage_matrices_compressed)
+    println("    Percentage of Matrices Compressed = ", 100*metrics.percentage_matrices_compressed, "%")
     println("    Compression Ratio = ", metrics.compression_ratio)
-end
+end# function printACAMetics
 
 function printACAMetrics(metrics::ACAMetrics, output_file::IOStream)
     # Prints metrics to an output file
@@ -100,15 +113,17 @@ function printACAMetrics(metrics::ACAMetrics, output_file::IOStream)
     println(output_file, "      Min = ", metrics.min_rank)
     println(output_file, "      Max = ", metrics.max_rank)
     println(output_file, "  Compression Metrics:")
-    println(output_file, "    Percentage of Matrices Compressed = ", 100*metrics.percentage_matrices_compressed)
+    println(output_file, "    Percentage of Matrices Compressed = ", 100*metrics.percentage_matrices_compressed, "%")
     println(output_file, "    Compression Ratio = ", metrics.compression_ratio)
-end
+end # function printACAMetrics
 
 @views function fullMatvecACA(pulse_mesh::PulseMesh, octree::Octree, J::AbstractArray{T,1}, use_dZdk=false)::Array{T,1} where T
-    # This function implicitly computes Z*J=V for the entire Z matrix using the
-    #   sub-Z matrices computed directly or compressed as U and V for interactions
-    #   between the elements in nodes of the octree.  if use_dZdk is true then
-    #   the function computes dZ/dk*J
+    # This function implicitly computes Z*J=V (or dZ/dk*J) for the entire Z matrix
+    #   using the sub-Z matrices computed directly or compressed as U and V for
+    #   interactions between the elements in nodes of the octree.  if use_dZdk is
+    #   true then the function computes dZ/dk*J.
+    # Returns the product of the matvec, V.
+    # It might be beneficial to break this into two functions
     @unpack num_elements = pulse_mesh
     V = zeros(ComplexF64, num_elements)
     leaf_nodes = octree.nodes[octree.leaf_node_idxs]
@@ -120,7 +135,7 @@ end
                 src_node = leaf_nodes[src_node_idx]
                 sub_J = J[src_node.element_idxs]
                 sub_Z = test_node.node2node_Z_matrices[src_node_idx] # this produces type instability, but unavoidable
-                sub_V = subMatvecACA(sub_Z, sub_J)
+                sub_V = subMatvecACA(sub_Z, sub_J) # dispatches on typeof(sub_Z)
                 V[test_node.element_idxs] += sub_V
             end
         end
@@ -131,61 +146,13 @@ end
                 src_node = leaf_nodes[src_node_idx]
                 sub_J = J[src_node.element_idxs]
                 sub_Z = test_node.node2node_dZdk_matrices[src_node_idx] # this produces type instability, but unavoidable
-                sub_V = subMatvecACA(sub_Z, sub_J)
+                sub_V = subMatvecACA(sub_Z, sub_J) # dispatches on typeof(sub_Z)
                 V[test_node.element_idxs] += sub_V
             end
         end
     end
     return(V)
-end # fullMatvecACA
-
-@views function solveSoftIEACA(pulse_mesh::PulseMesh,
-                                    num_levels::Int64,
-                                    excitation::Function,
-                                    wavenumber,
-                                    distance_to_edge_tol,
-                                    near_singular_tol,
-                                    compression_distance,
-                                    ACA_approximation_tol,
-                                    gmres_tol,
-                                    gmres_max_iters)
-    # Solves for the surface unknowns for the problem geometry described by pulse_mesh
-    #   and excitation using ACA when suitable
-    # num_levels determines the number of levels in the octree for ACA
-    # distance_to_edge_tol and near_singular_tol are paramters for integration routines
-    # compression_distance determines when to use ACA (see lower lvl func descriptions)
-    # ACA_approximation_tol lower means higher rank approximations are used in ACA
-    # returns an array of the unknowns named sources
-    # this is different from the below function by allowing control over GMRES params
-    @unpack num_elements = pulse_mesh
-
-    println("Filling RHS...")
-    rhs = zeros(ComplexF64, num_elements)
-    rhs_fill_time = @elapsed rhsFill!(pulse_mesh, excitation, rhs)
-    println("  RHS fill time: ", rhs_fill_time)
-
-    println("Filling ACA Matrix...")
-    matrix_fill_time = @elapsed begin
-        octree = createOctree(num_levels, pulse_mesh)
-        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
-                                      distance_to_edge_tol, near_singular_tol,
-                                      compression_distance, ACA_approximation_tol)
-    end
-    println("  Matrix fill time: ", matrix_fill_time)
-
-    println("Solving with ACA...")
-    solve_time = @elapsed begin
-        fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
-        fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
-        sources = zeros(ComplexF64, num_elements)
-        num_iters = gmres!(sources, fullMatvecLinearMap, rhs, reltol=gmres_tol, maxiter=gmres_max_iters, log=true)[2]
-        println("GMRES ", string(num_iters))
-    end
-    println("  Solve time: ", solve_time)
-
-    return((sources, octree, computeACAMetrics(num_elements, octree)))
-    # return(computeACAMetrics(num_elements, octree))
-end #solveSoftIEACA
+end # function fullMatvecACA
 
 @views function solveSoftIEACA(pulse_mesh::PulseMesh,
                                     num_levels::Int64,
@@ -201,7 +168,7 @@ end #solveSoftIEACA
     # distance_to_edge_tol and near_singular_tol are paramters for integration routines
     # compression_distance determines when to use ACA (see lower lvl func descriptions)
     # ACA_approximation_tol lower means higher rank approximations are used in ACA
-    # returns an array of the unknowns named sources
+    # returns an array of the unknowns, the octree, and ACAMetrics
     @unpack num_elements = pulse_mesh
 
     println("Filling ACA Matrix...")
@@ -223,8 +190,7 @@ end #solveSoftIEACA
                              compression_distance,
                              ACA_approximation_tol)
     return((sources, octree, computeACAMetrics(num_elements, octree)))
-    # return(computeACAMetrics(num_elements, octree))
-end #solveSoftIEACA
+end # function solveSoftIEACA
 
 @views function solveSoftIEACA(pulse_mesh::PulseMesh,
                                octree::Octree,
@@ -248,6 +214,7 @@ end #solveSoftIEACA
     println("Filling RHS...")
     rhs = zeros(ComplexF64, num_elements)
     rhs_fill_time = @elapsed rhsFill!(pulse_mesh, excitation, rhs)
+    pulse_mesh.RHS = rhs
     println("RHS fill time: ", rhs_fill_time)
 
     println("Solving with ACA...")
@@ -255,13 +222,13 @@ end #solveSoftIEACA
         fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
         fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
         sources = zeros(ComplexF64, num_elements)
-        num_iters = gmres!(sources, fullMatvecLinearMap, rhs, log=true)[2]
-        println("GMRES ", string(num_iters))
+        history = gmres!(sources, fullMatvecLinearMap, rhs, log=true, verbose=false)[2]
     end
-    println("Solve time: ", solve_time)
-
+    println("  GMRES ", string(history))
+    println("  Solve time: ", solve_time)
+    outputGMRESResiduals(history, "solveSoftIEACA_GMRES_residual_history")
     return(sources)
-end #solveSoftIEACA
+end # function solveSoftIEACA
 
 @views function solveSoftCFIEACA(pulse_mesh::PulseMesh,
                                       num_levels::Int64,
@@ -279,7 +246,7 @@ end #solveSoftIEACA
     # distance_to_edge_tol and near_singular_tol are paramters for integration routines
     # compression_distance determines when to use ACA (see lower lvl func descriptions)
     # ACA_approximation_tol lower means higher rank approximations are used in ACA
-    # returns an array of the unknowns named sources
+    # returns an array of the unknowns, the octree, and ACAMetrics
     @unpack num_elements = pulse_mesh
 
     println("Filling ACA Matrix...")
@@ -304,7 +271,7 @@ end #solveSoftIEACA
                                           ACA_approximation_tol)
 
     return((sources, octree, computeACAMetrics(num_elements, octree)))
-end #solveSoftIEACA
+end # function solveSoftCFIEACA
 
 @views function solveSoftCFIEACA(pulse_mesh::PulseMesh,
                                  octree::Octree,
@@ -343,11 +310,11 @@ end #solveSoftIEACA
         fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
         fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
         sources = zeros(ComplexF64, num_elements)
-        num_iters = gmres!(sources, fullMatvecLinearMap, rhs, log=true)[2]
-        println("GMRES ", string(num_iters))
+        history = gmres!(sources, fullMatvecLinearMap, rhs, log=true, verbose=false)[2]
     end
+    println("  GMRES ", string(history))
     println("  Solve time: ", solve_time)
-
+    outputGMRESResiduals(history, "solveSoftCFIEACA_GMRES_residual_history")
     return(sources)
 end #solveSoftCFIEACA
 
@@ -355,10 +322,10 @@ end #solveSoftCFIEACA
     # computes the matrix-vector product between sub_Z and sub_J when sub_Z is
     #   not decomposed
     return(sub_Z * sub_J)
-end #subMatvecACA
+end # function subMatvecACA
 
 @views function subMatvecACA(sub_Z::Tuple{Array{T,2},Array{T,2}}, sub_J::AbstractArray{T,1})::Array{T,1} where T
     # computes the matrix-vector product between sub_Z and sub_J when sub_Z is
     #   decomposed into U and V matrices
     return(sub_Z[1] * (sub_Z[2] * sub_J))
-end #subMatvecACA
+end # function subMatvecACA

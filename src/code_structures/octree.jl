@@ -1,4 +1,10 @@
-# dependencies: mesh.jl quadrature.jl fill.jl
+# dependencies: mesh.jl
+
+################################################################################
+# This file contains structs for and Octree and a Node and functions that      #
+# create these structures.  Functions to fill node2node_X_matrices are in      #
+# ACA_fill.jl.                                                                 #
+################################################################################
 
 using LinearAlgebra
 using Parameters
@@ -72,7 +78,7 @@ end
         end
     end
     return(children_nodes)
-end # createChildren
+end # function createChildren
 
 function createOctree(num_levels::Int64, pulse_mesh::PulseMesh)
     # highest-level function that handles all octree construction
@@ -96,7 +102,7 @@ function createOctree(num_levels::Int64, pulse_mesh::PulseMesh)
         octree.leaf_node_idxs = [1]
     end
     return(octree)
-end
+end # function createOctree
 
 @views function fillOctreeNodes!(parent_idx::Int64, octree::Octree, ele_centroids::AbstractArray{Array{Float64,1},1})
     # recursive function that spawns all child nodes down to the leaf level
@@ -115,149 +121,7 @@ end
     else # at leaf level; stop recursion
         append!(octree.leaf_node_idxs, octree.nodes[parent_idx].children_idxs)
     end
-end # fillOctreeNodes!
-
-function fillOctreeZMatricesGeneral!(pulse_mesh::PulseMesh,
-                                     octree::Octree,
-                                     computeZEntry::Function,
-                                     testIntegrand::Function,
-                                     compression_distance,
-                                     ACA_approximation_tol)
-    # Core general purpose routine to fill sub-Z matrices of octree nodes
-    # computeZEntry is prewrapped so that its only arguments are as shown below
-    #   and is the function to compute a single entry of the Z matrix used in ACA
-    # testIntegrand is the integrand of the test integral in the MoM formulation
-    #   which is used to fill a sub-Z matrix when it cannot be compressed with ACA
-    z_entry_datatype = ComplexF64
-    num_leaves = length(octree.leaf_node_idxs)
-    leaf_edge_length = octree.nodes[octree.leaf_node_idxs[1]].bounds[1][2] - octree.nodes[octree.leaf_node_idxs[1]].bounds[1][1]
-    min_separation = compression_distance * leaf_edge_length
-    for local_test_node_idx = 1:num_leaves
-        global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
-        test_node = octree.nodes[global_test_node_idx]
-        for local_src_node_idx = 1:num_leaves
-            global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
-            src_node = octree.nodes[global_src_node_idx]
-            if norm(src_node.centroid-test_node.centroid) > min_separation # use ACA
-                num_rows = length(test_node.element_idxs)
-                num_cols = length(src_node.element_idxs)
-                computeMatrixEntry(test_idx, src_idx) = computeZEntry(test_node, src_node,
-                                                                      test_idx, src_idx)
-                compressed_sub_Z = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
-                                                    ACA_approximation_tol, num_rows, num_cols)
-                append!(test_node.node2node_Z_matrices, [compressed_sub_Z])
-            else # use direct Z calculation
-                # sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
-                sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
-                nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z_matrix)
-                append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
-            end # if-else
-        end
-    end
-end # function fillOctreeZMatricesGeneral!
-
-@views function fillOctreeZMatricesSoundSoft!(pulse_mesh::PulseMesh,
-                                              octree::Octree,
-                                              wavenumber,
-                                              distance_to_edge_tol,
-                                              near_singular_tol,
-                                              compression_distance,
-                                              ACA_approximation_tol)
-    # Computes the sub Z matrices for interactions between nodes using ACA if the nodes
-    #   are sufficiently far apart or directly computing the sub-Z matrix if too close
-    # octree is the Octree object for which the sub-Z matrices will be computed and stored in
-    #   i.e. it has empyt arrays stored for node2node_Z_matrices when passed as argument
-    # compression distance is the number of node edge lengths between centroids of nodes dictating when ACA can be used
-    # ACA_approximation_tol determines how accurately the compressed matrices represent Z
-    # returns nothing
-    z_entry_datatype = ComplexF64
-    soundSoftTestIntegrand(r_test, global_src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, global_src_idx,
-                                                   wavenumber,
-                                                   r_test,
-                                                   distance_to_edge_tol,
-                                                   near_singular_tol,
-                                                   is_singular)
-    computeZEntryIntermediate(test_node, src_node, test_idx, src_idx) = computeZEntrySoundSoft(pulse_mesh, test_node, src_node,
-                                                                            wavenumber, distance_to_edge_tol,
-                                                                            near_singular_tol, test_idx, src_idx)
-    fillOctreeZMatricesGeneral!(pulse_mesh, octree, computeZEntryIntermediate,
-                                soundSoftTestIntegrand, compression_distance, ACA_approximation_tol)
-end
-
-@views function fillOctreeZMatricesSoundSoftCFIE!(pulse_mesh::PulseMesh,
-                                              octree::Octree,
-                                              wavenumber,
-                                              softIE_weight,
-                                              distance_to_edge_tol,
-                                              near_singular_tol,
-                                              compression_distance,
-                                              ACA_approximation_tol)
-    # Computes the sub Z matrices for interactions between nodes using ACA if the nodes
-    #   are sufficiently far apart or directly computing the sub-Z matrix if too close
-    # octree is the Octree object for which the sub-Z matrices will be computed and stored in
-    #   i.e. it has empyt arrays stored for node2node_Z_matrices when passed as argument
-    # compression distance is the number of node edge lengths between centroids of nodes dictating when ACA can be used
-    # ACA_approximation_tol determines how accurately the compressed matrices represent Z
-    # returns nothing
-    z_entry_datatype = ComplexF64
-    soundSoftCFIETestIntegrand(r_test, global_src_idx, is_singular) = softIE_weight *
-                                                                      scalarGreensIntegration(pulse_mesh, global_src_idx,
-                                                                          wavenumber, r_test, distance_to_edge_tol,
-                                                                          near_singular_tol, is_singular) +
-                                                                      (1-softIE_weight) * im *
-                                                                      scalarGreensNormalDerivativeIntegration(pulse_mesh,
-                                                                          global_src_idx, wavenumber, r_test, is_singular)
-    computeZEntryIntermediate(test_node, src_node, test_idx, src_idx) = computeZEntrySoftCFIE(pulse_mesh, test_node, src_node,
-                                                                            wavenumber, softIE_weight, distance_to_edge_tol,
-                                                                            near_singular_tol, test_idx, src_idx)
-    fillOctreeZMatricesGeneral!(pulse_mesh, octree, computeZEntryIntermediate,
-                                soundSoftCFIETestIntegrand, compression_distance, ACA_approximation_tol)
-end
-
-@views function fillOctreedZdkMatricesSoundSoft!(pulse_mesh::PulseMesh,
-                                                 octree::Octree,
-                                                 wavenumber,
-                                                 compression_distance,
-                                                 ACA_approximation_tol)
-    # Computes the sub dZ/dk matrices for interactions between nodes using ACA if the nodes
-    #   are sufficiently far apart or directly computing the sub-Z matrix if too close
-    # octree is the Octree object for which the sub-Z matrices will be computed and stored in
-    #   i.e. it has empyt arrays stored for node2node_Z_matrices when passed as argument
-    # compression distance is the number of node edge lengths between centroids of nodes dictating when ACA can be used
-    # ACA_approximation_tol determines how accurately the compressed matrices represent Z
-    # returns nothing
-    z_entry_datatype = ComplexF64
-    soundSoftDerivTestIntegrand(r_test, global_src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh,
-                                                                                global_src_idx,
-                                                                                wavenumber,
-                                                                                r_test,
-                                                                                is_singular)
-    num_leaves = length(octree.leaf_node_idxs)
-    leaf_edge_length = octree.nodes[octree.leaf_node_idxs[1]].bounds[1][2] - octree.nodes[octree.leaf_node_idxs[1]].bounds[1][1]
-    min_separation = compression_distance * leaf_edge_length
-    for local_test_node_idx = 1:num_leaves
-        global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
-        test_node = octree.nodes[global_test_node_idx]
-        for local_src_node_idx = 1:num_leaves
-            global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
-            src_node = octree.nodes[global_src_node_idx]
-            if norm(src_node.centroid-test_node.centroid) > min_separation # use ACA
-                num_rows = length(test_node.element_idxs)
-                num_cols = length(src_node.element_idxs)
-                computeMatrixEntry(test_idx, src_idx) = computedZdkEntrySoundSoft(pulse_mesh,
-                                                            test_node, src_node, wavenumber,
-                                                            test_idx, src_idx)
-                compressed_sub_Z = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
-                                                    ACA_approximation_tol, num_rows, num_cols)
-                append!(test_node.node2node_dZdk_matrices, [compressed_sub_Z])
-            else # use direct Z calculation
-                sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
-                nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftDerivTestIntegrand, sub_Z_matrix)
-                append!(test_node.node2node_dZdk_matrices, [sub_Z_matrix])
-            end # if-else
-        end
-    end
-end
+end # function fillOctreeNodes!
 
 @views function initializeOctree(num_levels::Int64, buffer, ele_centroids::AbstractArray{Array{Float64,1},1})
     # Creates in octree instance with only the level 1 node encapsulating all elements
@@ -282,4 +146,4 @@ end
     level1_node = Node(level1, no_parent_idx, no_children_idxs, all_ele_idxs, level1_bounds, level1_centroid, no_Z_matrices, no_Z_matrices)
     level1_node_idx = 1
     return(Octree(num_levels, level1_node_idx, no_leaves, [level1_node]))
-end # initializeOctree
+end # function initializeOctree

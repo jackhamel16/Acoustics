@@ -1,5 +1,11 @@
 # dependencies: fill.jl greens_functions.jl mesh.jl
 
+################################################################################
+# This file contains functions that solve various acoustic integral equations  #
+# for the equivalent sources that exist on the surface of a scatterer w/o ACA  #
+# See documentation section 3                                                  #
+################################################################################
+
 function solveSoftIE(pulse_mesh::PulseMesh,
                      excitation::Function,
                      wavenumber::Number,

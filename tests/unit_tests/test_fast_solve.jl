@@ -9,6 +9,7 @@ include("../../src/fill.jl")
 include("../../src/greens_functions.jl")
 include("../../src/solve.jl")
 include("../../src/ACA/ACA.jl")
+include("../../src/ACA/ACA_fill.jl")
 
 include("../../src/ACA/fast_solve.jl")
 
@@ -193,6 +194,8 @@ include("../../src/ACA/fast_solve.jl")
         @test isapprox(sol_J, test_J[1], rtol=0.13e-6) # not exact because of GMRES
         @test typeof(test_J[2]) == Octree
         @test typeof(test_J[3]) == ACAMetrics
+        rm("solveSoftIEACA_GMRES_residual_history.txt")
+        rm("solveSoftIEACA_GMRES_residual_history.png")
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -208,6 +211,8 @@ include("../../src/ACA/fast_solve.jl")
         num_levels = 3
         test_J = solveSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.15e-6)
+        rm("solveSoftIEACA_GMRES_residual_history.txt")
+        rm("solveSoftIEACA_GMRES_residual_history.png")
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -225,12 +230,16 @@ include("../../src/ACA/fast_solve.jl")
         ACA_approximation_tol = 1e-2
         test_J = solveSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.42e-2)
+        rm("solveSoftIEACA_GMRES_residual_history.txt")
+        rm("solveSoftIEACA_GMRES_residual_history.png")
 
         num_levels = 3
         compression_distance = 1.5
         ACA_approximation_tol = 1e-6
         test_J = solveSoftIEACA(pulse_mesh, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.34e-6)
+        rm("solveSoftIEACA_GMRES_residual_history.txt")
+        rm("solveSoftIEACA_GMRES_residual_history.png")
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -251,6 +260,8 @@ include("../../src/ACA/fast_solve.jl")
         test_J = solveSoftIEACA(pulse_mesh, octree, num_levels, excitation, wavenumber, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         sol_J = solveSoftIE(pulse_mesh, excitation, wavenumber, distance_to_edge_tol, near_singular_tol)
         @test isapprox(sol_J, test_J, rtol=0.21e-3)
+        rm("solveSoftIEACA_GMRES_residual_history.txt")
+        rm("solveSoftIEACA_GMRES_residual_history.png")
     end # solveSoftIEACA tests
     @testset "solveSoftCFIEACA tests" begin
         wavenumber = 1.0+0.0im
@@ -273,16 +284,22 @@ include("../../src/ACA/fast_solve.jl")
         @test isapprox(sol_J, test_J[1], rtol=0.12e-7) # not exact because of GMRES
         @test typeof(test_J[2]) == Octree
         @test typeof(test_J[3]) == ACAMetrics
+        rm("solveSoftCFIEACA_GMRES_residual_history.txt")
+        rm("solveSoftCFIEACA_GMRES_residual_history.png")
         # 3 octree levels, no compression
         num_levels = 3
         compression_distance = 1e100
         test_J = solveSoftCFIEACA(pulse_mesh, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.13e-7)
+        rm("solveSoftCFIEACA_GMRES_residual_history.txt")
+        rm("solveSoftCFIEACA_GMRES_residual_history.png")
         # 3 octree levels, with compression of non-touching nodes
         num_levels = 3
         compression_distance = 1.5
         test_J = solveSoftCFIEACA(pulse_mesh, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.15e-7)
+        rm("solveSoftCFIEACA_GMRES_residual_history.txt")
+        rm("solveSoftCFIEACA_GMRES_residual_history.png")
 
         # Switch to rectangular strip mesh
         wavenumber = 1.0+0.0im
@@ -303,12 +320,16 @@ include("../../src/ACA/fast_solve.jl")
         ACA_approximation_tol = 1e-6
         test_J = solveSoftCFIEACA(pulse_mesh, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.8e-8)
+        rm("solveSoftCFIEACA_GMRES_residual_history.txt")
+        rm("solveSoftCFIEACA_GMRES_residual_history.png")
         # 3 levels, with compression, low approx tol
         num_levels = 3
         compression_distance = 1.5
         ACA_approximation_tol = 1e-2
         test_J = solveSoftCFIEACA(pulse_mesh, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.5e-3)
+        rm("solveSoftCFIEACA_GMRES_residual_history.txt")
+        rm("solveSoftCFIEACA_GMRES_residual_history.png")
         # 4 levels, with compression, high approx tol, tests when octree already is made
         num_levels = 4
         compression_distance = 1.5
@@ -319,6 +340,8 @@ include("../../src/ACA/fast_solve.jl")
                                       compression_distance, ACA_approximation_tol)
         test_J = solveSoftCFIEACA(pulse_mesh, octree, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J, rtol=0.13e-7)
+        rm("solveSoftCFIEACA_GMRES_residual_history.txt")
+        rm("solveSoftCFIEACA_GMRES_residual_history.png")
 
         wavenumber = 1.0+0.0im
         src_quadrature_rule = gauss7rule
@@ -337,6 +360,8 @@ include("../../src/ACA/fast_solve.jl")
         ACA_approximation_tol = 1e-5
         test_J = solveSoftCFIEACA(pulse_mesh, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_J, test_J[1], rtol=0.88e-6)
+        rm("solveSoftCFIEACA_GMRES_residual_history.txt")
+        rm("solveSoftCFIEACA_GMRES_residual_history.png")
     end # solveSoftCFIEACA tests
     @testset "subMatvecACA tests" begin
         sub_Z = zeros(5,5)

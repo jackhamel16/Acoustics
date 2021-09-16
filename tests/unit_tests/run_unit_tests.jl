@@ -1,4 +1,5 @@
 include("test_ACA.jl")
+include("test_ACA_fill.jl")
 include("test_excitation.jl")
 include("test_fast_solve.jl")
 include("test_fill.jl")

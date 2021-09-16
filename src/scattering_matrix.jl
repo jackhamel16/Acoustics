@@ -1,6 +1,18 @@
-# Dependencies: solve.jl
+# Dependencies: mesh.jl octree.jl fast_solve.jl solve.jl
 
-@views function calculateScatteringMatrix(max_l::Int64, wavenumber, pulse_mesh::PulseMesh, distance_to_edge_tol, near_singular_tol)
+################################################################################
+# This files contains functions that compute the scattering matrix and its     #
+# derivative with respect to k with or without ACA                             #
+# See documentation section 4                                                  #
+################################################################################
+
+@views function calculateScatteringMatrix(max_l::Int64,
+                                          wavenumber,
+                                          pulse_mesh::PulseMesh,
+                                          distance_to_edge_tol,
+                                          near_singular_tol)
+    # Computes the scattering matrix
+    # Returns dS/dk and Js
     @unpack num_elements,
             Z_factors = pulse_mesh
     num_harmonics = max_l^2 + 2*max_l + 1
@@ -26,9 +38,16 @@
     end
     S_matrix += im/(2*wavenumber) * Vs_trans * Js
     return(S_matrix, Js)
-end
+end # function calculateScatteringMatrix
 
-@views function calculateScatteringMatrixACA(max_l::Int64, wavenumber, pulse_mesh::PulseMesh, octree::Octree, distance_to_edge_tol, near_singular_tol)
+@views function calculateScatteringMatrixACA(max_l::Int64,
+                                             wavenumber,
+                                             pulse_mesh::PulseMesh,
+                                             octree::Octree,
+                                             distance_to_edge_tol,
+                                             near_singular_tol)
+    # Computes the scattering matrix using ACA
+    # Returns dS/dk and Js
     @unpack num_elements = pulse_mesh
     num_harmonics = max_l^2 + 2*max_l + 1
     S_matrix = zeros(ComplexF64, num_harmonics, num_harmonics)
@@ -50,17 +69,21 @@ end
             fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
             fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
             sources = zeros(ComplexF64, num_elements)
-            num_iters = gmres!(sources, fullMatvecLinearMap, Vs_trans[harmonic_idx,:], log=true)[2]
-            println("GMRES ", string(num_iters))
+            history = gmres!(sources, fullMatvecLinearMap, Vs_trans[harmonic_idx,:], log=true)[2]
+            println("GMRES ", string(history))
             Js[:,harmonic_idx] = sources
             harmonic_idx += 1
         end
     end
     S_matrix += im/(2*wavenumber) * Vs_trans * Js
     return(S_matrix, Js)
-end
+end # function calculateScatteringMatrixACA
 
 @views function calculateScatteringMatrixDerivative(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, Js::Array{ComplexF64,2}, distance_to_edge_tol, near_singular_tol)
+    # Computes the derivative of the scattering matrix with respect to k.
+    #   Requires Js to have been computed externally (this is handled in S
+    #   computation).
+    # Returns dS/dk
     @unpack num_elements,
             Z_factors = pulse_mesh
     dZdk = calculateZKDerivMatrix(pulse_mesh, wavenumber)
@@ -71,7 +94,6 @@ end
     for l = 0:max_l
         for m=-l:l
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
-            # Js[:,harmonic_idx] = Z_factors \ Vs_trans[harmonic_idx,:]
             dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
             harmonic_idx += 1
         end
@@ -82,24 +104,26 @@ end
     # old_term3 = j_over_2k * (Vs_trans / z_factors) * (transpose(dVsdk_trans) - dZdk*Js) # true without full galerkin
     term3 = j_over_2k*(transpose(Js)*transpose(dVsdk_trans) - transpose(Js)*dZdk*Js) # requires full galerkin testing
     return(term1 + term2 + term3)
-end
+end # function calculateScatteringMatrixDerivative
 
-@views function calculateScatteringMatrixDerivativeACA(max_l::Int64, num_harmonics::Int64, wavenumber, pulse_mesh::PulseMesh, Js::Array{ComplexF64,2}, octree::Octree)
+@views function calculateScatteringMatrixDerivativeACA(max_l::Int64,
+                                                       num_harmonics::Int64,
+                                                       wavenumber,
+                                                       pulse_mesh::PulseMesh,
+                                                       Js::Array{ComplexF64,2},
+                                                       octree::Octree)
+    # Computes the derivative of the scattering matrix with respect to k using ACA.
+    #   Requires Js to have been computed externally (this is handled in S
+    #   computation).
+    # Returns dS/dk
     @unpack num_elements = pulse_mesh
     Vs_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
-    # Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
     dVsdk_trans = Array{ComplexF64}(undef, num_harmonics, num_elements)
     dZdk_times_Js = Array{ComplexF64}(undef, num_elements, num_harmonics)
     harmonic_idx = 1
     for l = 0:max_l
         for m=-l:l
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
-            # fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
-            # fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
-            # sources = zeros(ComplexF64, num_elements)
-            # num_iters = gmres!(sources, fullMatvecLinearMap, Vs_trans[harmonic_idx,:], log=true)[2]
-            # println("GMRES ", string(num_iters))
-            # Js[:,harmonic_idx] = sources
             dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
             dZdk_times_Js[:,harmonic_idx] = fullMatvecACA(pulse_mesh, octree, Js[:,harmonic_idx], true)
             harmonic_idx += 1
@@ -111,7 +135,7 @@ end
     # old_term3 = j_over_2k * (Vs_trans / z_factors) * (transpose(dVsdk_trans) - dZdk*Js) # true without full galerkin
     term3 = j_over_2k*(transpose(Js)*transpose(dVsdk_trans) - transpose(Js)*dZdk_times_Js) # requires full galerkin testing
     return(term1 + term2 + term3)
-end
+end # function calculateScatteringMatrixDerivativeACA
 
 @views function calculateVlm(pulse_mesh::PulseMesh, wavenumber, l, m)
     # calculates the rhs vector for a spherical wave excitation of degree l and order m
@@ -124,7 +148,7 @@ end
     Vlm = zeros(ComplexF64, num_elements)
     rhsFill!(pulse_mesh, sphericalWaveExcitation, Vlm)
     return(Vlm)
-end
+end # function calculateVlm
 
 @views function calculateVlmKDeriv(pulse_mesh::PulseMesh, wavenumber, l, m)
     # calculates the derivative with respect to k of the rhs vector for a
@@ -134,7 +158,7 @@ end
     sphericalWaveKDerivIntegrand(x,y,z) = sphericalWaveKDerivative(wavenumber, [x,y,z], l, m)
     rhsFill!(pulse_mesh, sphericalWaveKDerivIntegrand, dVlmdk)
     return(dVlmdk)
-end
+end # function calculateVlmKDeriv
 
 @views function calculateZKDerivMatrix(pulse_mesh::PulseMesh, wavenumber)
     # Computes the derivative with respect to k of the Z matrix using sound-soft
@@ -148,21 +172,7 @@ end
     dZdk_matrix = zeros(ComplexF64, num_elements, num_elements)
     matrixFill!(pulse_mesh, testIntegrand, dZdk_matrix)
     return(dZdk_matrix)
-end
-
-# @views function calculateZKDerivMatrixACA(pulse_mesh::PulseMesh, wavenumber)
-#     # Computes the derivative with respect to k of the Z matrix using sound-soft
-#     # IE to construct the scattering matrix
-#     @unpack num_elements = pulse_mesh
-#     testIntegrand(r_test, src_idx, is_singular) = scalarGreensKDerivIntegration(pulse_mesh,
-#                                                                                 src_idx,
-#                                                                                 wavenumber,
-#                                                                                 r_test,
-#                                                                                 is_singular)
-#     dZdk_matrix = zeros(ComplexF64, num_elements, num_elements)
-#     matrixFill!(pulse_mesh, testIntegrand, dZdk_matrix)
-#     return(dZdk_matrix)
-# end
+end # function calculateZKDerivMatrix
 
 @views function calculateZMatrix(pulse_mesh::PulseMesh, wavenumber, distance_to_edge_tol, near_singular_tol)
     # Computes the Z matrix using sound-soft IE to construct the scattering matrix
@@ -176,4 +186,4 @@ end
     Z_matrix = zeros(ComplexF64, num_elements, num_elements)
     matrixFill!(pulse_mesh, testIntegrand, Z_matrix)
     return(Z_matrix)
-end
+end # function calculateZMatrix
