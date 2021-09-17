@@ -15,6 +15,7 @@
 
 import gmsh
 import sys
+import numpy as np
 
 # if len(sys.argv) < 2:
 #     print("Usage: " + sys.argv[0] + " file")
@@ -25,7 +26,8 @@ gmsh.initialize()
 # You can run this tutorial on any file that Gmsh can read, e.g. a mesh file in
 # the MSH format: `python t1.py file.msh'
 
-gmsh.open("Documentation/WS_ACA_Testing/Test9/cylinder_r1_h2_3201.msh")
+gmsh.open("../Documentation/WS_ACA_Testing/Test9/cylinder_r1_h2_3201.msh")
+# gmsh.open("../examples/simple/sphere/sphere_1m.msh")
 
 # Print the model name and dimension:
 print('Model ' + gmsh.model.getCurrent() + ' (' +
@@ -45,6 +47,7 @@ print('Model ' + gmsh.model.getCurrent() + ' (' +
 # pairs:
 entities = gmsh.model.getEntities()
 
+num_elements = np.zeros((4), dtype=np.double)
 for e in entities:
     # Dimension and tag of the entity:
     dim = e[0]
@@ -85,6 +88,7 @@ for e in entities:
 
     # * Number of mesh nodes and elements:
     numElem = sum(len(i) for i in elemTags)
+    num_elements[dim] += numElem
     print(" - Mesh has " + str(len(nodeTags)) + " nodes and " + str(numElem) +
           " elements")
 
@@ -117,6 +121,13 @@ for e in entities:
             t)
         print(" - Element type: " + name + ", order " + str(order) + " (" +
               str(numv) + " nodes in param coord: " + str(parv) + ")")
+        present_element_type.append()
+
+print("Number of Elements:")
+print(" - Point:", num_elements[0])
+print(" - Line:", num_elements[1])
+print(" - Surface:", num_elements[2])
+print(" - Volume:", num_elements[3])
 
 # We can use this to clear all the model data:
 gmsh.clear()

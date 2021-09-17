@@ -20,6 +20,13 @@ function plotWSTimeDelays(time_delays_filename::String)
     return(times)
 end
 
+# times1 = plotWSTimeDelays("Documentation/WS_ACA_Testing/Test9/cylinder_WS_noACA_test9_run1/Wigner_Smith_time_delays.txt")
+# times2 = plotWSTimeDelays("Documentation/WS_ACA_Testing/Test9/cylinder_WS_ACA_test9_run2/Wigner_Smith_time_delays.txt")
+# Plots.plot([i for i=1:144], times1, label="no ACA", size=(800,600))
+# Plots.plot!([i for i=1:144], times2, linestyle=:dash, label="ACA", title="Wigner Smith Time Delays", xlabel="WS Mode Index", ylabel="Time (seconds)", size=(800,600))
+# plot_filename = "WS_time_delays_plot"
+# savefig(plot_filename)
+
 if length(ARGS) == 1
     times = plotWSTimeDelays(ARGS[1])
 else
