@@ -16,10 +16,13 @@ function scalarGreensNonSingular(R::Float64, k::Number)
 end
 
 function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Number, nhat::AbstractArray{Float64, 1})
-    R = norm(R_vec)
+    R = norm(R_vec) # Assumes R = |r_test-r_src|
     grad_G = [-R_vec[1]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[1]*exp(-im*k*R)/(4*pi*R^2),
               -R_vec[2]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[2]*exp(-im*k*R)/(4*pi*R^2),
               -R_vec[3]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[3]*exp(-im*k*R)/(4*pi*R^2)]
+    # grad_G = [R_vec[1]*exp(-im*k*R)/(4*pi*R^3) + im*k*R_vec[1]*exp(-im*k*R)/(4*pi*R^2),
+    #           R_vec[2]*exp(-im*k*R)/(4*pi*R^3) + im*k*R_vec[2]*exp(-im*k*R)/(4*pi*R^2),
+    #           R_vec[3]*exp(-im*k*R)/(4*pi*R^3) + im*k*R_vec[3]*exp(-im*k*R)/(4*pi*R^2)]
     dot(nhat, grad_G)
 end
 
@@ -40,7 +43,8 @@ end
     if is_singular == true
         return(0.5) # principal value of integral for r=r'
     else
-        scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, normals[element_idx,:])
+        scalar_greens_nd_integrand(x_src,y_src,z_src) = scalarGreensNormalDerivative(r_test-[x_src,y_src,z_src], wavenumber, normals[element_idx,:])
+        # scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, normals[element_idx,:])
         return(gaussQuadrature(triangle_area, scalar_greens_nd_integrand,
                                  src_quadrature_points[element_idx], src_quadrature_weights))
     end
