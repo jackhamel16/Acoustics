@@ -26,10 +26,44 @@ function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Numbe
     dot(nhat, grad_G)
 end
 
+function scalarGreensNormalDerivative(r_test::AbstractArray{Float64, 1}, r_src::AbstractArray{Float64, 1}, k::Number, nhat::AbstractArray{Float64, 1})
+    R_vec = r_test - r_src
+    R = norm(R_vec)
+    return(-exp(-im*k*R)*(1+im*k*R)/(4*pi*R^3) .* dot(nhat, R_vec))
+    # dot(nhat, grad_G)
+    # dot(grad_G, nhat)
+    # sum(nhat .* grad_G)
+end
+# 
+# @views function scalarGreensNormalDerivativeIntegration(pulse_mesh::PulseMesh,
+#                                  element_idx::Int64,
+#                                  wavenumber::Number,
+#                                  r_test::Array{Float64, 1},
+#                                  is_singular::Bool)
+#     @unpack nodes,
+#             elements,
+#             areas,
+#             normals,
+#             src_quadrature_rule,
+#             src_quadrature_points,
+#             src_quadrature_weights = pulse_mesh
+#     triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
+#     triangle_area = areas[element_idx]
+#     if is_singular == true
+#         return(0.5) # principal value of integral for r=r'
+#     else
+#         # scalar_greens_nd_integrand(x_src,y_src,z_src) = scalarGreensNormalDerivative(r_test, [x_src,y_src,z_src], wavenumber, normals[element_idx,:])
+#         scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, normals[element_idx,:])
+#         return(gaussQuadrature(triangle_area, scalar_greens_nd_integrand,
+#                                  src_quadrature_points[element_idx], src_quadrature_weights))
+#     end
+# end
+
 @views function scalarGreensNormalDerivativeIntegration(pulse_mesh::PulseMesh,
                                  element_idx::Int64,
                                  wavenumber::Number,
                                  r_test::Array{Float64, 1},
+                                 test_normal::Array{Float64, 1},
                                  is_singular::Bool)
     @unpack nodes,
             elements,
@@ -43,8 +77,8 @@ end
     if is_singular == true
         return(0.5) # principal value of integral for r=r'
     else
-        scalar_greens_nd_integrand(x_src,y_src,z_src) = scalarGreensNormalDerivative(r_test-[x_src,y_src,z_src], wavenumber, normals[element_idx,:])
-        # scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, normals[element_idx,:])
+        scalar_greens_nd_integrand(x_src,y_src,z_src) = scalarGreensNormalDerivative(r_test, [x_src,y_src,z_src], wavenumber, test_normal)
+        # scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, test_normal)
         return(gaussQuadrature(triangle_area, scalar_greens_nd_integrand,
                                  src_quadrature_points[element_idx], src_quadrature_weights))
     end

@@ -6,7 +6,7 @@ include("../../src/includes.jl")
 include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
-lambda = 6.833255037507872#10.0
+lambda = 2.2#6.833255037507872#10.0
 wavenumber = 2*pi / lambda + 0*im
 src_quadrature_rule = gauss7rule
 test_quadrature_rule = gauss1rule
@@ -31,14 +31,14 @@ for run_idx in 1:length(num_elements)
                     distance_to_edge_tol,
                     near_singular_tol)
 
-    real_filename = string("sources_real_softIE_sphere",num_elements[run_idx])
-    imag_filename = string("sources_imag_softIE_sphere",num_elements[run_idx])
-    mag_filename = string("sources_mag_softIE_sphere",num_elements[run_idx])
+    real_filename = string("sources_real_softIE_l",l,"_m",m,"_sphere",num_elements[run_idx])
+    imag_filename = string("sources_imag_softIE_l",l,"_m",m,"_sphere",num_elements[run_idx])
+    mag_filename = string("sources_mag_softIE_l",l,"_m",m,"_sphere",num_elements[run_idx])
     exportSourcesGmsh(mesh_filename, real_filename, real.(sources))
     exportSourcesGmsh(mesh_filename, imag_filename, imag.(sources))
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources))
 
-    sources_analytical = computeAnalyticalSolution(wavenumber, radius, mesh_filename)
+    sources_analytical = computeAnalyticalSolution(wavenumber, l, m, radius, mesh_filename)
 
     append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
 end
@@ -56,7 +56,7 @@ predicted_errors = error_fit.(sqrt.(n))
 
 Plots.scatter(sqrt.(num_elements), l2errors, label="", xaxis=:log, yaxis=:log, size=(800,600))
 plot!(sqrt.(n), predicted_errors, title="1m Sphere vs Analytical Solution", label="Sound-Soft", xlabel="sqrt(N), N is number of unknowns", ylabel="l2-Error")
-savefig("sphere_convergence_results_softIE")
+savefig(string("sphere_convergence_results_softIE_l",l,"_m",m))
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
@@ -72,9 +72,9 @@ else
 end
 
 #output data
-output_file = open("sphere_convergence_data_softIE.txt", "w")
+output_file = open(string("sphere_convergence_data_softIE_l",l,"_m",m,".txt"), "w")
 output_data = hcat(num_elements, l2errors)
-# println(output_file, "Convergence rate = ", slope)
+println(output_file, "Convergence rate = ", slope)
 println(output_file, "[num unknowns, l2-error]")
 for run_idx in 1:length(num_elements)
     println(output_file, output_data[run_idx,:])

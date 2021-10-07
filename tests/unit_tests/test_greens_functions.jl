@@ -25,11 +25,26 @@ include("../../src/greens_functions.jl")
         @test isnan(scalarGreensNonSingular(0.0, 100.0+0*im)) == true
     end
     @testset "scalarGreensNormalDerivative tests" begin
-        @test isapprox(scalarGreensNormalDerivative([1.0, 0.0, 0.0], 0.0+0*im, [0.0, 0.0, 0.0]), 0.0, rtol=1e-14)
-        @test isapprox(scalarGreensNormalDerivative([1.0, 0.0, 0.0], 0.0+0*im, [1.0, 0.0, 0.0]), -1/(4*pi), rtol=1e-14)
-        @test isapprox(scalarGreensNormalDerivative([0.0, 1.0, 0.0], 0.0+0*im, [0.0, 2.0, 0.0]), -1/(2*pi), rtol=1e-14)
-        @test isapprox(scalarGreensNormalDerivative([0.5, 1.5, -0.2], 0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), -0.013703111386864185-0.0115627559665488*im, rtol=1e-14)
-        @test isnan(scalarGreensNormalDerivative([0.0, 0.0, 0.0], 1.0+0*im, [0.0, 0.0, 1.0])) == true
+        # @test isapprox(scalarGreensNormalDerivative([1.0, 0.0, 0.0], 0.0+0*im, [0.0, 0.0, 0.0]), 0.0, rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([1.0, 0.0, 0.0], 0.0+0*im, [1.0, 0.0, 0.0]), -1/(4*pi), rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([0.0, 1.0, 0.0], 0.0+0*im, [0.0, 2.0, 0.0]), -1/(2*pi), rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([0.5, 1.5, -0.2], 0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), -0.013703111386864185-0.0115627559665488*im, rtol=1e-14)
+        # @test isnan(scalarGreensNormalDerivative([0.0, 0.0, 0.0], 1.0+0*im, [0.0, 0.0, 1.0])) == true
+        # @test isapprox(scalarGreensNormalDerivative([0.0,0,0] - [1.0, 0.0, 0.0], 0.0+0*im, [0.0, 0.0, 0.0]), 0.0, rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([-0.5, 0.0, 0.0] - [0.5, 0.0, 0.0], 0.0+0*im, [1.0, 0.0, 0.0]), -1/(4*pi), rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([0.0, -0.1, 0.0] - [0.0, 0.9, 0.0], 0.0+0*im, [0.0, 2.0, 0.0]), -1/(2*pi), rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([0.0, -0.5, 0.2] - [0.5, 1.0, 0],  0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), -0.013703111386864185-0.0115627559665488*im, rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([0.5, 1.0, 0] - [0.0, -0.5, 0.2], 0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), 0.013703111386864185+0.0115627559665488*im, rtol=1e-14)
+        # @test isapprox(scalarGreensNormalDerivative([-2.5, 0, 1] - [1, 3, 5.1], 30, [0.5, -1, 0.2]), 0.007199594184191544-0.025993631296332677*im, rtol=1e-14)
+        # @test isnan(scalarGreensNormalDerivative([0.0, 0.0, 10.0] - [0.0, 0.0, 10.0], 1.0+0*im, [0.0, 0.0, 1.0])) == true
+        # @test isapprox(scalarGreensNormalDerivative([0.0,0,0] - [1.0, 0.0, 0.0], 0.0+0*im, [0.0, 0.0, 0.0]), 0.0, rtol=1e-14)
+
+        @test isapprox(scalarGreensNormalDerivative([0.5, 0.0, 0.0], [-0.5, 0.0, 0.0], 0.0+0*im, [1.0, 0.0, 0.0]), -1/(4*pi), rtol=1e-14)
+        @test isapprox(scalarGreensNormalDerivative([0.0, 0.9, 0.0], [0.0, -0.1, 0.0], 0.0+0*im, [0.0, 2.0, 0.0]), -1/(2*pi), rtol=1e-14)
+        @test isapprox(scalarGreensNormalDerivative([0.5, 1.0, 0], [0.0, -0.5, 0.2],  0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), -0.013703111386864185-0.0115627559665488*im, rtol=1e-14)
+        @test isapprox(scalarGreensNormalDerivative([0.0, -0.5, 0.2], [0.5, 1.0, 0], 0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), 0.013703111386864185+0.0115627559665488*im, rtol=1e-14)
+        @test isapprox(scalarGreensNormalDerivative([1, 3, 5.1], [-2.5, 0, 1], 30, [0.5, -1, 0.2]), 0.007199594184191544-0.025993631296332677*im, rtol=1e-14)
+        @test isnan(scalarGreensNormalDerivative([0.0, 0.0, 10.0], [0.0, 0.0, 10.0], 1.0+0*im, [0.0, 0.0, 1.0])) == true
     end
     @testset "scalarGreensSingularityIntegral tests" begin
         # The following two tests compare scalarGreensSingularityIntegral to the result
@@ -294,7 +309,7 @@ include("../../src/greens_functions.jl")
         normal = [0.0, 0.0, 1.0]
         r_test_far = [0.5, 50.0, 0.0]
         r_test_singular = [0.25, -0.25, 0.0]
-        scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test_far,
+        scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative(r_test_far,[x,y,z],
                                                       wavenumber, normal)
         quadrature_points7 = calculateQuadraturePoints(nodes, [1 2 3], gauss7rule[1:3,:])
         solution_far = gaussQuadrature(triangle_area, scalar_greens_nd_integrand,
@@ -306,16 +321,16 @@ include("../../src/greens_functions.jl")
                                src_quadrature_points=quadrature_points7,
                                src_quadrature_weights=gauss7rule[4,:])
         @test isapprox(scalarGreensNormalDerivativeIntegration(pulse_mesh, 1, wavenumber,
-                                               r_test_far, false),
+                                               r_test_far, normal, false),
                        solution_far, rtol=1e-15)
         @test isapprox(scalarGreensNormalDerivativeIntegration(pulse_mesh, 1, wavenumber,
-                                               r_test_singular, true),
+                                               r_test_singular, normal, true),
                        solution_singular, rtol=1e-15)
         @test false == isapprox(scalarGreensNormalDerivativeIntegration(pulse_mesh, 1, wavenumber,
-                                               r_test_singular, false),
+                                               r_test_singular, normal, false),
                                 solution_singular, rtol=1e-15)
         @test false == isapprox(scalarGreensNormalDerivativeIntegration(pulse_mesh, 1, wavenumber,
-                                               r_test_far, true),
+                                               r_test_far, normal, true),
                                 solution_far, rtol=1e-15)
     end
 

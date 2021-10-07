@@ -26,7 +26,9 @@ gmsh.initialize()
 # You can run this tutorial on any file that Gmsh can read, e.g. a mesh file in
 # the MSH format: `python t1.py file.msh'
 
-gmsh.open("../Documentation/WS_ACA_Testing/Test9/cylinder_r1_h2_3201.msh")
+# gmsh.open("../Documentation/WS_ACA_Testing/Test9/cylinder_r1_h2_3201.msh")
+# gmsh.open("../examples/simple/cube/cube_1m.msh")
+gmsh.open("../examples/simple/cylinder_short_with_spherical_caps_1275.msh")
 # gmsh.open("../examples/simple/sphere/sphere_1m.msh")
 
 # Print the model name and dimension:
@@ -121,7 +123,7 @@ for e in entities:
             t)
         print(" - Element type: " + name + ", order " + str(order) + " (" +
               str(numv) + " nodes in param coord: " + str(parv) + ")")
-        present_element_type.append()
+        # present_element_type.append()
 
 print("Number of Elements:")
 print(" - Point:", num_elements[0])

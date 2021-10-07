@@ -63,7 +63,7 @@ for run_idx in 1:length(num_elements)
     exportSourcesGmsh(mesh_filename, imag_filename, imag.(sources))
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources))
 
-    sources_analytical = computeAnalyticalSolution(wavenumbers[run_idx], radius, mesh_filename)
+    sources_analytical = computeAnalyticalSolution(wavenumbers[run_idx], l, m, radius, mesh_filename)
 
     append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
     all_metrics[run_idx] = metrics

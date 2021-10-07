@@ -70,3 +70,27 @@ function matrixFill!(pulse_mesh::PulseMesh,
         end
     end
 end # function matrixFill!
+
+function matrixNormalDerivFill!(pulse_mesh::PulseMesh,
+                    testIntegrand::Function,
+                    z_matrix::AbstractArray{ComplexF64, 2})
+    @unpack num_elements,
+            elements,
+            areas,
+            normals,
+            nodes,
+            test_quadrature_points,
+            test_quadrature_weights = pulse_mesh
+    for src_idx in 1:num_elements
+        for test_idx in 1:num_elements
+            is_singular = (src_idx == test_idx)
+            test_nodes = getTriangleNodes(test_idx, elements, nodes)
+            src_nodes = getTriangleNodes(src_idx, elements, nodes)
+            testIntegrandXYZ(x,y,z) = testIntegrand([x,y,z], src_idx, normals[test_idx,:], is_singular)
+            z_matrix[test_idx, src_idx] += gaussQuadrature(areas[test_idx],
+                                                           testIntegrandXYZ,
+                                                           test_quadrature_points[test_idx],
+                                                           test_quadrature_weights)
+        end
+    end
+end # function matrixNormalDerivFill!

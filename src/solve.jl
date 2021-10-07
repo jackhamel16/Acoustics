@@ -42,6 +42,41 @@ function solveSoftIE(pulse_mesh::PulseMesh,
     return(source_vec)
 end
 
+# function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
+#                                 excitation_normal_derivative::Function,
+#                                 wavenumber::Number)
+#
+#     @unpack num_elements = pulse_mesh
+#     println("Filling RHS...")
+#     RHS = zeros(ComplexF64, num_elements)
+#     rhs_fill_time = @elapsed rhsNormalDerivFill!(pulse_mesh, excitation_normal_derivative, RHS)
+#     pulse_mesh.RHS = RHS
+#     println("  RHS fill time: ", rhs_fill_time)
+#
+#     matrix_fill_time = @elapsed begin
+#         if pulse_mesh.Z_factors == lu(ones(1,1))
+#             println("Filling Matrix...")
+#             testIntegrandNormalDerivative(r_test, src_idx, is_singular) =
+#                                     scalarGreensNormalDerivativeIntegration(pulse_mesh,
+#                                                                             src_idx,
+#                                                                             wavenumber,
+#                                                                             r_test,
+#                                                                             is_singular)
+#             Z_matrix = zeros(ComplexF64, num_elements, num_elements)
+#             matrixFill!(pulse_mesh, testIntegrandNormalDerivative, Z_matrix)
+#             Z_factors = lu(Z_matrix)
+#             pulse_mesh.Z_factors = Z_factors
+#         end
+#     end
+#     println("  Matrix fill time: ", matrix_fill_time)
+#
+#     println("Solving...")
+#     solve_time = @elapsed source_vec = pulse_mesh.Z_factors \ pulse_mesh.RHS
+#     println("  Solve time: ", solve_time)
+#
+#     return(source_vec)
+# end
+
 function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
                                 excitation_normal_derivative::Function,
                                 wavenumber::Number)
@@ -56,14 +91,16 @@ function solveSoftIENormalDeriv(pulse_mesh::PulseMesh,
     matrix_fill_time = @elapsed begin
         if pulse_mesh.Z_factors == lu(ones(1,1))
             println("Filling Matrix...")
-            testIntegrandNormalDerivative(r_test, src_idx, is_singular) =
+            testIntegrandNormalDerivative(r_test, src_idx, test_normal, is_singular) =
                                     scalarGreensNormalDerivativeIntegration(pulse_mesh,
                                                                             src_idx,
                                                                             wavenumber,
                                                                             r_test,
+                                                                            test_normal,
                                                                             is_singular)
             Z_matrix = zeros(ComplexF64, num_elements, num_elements)
-            matrixFill!(pulse_mesh, testIntegrandNormalDerivative, Z_matrix)
+            matrixNormalDerivFill!(pulse_mesh, testIntegrandNormalDerivative, Z_matrix)
+            # matrixFill!(pulse_mesh, testIntegrandNormalDerivative, Z_matrix)
             Z_factors = lu(Z_matrix)
             pulse_mesh.Z_factors = Z_factors
         end
