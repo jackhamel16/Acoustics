@@ -25,20 +25,6 @@ include("../../src/greens_functions.jl")
         @test isnan(scalarGreensNonSingular(0.0, 100.0+0*im)) == true
     end
     @testset "scalarGreensNormalDerivative tests" begin
-        # @test isapprox(scalarGreensNormalDerivative([1.0, 0.0, 0.0], 0.0+0*im, [0.0, 0.0, 0.0]), 0.0, rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([1.0, 0.0, 0.0], 0.0+0*im, [1.0, 0.0, 0.0]), -1/(4*pi), rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([0.0, 1.0, 0.0], 0.0+0*im, [0.0, 2.0, 0.0]), -1/(2*pi), rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([0.5, 1.5, -0.2], 0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), -0.013703111386864185-0.0115627559665488*im, rtol=1e-14)
-        # @test isnan(scalarGreensNormalDerivative([0.0, 0.0, 0.0], 1.0+0*im, [0.0, 0.0, 1.0])) == true
-        # @test isapprox(scalarGreensNormalDerivative([0.0,0,0] - [1.0, 0.0, 0.0], 0.0+0*im, [0.0, 0.0, 0.0]), 0.0, rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([-0.5, 0.0, 0.0] - [0.5, 0.0, 0.0], 0.0+0*im, [1.0, 0.0, 0.0]), -1/(4*pi), rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([0.0, -0.1, 0.0] - [0.0, 0.9, 0.0], 0.0+0*im, [0.0, 2.0, 0.0]), -1/(2*pi), rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([0.0, -0.5, 0.2] - [0.5, 1.0, 0],  0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), -0.013703111386864185-0.0115627559665488*im, rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([0.5, 1.0, 0] - [0.0, -0.5, 0.2], 0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), 0.013703111386864185+0.0115627559665488*im, rtol=1e-14)
-        # @test isapprox(scalarGreensNormalDerivative([-2.5, 0, 1] - [1, 3, 5.1], 30, [0.5, -1, 0.2]), 0.007199594184191544-0.025993631296332677*im, rtol=1e-14)
-        # @test isnan(scalarGreensNormalDerivative([0.0, 0.0, 10.0] - [0.0, 0.0, 10.0], 1.0+0*im, [0.0, 0.0, 1.0])) == true
-        # @test isapprox(scalarGreensNormalDerivative([0.0,0,0] - [1.0, 0.0, 0.0], 0.0+0*im, [0.0, 0.0, 0.0]), 0.0, rtol=1e-14)
-
         @test isapprox(scalarGreensNormalDerivative([0.5, 0.0, 0.0], [-0.5, 0.0, 0.0], 0.0+0*im, [1.0, 0.0, 0.0]), -1/(4*pi), rtol=1e-14)
         @test isapprox(scalarGreensNormalDerivative([0.0, 0.9, 0.0], [0.0, -0.1, 0.0], 0.0+0*im, [0.0, 2.0, 0.0]), -1/(2*pi), rtol=1e-14)
         @test isapprox(scalarGreensNormalDerivative([0.5, 1.0, 0], [0.0, -0.5, 0.2],  0.25+0.5*im, [0.0, sqrt(0.5), sqrt(0.5)]), -0.013703111386864185-0.0115627559665488*im, rtol=1e-14)

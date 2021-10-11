@@ -30,11 +30,8 @@ function scalarGreensNormalDerivative(r_test::AbstractArray{Float64, 1}, r_src::
     R_vec = r_test - r_src
     R = norm(R_vec)
     return(-exp(-im*k*R)*(1+im*k*R)/(4*pi*R^3) .* dot(nhat, R_vec))
-    # dot(nhat, grad_G)
-    # dot(grad_G, nhat)
-    # sum(nhat .* grad_G)
 end
-# 
+#
 # @views function scalarGreensNormalDerivativeIntegration(pulse_mesh::PulseMesh,
 #                                  element_idx::Int64,
 #                                  wavenumber::Number,

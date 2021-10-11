@@ -6,7 +6,7 @@ include("../../src/includes.jl")
 include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
-lambda = 6.0
+lambda = 5.0
 wavenumber = 2*pi / lambda + 0*im
 src_quadrature_rule = gauss7rule
 test_quadrature_rule = gauss1rule
@@ -14,9 +14,9 @@ distance_to_edge_tol = 1e-12
 near_singular_tol = 1.0
 #set up sphere
 radius = 1.0
-l, m = 2, 1
+l, m = 0, 0
 
-num_elements = [1266]#, 3788]#, 8010]#, 19034]
+num_elements = [1266, 3788, 8010]#, 19034]
 l2errors = Array{Float64, 1}(undef, 0)
 
 sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
@@ -44,13 +44,6 @@ for run_idx in 1:length(num_elements)
     exportSourcesGmsh(mesh_filename, imag_analytical_filename, imag.(sources_analytical))
     exportSourcesGmsh(mesh_filename, mag_analytical_filename, abs.(sources_analytical))
 
-    scale_factors = sources_analytical ./ sources
-    exportSourcesGmsh(mesh_filename, string("scale_factors_real_l",l,"_m",m,"_sphere"), real.(scale_factors))
-    exportSourcesGmsh(mesh_filename, string("scale_factors_imag_l",l,"_m",m,"_sphere"), imag.(scale_factors))
-    exportSourcesGmsh(mesh_filename, string("scale_factors_mag_l",l,"_m",m,"_sphere"), abs.(scale_factors))
-    println("Avg scale factor = ", sum(scale_factors) / pulse_mesh.num_elements)
-    println("Avg scale factor mag = ", sum(abs.(sources_analytical) ./ abs.(sources)) / pulse_mesh.num_elements)
-
     append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
 end
 
@@ -71,7 +64,7 @@ savefig(string("sphere_convergence_results_softIENormalDeriv_l",l,"_m",m))
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-1.1579399752858406, -1.1200508751294938, -1.0940611094829429] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test, 10 lambda
+convergence_rates = [-0.9403606648356206, -0.9489435772370495, -1.0940611094829429] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test, 10 lambda
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6
