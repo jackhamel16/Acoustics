@@ -72,9 +72,11 @@ end # function computeZEntrySoundSoft
     global_test_idx = test_node.element_idxs[test_idx]
     global_src_idx = src_node.element_idxs[src_idx]
     @unpack areas,
+            normals,
             test_quadrature_points,
             test_quadrature_weights = pulse_mesh
     is_singular = global_test_idx == global_src_idx
+    test_normal = normals[global_test_idx,:]
     testIntegrand(x,y,z) = softIE_weight *
                            scalarGreensIntegration(pulse_mesh,
                                                    global_src_idx,
@@ -88,6 +90,7 @@ end # function computeZEntrySoundSoft
                                                                    global_src_idx,
                                                                    wavenumber,
                                                                    [x,y,z],
+                                                                   test_normal,
                                                                    is_singular)
     Z_entry = gaussQuadrature(areas[global_test_idx],
                               testIntegrand,
@@ -178,7 +181,8 @@ function fillOctreeZMatricesGeneral!(pulse_mesh::PulseMesh,
                                      computeZEntry::Function,
                                      testIntegrand::Function,
                                      compression_distance,
-                                     ACA_approximation_tol)
+                                     ACA_approximation_tol,
+                                     use_normal=false)
     # Core general purpose routine to fill sub-Z matrices of octree nodes
     # computeZEntry is prewrapped so that its only arguments are as shown below
     #   and is the function to compute a single entry of the Z matrix used in ACA
@@ -206,7 +210,11 @@ function fillOctreeZMatricesGeneral!(pulse_mesh::PulseMesh,
             else # use direct Z calculation
                 # sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
                 sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
-                nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z_matrix)
+                if use_normal == false
+                    nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z_matrix)
+                else
+                    nodeMatrixNormalDerivFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z_matrix)
+                end
                 append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
             end # if-else
         end
@@ -254,18 +262,21 @@ end
     # ACA_approximation_tol determines how accurately the compressed matrices represent Z
     # returns nothing
     z_entry_datatype = ComplexF64
-    soundSoftCFIETestIntegrand(r_test, global_src_idx, is_singular) = softIE_weight *
+    use_normal = true
+    soundSoftCFIETestIntegrand(r_test, global_src_idx, test_normal, is_singular) = softIE_weight *
                                                                       scalarGreensIntegration(pulse_mesh, global_src_idx,
                                                                           wavenumber, r_test, distance_to_edge_tol,
                                                                           near_singular_tol, is_singular) +
                                                                       (1-softIE_weight) * im *
                                                                       scalarGreensNormalDerivativeIntegration(pulse_mesh,
-                                                                          global_src_idx, wavenumber, r_test, is_singular)
-    computeZEntryIntermediate(test_node, src_node, test_idx, src_idx) = computeZEntrySoftCFIE(pulse_mesh, test_node, src_node,
+                                                                          global_src_idx, wavenumber, r_test, test_normal,
+                                                                          is_singular)
+    computeZEntryForACA(test_node, src_node, test_idx, src_idx) = computeZEntrySoftCFIE(pulse_mesh, test_node, src_node,
                                                                             wavenumber, softIE_weight, distance_to_edge_tol,
                                                                             near_singular_tol, test_idx, src_idx)
-    fillOctreeZMatricesGeneral!(pulse_mesh, octree, computeZEntryIntermediate,
-                                soundSoftCFIETestIntegrand, compression_distance, ACA_approximation_tol)
+    fillOctreeZMatricesGeneral!(pulse_mesh, octree, computeZEntryForACA,
+                                soundSoftCFIETestIntegrand, compression_distance,
+                                ACA_approximation_tol, use_normal)
 end
 
 @views function nodeMatrixFill!(pulse_mesh::PulseMesh,
@@ -298,3 +309,35 @@ end
         end
     end
 end # function nodeMatrixFill!
+
+@views function nodeMatrixNormalDerivFill!(pulse_mesh::PulseMesh,
+                        test_node::Node,
+                        src_node::Node,
+                        testIntegrand::Function,
+                        sub_z_matrix::AbstractArray{ComplexF64, 2})
+    # Directly computes the sub-Z matrix for interactions between elements in test_node
+    #   and src_node when integrand needs the test normal vector.
+    # Results stored in sub_z_matrix
+    @unpack elements,
+            areas,
+            normals,
+            nodes,
+            test_quadrature_points,
+            test_quadrature_weights = pulse_mesh
+    num_src_elements = length(src_node.element_idxs)
+    num_test_elements = length(test_node.element_idxs)
+    for local_src_idx in 1:num_src_elements
+        global_src_idx = src_node.element_idxs[local_src_idx]
+        for local_test_idx in 1:num_test_elements
+            global_test_idx = test_node.element_idxs[local_test_idx]
+            is_singular = (global_src_idx == global_test_idx)
+            test_tri_nodes = getTriangleNodes(global_test_idx, elements, nodes)
+            src_tri_nodes = getTriangleNodes(global_src_idx, elements, nodes)
+            testIntegrandXYZ(x,y,z) = testIntegrand([x,y,z], global_src_idx, normals[global_test_idx,:], is_singular)
+            sub_z_matrix[local_test_idx, local_src_idx] = gaussQuadrature(areas[global_test_idx],
+                                                           testIntegrandXYZ,
+                                                           test_quadrature_points[global_test_idx],
+                                                           test_quadrature_weights)
+        end
+    end
+end # function nodeMatrixNormalDerivFill!

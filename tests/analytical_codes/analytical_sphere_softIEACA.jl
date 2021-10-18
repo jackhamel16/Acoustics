@@ -7,8 +7,6 @@ include("../../src/includes.jl")
 include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
-# lambda = 10.0
-# wavenumber = 2*pi / lambda + 0*im
 src_quadrature_rule = gauss7rule
 test_quadrature_rule = gauss1rule
 distance_to_edge_tol = 1e-12
@@ -23,7 +21,7 @@ ACA_approximation_tol = 1e-6
 gmres_tol = 1e-12
 
 # note: make sure lowest lambda does not encrouch on resonances
-num_elements = [1266, 3788, 8010]#, 19034]#, 39610, 70118]
+num_elements = [1266, 3788, 8010, 19034]#, 39610, 70118]
 
 edges_per_wavelength = 350 # hold ratio of lambda to edge length constant
 sphere_area = pi * radius^2

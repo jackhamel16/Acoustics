@@ -16,7 +16,6 @@ include("../../src/includes.jl")
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
 
-        mesh_filename = "examples/test/circular_plate_1m.msh"
         mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
@@ -50,10 +49,8 @@ include("../../src/includes.jl")
                         near_singular_tol,
                         soft_IE_nd_only)
         @test isapprox(sourcesCFIE_soft_IE_only, sourcesIE, rtol=1e-12)
-        # @test false==isapprox(sourcesCFIE_soft_IE_only, sourcesIEnd, rtol=1e-12)
-        @test isapprox(sourcesCFIE_soft_IE_only, sourcesIEnd, rtol=1e-2)
+        @test isapprox(sourcesCFIE_soft_IE_only, sourcesIEnd, rtol=1e-1)
         @test isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIEnd, rtol=1e-12)
-        # @test false==isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIE, rtol=1e-12)
-        @test isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIE, rtol=1e-2)
+        @test isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIE, rtol=1e-1)
     end #solveSoftCFIE tests
 end

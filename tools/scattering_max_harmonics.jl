@@ -1,3 +1,10 @@
+################################################################################
+# This function is a sort of scratch pad for computing the estimated minimum   #
+# number of harmonics needed in solving a WS problem based on the approximate  #
+# size of elements in a mesh determined by the number of elements and total    #
+# surface area of the geometry.                                                #
+################################################################################
+
 radius = 1
 # height = 2
 num_elements = 3788

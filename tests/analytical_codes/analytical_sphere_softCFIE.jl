@@ -64,7 +64,7 @@ savefig("sphere_convergence_results_softCFIE")
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-2.464481839389643, -2.8225094408712224, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-1.089681879696656, -1.0784468082803642, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6

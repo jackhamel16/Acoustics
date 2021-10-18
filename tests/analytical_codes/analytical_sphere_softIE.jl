@@ -6,7 +6,7 @@ include("../../src/includes.jl")
 include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
-lambda = 2.2#6.833255037507872#10.0
+lambda = 6.833255037507872#10.0
 wavenumber = 2*pi / lambda + 0*im
 src_quadrature_rule = gauss7rule
 test_quadrature_rule = gauss1rule
@@ -16,7 +16,7 @@ near_singular_tol = 1.0
 radius = 1.0
 l, m = 0, 0
 
-num_elements = [1266, 3788]#, 8010]#, 19034]
+num_elements = [1266, 3788, 8010]#, 19034]
 l2errors = Array{Float64, 1}(undef, 0)
 
 sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)

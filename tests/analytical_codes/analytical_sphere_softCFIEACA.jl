@@ -106,7 +106,7 @@ savefig("sphere_runtime_results_softCFIEACA")
 println("Run Time Slope = ", time_slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-2.3787216946889758, -2.6944277683731173, 2.863990233302726] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-0.9686703863531484, -0.9573673114806939, -0.9419219171354816] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - error_slope)/expected_convergence_rate)
 tolerance = 1e-6

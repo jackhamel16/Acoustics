@@ -1,3 +1,10 @@
+# Dependencies: mesh.jl math.jl
+
+################################################################################
+# Thie file contains functions to compute the analytical solution to a sphere  #
+# scatterer placed at the origin with an arbitrary incident spherical wave.    #
+################################################################################
+
 include("../../src/includes.jl")
 
 function computeAnalyticalSolution(wavenumber, l, m, radius, mesh_filename)

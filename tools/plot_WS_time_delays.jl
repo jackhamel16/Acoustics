@@ -20,6 +20,7 @@ function plotWSTimeDelays(time_delays_filename::String)
     return(times)
 end
 
+# code below will plot mulitple sets of delays in one figure
 # times1 = plotWSTimeDelays("Documentation/WS_ACA_Testing/Test9/cylinder_WS_noACA_test9_run1/Wigner_Smith_time_delays.txt")
 # times2 = plotWSTimeDelays("Documentation/WS_ACA_Testing/Test9/cylinder_WS_ACA_test9_run2/Wigner_Smith_time_delays.txt")
 # Plots.plot([i for i=1:144], times1, label="no ACA", size=(800,600))
