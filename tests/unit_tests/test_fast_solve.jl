@@ -359,7 +359,7 @@ include("../../src/ACA/fast_solve.jl")
         compression_distance = 1.5
         ACA_approximation_tol = 1e-5
         test_J = solveSoftCFIEACA(pulse_mesh, num_levels, excitation, excitation_normal_deriv, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
-        @test isapprox(sol_J, test_J[1], rtol=0.88e-6)
+        @test isapprox(sol_J, test_J[1], rtol=0.9e-6)
         rm("solveSoftCFIEACA_GMRES_residual_history.txt")
         rm("solveSoftCFIEACA_GMRES_residual_history.png")
     end # solveSoftCFIEACA tests

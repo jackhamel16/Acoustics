@@ -57,12 +57,13 @@ include("../../src/ACA/ACA_fill.jl")
                                                        r_test,
                                                        distance_to_edge_tol,
                                                        near_singular_tol,
-                                                       is_singular) +
-                                                      (1-softIE_weight) * im *
+                                                       is_singular)
+        testIntegrandND(r_test, src_idx, test_normal, is_singular) = (1-softIE_weight) * im *
                                                       scalarGreensNormalDerivativeIntegration(pulse_mesh,
-                                                        src_idx, wavenumber, r_test, is_singular)
+                                                        src_idx, wavenumber, r_test, test_normal, is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
         matrixFill!(pulse_mesh, testIntegrand, z_matrix)
+        matrixNormalDerivFill!(pulse_mesh, testIntegrandND, z_matrix)
         num_levels = 1
         octree = createOctree(num_levels, pulse_mesh)
         test_idx = 1
@@ -162,6 +163,30 @@ include("../../src/ACA/ACA_fill.jl")
         @test isapprox(octree.nodes[6].node2node_Z_matrices[3][1] * octree.nodes[6].node2node_Z_matrices[3][2], [z_matrix[1,4]], rtol = 1e-14)
         @test isapprox(octree.nodes[8].node2node_Z_matrices[1][1] * octree.nodes[8].node2node_Z_matrices[1][2], [z_matrix[4,1]], rtol = 1e-14)
         @test isapprox(octree.nodes[8].node2node_Z_matrices[3][1], z_matrix[4,4], rtol = 1e-14)
+
+        use_normal = true
+        num_levels = 3
+        octree = createOctree(num_levels, pulse_mesh)
+        testIntegrand(r_test, src_idx, is_singular) = scalarGreensIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       distance_to_edge_tol,
+                                                       near_singular_tol,
+                                                       is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
+        testIntegrandNormal(r_test, src_idx, test_normal, is_singular) = testIntegrand(r_test, src_idx, is_singular) # just test the functionality of passing in a normal vector
+        computeZEntry(test_node, src_node, test_idx, src_idx) = computeZEntrySoundSoft(pulse_mesh,
+                                                                  test_node, src_node, wavenumber,
+                                                                  distance_to_edge_tol,
+                                                                  near_singular_tol,
+                                                                  test_idx, src_idx)
+        fillOctreeZMatricesGeneral!(pulse_mesh, octree, computeZEntry, testIntegrandNormal, compression_distance, ACA_tol, use_normal)
+        @test isapprox(octree.nodes[6].node2node_Z_matrices[1][1], z_matrix[1,1], rtol = 1e-14)
+        @test isapprox(octree.nodes[6].node2node_Z_matrices[2][1], z_matrix[1,2], rtol = 1e-14)
+        @test isapprox(octree.nodes[6].node2node_Z_matrices[3][1] * octree.nodes[6].node2node_Z_matrices[3][2], [z_matrix[1,4]], rtol = 1e-14)
+        @test isapprox(octree.nodes[8].node2node_Z_matrices[1][1] * octree.nodes[8].node2node_Z_matrices[1][2], [z_matrix[4,1]], rtol = 1e-14)
+        @test isapprox(octree.nodes[8].node2node_Z_matrices[3][1], z_matrix[4,4], rtol = 1e-14)
     end # fillOctreeZMatricesGeneral! tests
     @testset "fillOctreeZMatricesSoundSoft! tests" begin
         wavenumber = 1.0+0.0im
@@ -245,15 +270,15 @@ include("../../src/ACA/ACA_fill.jl")
                                                        distance_to_edge_tol,
                                                        near_singular_tol,
                                                        is_singular)
-        testIntegrandND(r_test, src_idx, is_singular) = (1 - softIE_weight) * im *
+        testIntegrandND(r_test, src_idx, test_normal, is_singular) = (1 - softIE_weight) * im *
                                                         scalarGreensNormalDerivativeIntegration(pulse_mesh, src_idx,
                                                           wavenumber,
                                                           r_test,
+                                                          test_normal,
                                                           is_singular)
-        fullTestIntegrand(r_test, src_idx, is_singular) = testIntegrand(r_test, src_idx, is_singular) +
-                                                          testIntegrandND(r_test, src_idx, is_singular)
         z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
-        matrixFill!(pulse_mesh, fullTestIntegrand, z_matrix)
+        matrixFill!(pulse_mesh, testIntegrand, z_matrix)
+        matrixNormalDerivFill!(pulse_mesh, testIntegrandND, z_matrix)
         num_levels = 1
         octree = createOctree(num_levels, pulse_mesh)
         fillOctreeZMatricesSoundSoftCFIE!(pulse_mesh, octree, wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_tol)
@@ -401,4 +426,43 @@ include("../../src/ACA/ACA_fill.jl")
         nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z)
         @test isapprox(sub_Z, sol, rtol=1e-14)
     end # nodeMatrixFill! tests
+    @testset "nodeMatrixNormalDerivFill! tests" begin
+        wavenumber = 1.0+0.0im
+        src_quadrature_rule = gauss7rule
+        test_quadrature_rule = gauss7rule
+        distance_to_edge_tol = 1e-12
+        near_singular_tol = 1.0
+        approximation_tol = 1e-3
+        mesh_filename = "examples/test/rectangle_plate_8elements_symmetric.msh"
+        pulse_mesh =  buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        num_levels = 3
+        octree = createOctree(num_levels, pulse_mesh)
+        testIntegrandND(r_test, src_idx, test_normal, is_singular) = scalarGreensNormalDerivativeIntegration(pulse_mesh, src_idx,
+                                                       wavenumber,
+                                                       r_test,
+                                                       test_normal,
+                                                       is_singular)
+        z_matrix = zeros(ComplexF64, pulse_mesh.num_elements, pulse_mesh.num_elements)
+        matrixNormalDerivFill!(pulse_mesh, testIntegrandND, z_matrix)
+        sol = z_matrix[1,2]
+        test_node = octree.nodes[6]
+        src_node = octree.nodes[7]
+        sub_Z = zeros(ComplexF64, 1, 1)
+        nodeMatrixNormalDerivFill!(pulse_mesh, test_node, src_node, testIntegrandND, sub_Z)
+        @test isapprox(sub_Z[1,1], sol, rtol=1e-14)
+
+        sol = z_matrix[2,8]
+        test_node = octree.nodes[7]
+        src_node = octree.nodes[13]
+        sub_Z = zeros(ComplexF64, 1, 1)
+        nodeMatrixNormalDerivFill!(pulse_mesh, test_node, src_node, testIntegrandND, sub_Z)
+        @test isapprox(sub_Z[1,1], sol, rtol=1e-14)
+
+        sol = z_matrix[[1,2],[3,4]]
+        test_node = octree.nodes[2]
+        src_node = octree.nodes[3]
+        sub_Z = zeros(ComplexF64, 2, 2)
+        nodeMatrixNormalDerivFill!(pulse_mesh, test_node, src_node, testIntegrandND, sub_Z)
+        @test isapprox(sub_Z, sol, rtol=1e-14)
+    end # nodeMatrixNormalDerivFill! tests
 end # ACA_fill tests

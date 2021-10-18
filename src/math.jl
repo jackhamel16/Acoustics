@@ -29,7 +29,7 @@ end
 
 function sphericalHarmonics(theta::Float64, phi::Float64, lmax::Int64)
     # Obtain the legendre polynomial and its array.
-    # This function gives legendre polynomial for  0 <= l <= lmax,  and  0 <= m <= l
+    # This function gives legendre polynomial for  0 <= l <= lmax,  and  -l <= m <= l
 	cos_theta = cos(theta);
 
     (Leg, dLeg) = sf_legendre_deriv_array(GSL_SF_LEGENDRE_SPHARM, lmax, cos_theta);

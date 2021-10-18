@@ -1,5 +1,10 @@
 # dependencies: mesh.jl quadrature.jl
 
+################################################################################
+# This file contains all functions related to computing Green's functions and  #
+# integrating over them.                                                       #
+################################################################################
+
 using LinearAlgebra
 
 function scalarGreens(R::Float64, k::Number)
@@ -12,22 +17,27 @@ function scalarGreensKDeriv(R, k)
 end
 
 function scalarGreensNonSingular(R::Float64, k::Number)
+    # scalar Green's function with the singularity subtracted away
     (exp(-im*k*abs(R))-1)/(4*pi*abs(R))
 end
 
-function scalarGreensNormalDerivative(R_vec::AbstractArray{Float64, 1}, k::Number, nhat::AbstractArray{Float64, 1})
+function scalarGreensNormalDerivative(r_test::AbstractArray{Float64, 1},
+                                      r_src::AbstractArray{Float64, 1},
+                                      k::Number,
+                                      nhat::AbstractArray{Float64, 1})
+    R_vec = r_test - r_src
     R = norm(R_vec)
-    grad_G = [-R_vec[1]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[1]*exp(-im*k*R)/(4*pi*R^2),
-              -R_vec[2]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[2]*exp(-im*k*R)/(4*pi*R^2),
-              -R_vec[3]*exp(-im*k*R)/(4*pi*R^3) - im*k*R_vec[3]*exp(-im*k*R)/(4*pi*R^2)]
-    dot(nhat, grad_G)
+    return(-exp(-im*k*R)*(1+im*k*R)/(4*pi*R^3) .* dot(nhat, R_vec))
 end
 
 @views function scalarGreensNormalDerivativeIntegration(pulse_mesh::PulseMesh,
-                                 element_idx::Int64,
-                                 wavenumber::Number,
-                                 r_test::Array{Float64, 1},
-                                 is_singular::Bool)
+                                                        element_idx::Int64,
+                                                        wavenumber::Number,
+                                                        r_test::Array{Float64, 1},
+                                                        test_normal::AbstractArray{Float64, 1},
+                                                        is_singular::Bool)
+    # Performs the source integral over the (test) normal derivative of the scalar
+    #   Green's function. Used in soft IE normal derivative and soft CFIE.
     @unpack nodes,
             elements,
             areas,
@@ -40,7 +50,7 @@ end
     if is_singular == true
         return(0.5) # principal value of integral for r=r'
     else
-        scalar_greens_nd_integrand(x,y,z) = scalarGreensNormalDerivative([x,y,z]-r_test, wavenumber, normals[element_idx,:])
+        scalar_greens_nd_integrand(x_src,y_src,z_src) = scalarGreensNormalDerivative(r_test, [x_src,y_src,z_src], wavenumber, test_normal)
         return(gaussQuadrature(triangle_area, scalar_greens_nd_integrand,
                                  src_quadrature_points[element_idx], src_quadrature_weights))
     end

@@ -42,7 +42,7 @@ for run_idx in 1:length(num_elements)
     exportSourcesGmsh(mesh_filename, imag_filename, imag.(sources))
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources))
 
-    sources_analytical = computeAnalyticalSolution(wavenumber, radius, mesh_filename)
+    sources_analytical = computeAnalyticalSolution(wavenumber, l, m, radius, mesh_filename)
 
     append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
 end
@@ -64,7 +64,7 @@ savefig("sphere_convergence_results_softCFIE")
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-2.464481839389643, -2.8225094408712224, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-1.089681879696656, -1.0784468082803642, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6

@@ -7,8 +7,6 @@ include("../../src/includes.jl")
 include("analytical_sphere.jl")
 
 excitation_amplitude = 1.0
-# lambda = 10.0
-# wavenumber = 2*pi / lambda + 0*im
 src_quadrature_rule = gauss7rule
 test_quadrature_rule = gauss1rule
 distance_to_edge_tol = 1e-12
@@ -23,7 +21,7 @@ ACA_approximation_tol = 1e-6
 gmres_tol = 1e-12
 
 # note: make sure lowest lambda does not encrouch on resonances
-num_elements = [1266, 3788, 8010]#, 19034]#, 39610, 70118]
+num_elements = [1266, 3788, 8010, 19034]#, 39610, 70118]
 
 edges_per_wavelength = 350 # hold ratio of lambda to edge length constant
 sphere_area = pi * radius^2
@@ -59,7 +57,7 @@ for run_idx in 1:length(num_elements)
     exportSourcesGmsh(mesh_filename, imag_filename, imag.(sources))
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources))
 
-    sources_analytical = computeAnalyticalSolution(wavenumbers[run_idx], radius, mesh_filename)
+    sources_analytical = computeAnalyticalSolution(wavenumbers[run_idx], l, m, radius, mesh_filename)
 
     append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
     all_metrics[run_idx] = metrics

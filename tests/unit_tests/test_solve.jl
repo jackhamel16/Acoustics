@@ -10,13 +10,13 @@ include("../../src/includes.jl")
         excitation_amplitude = 1.0
         lambda=2.5
         wavenumber = 2*pi/lambda + 0*im
-        wavevector = [wavenumber, 0.0, 0.0]
+        wavevector = [wavenumber, 0.0, wavenumber] ./ sqrt(2)
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss1rule
         distance_to_edge_tol = 1e-12
         near_singular_tol = 1.0
 
-        mesh_filename = "examples/test/circular_plate_1m.msh"
+        mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         planeWaveExcitation(x_test, y_test, z_test) = planeWave(excitation_amplitude, wavevector, [x_test,y_test,z_test])
         planeWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = planeWaveNormalDerivative(excitation_amplitude, wavevector, [x_test,y_test,z_test], normal)
@@ -49,8 +49,8 @@ include("../../src/includes.jl")
                         near_singular_tol,
                         soft_IE_nd_only)
         @test isapprox(sourcesCFIE_soft_IE_only, sourcesIE, rtol=1e-12)
-        @test false==isapprox(sourcesCFIE_soft_IE_only, sourcesIEnd, rtol=1e-12)
+        @test isapprox(sourcesCFIE_soft_IE_only, sourcesIEnd, rtol=1e-1)
         @test isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIEnd, rtol=1e-12)
-        @test false==isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIE, rtol=1e-12)
+        @test isapprox(sourcesCFIE_soft_IE_nd_only, sourcesIE, rtol=1e-1)
     end #solveSoftCFIE tests
 end
