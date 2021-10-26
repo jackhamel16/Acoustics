@@ -23,7 +23,7 @@ end
     lambda::Float64 = 0.0
     wavenumber::Number = 0.0
     max_l::Int64 = 0
-    mode_idx::Int64 = 0
+    mode_idxs::AbstractArray{Int64, 1} = [0]
 end
 
 @with_kw struct InputParams
@@ -105,11 +105,11 @@ function parseWignerSmithParams(input_file_lines::AbstractArray{T,1}) where T <:
         WS_idx = WS_idxs[1]
         lambda = parse(Float64, getAttribute(input_file_lines[WS_idx+1]))
         max_l = parse(Int64, getAttribute(input_file_lines[WS_idx+2]))
-        mode_idx = parse(Int64, getAttribute(input_file_lines[WS_idx+3]))
+        mode_idxs = parse.(Int64, strip.(split(getAttribute(input_file_lines[WS_idx+3]), ',')))
         return(WignerSmithParams(lambda=lambda,
                                  wavenumber = 2 * pi / lambda,
                                  max_l=max_l,
-                                 mode_idx=mode_idx))
+                                 mode_idxs=mode_idxs))
     end
 end #parseWignerSmithParams
 

@@ -64,7 +64,7 @@ end # function calculateWSMatrix
 end # function calculateWSMatrix
 
 @views function solveWSModeSoft(max_l::Int64,
-                            mode_idx::Int64,
+                            mode_idxs::AbstractArray{Int64,1},
                             wavenumber,
                             pulse_mesh::PulseMesh,
                             distance_to_edge_tol,
@@ -72,20 +72,25 @@ end # function calculateWSMatrix
     # Solves sound-soft IE with an incident field for the WS mode indicated by mode_idx
     Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
     eigen_Q = eigen(Q)
-    mode_vector = eigen_Q.vectors[:,mode_idx]
-    excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
-    println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
     writeWSTimeDelays(eigen_Q.values)
-    println("Solving at WS Mode ", mode_idx,"...")
-    sources_WS = solveSoftIE(pulse_mesh,
-                             excitationWSMode,
-                             wavenumber,
-                             distance_to_edge_tol,
-                             near_singular_tol)
+    sources_WS = Array{Array{ComplexF64, 1}, 1}(undef, length(mode_idxs))
+    for local_mode_idx = 1:length(mode_idxs)
+        mode_idx = mode_idxs[local_mode_idx]
+        mode_vector = eigen_Q.vectors[:,mode_idx]
+        excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
+        println("Solving at WS Mode ", mode_idx,"...")
+        println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
+        sources_WS[local_mode_idx] = solveSoftIE(pulse_mesh,
+                                 excitationWSMode,
+                                 wavenumber,
+                                 distance_to_edge_tol,
+                                 near_singular_tol)
+    end
+    return(sources_WS)
 end # function solveWSModeSoft
 
 @views function solveWSModeSoftACA(max_l::Int64,
-                               mode_idx::Int64,
+                               mode_idxs::AbstractArray{Int64,1},
                                wavenumber,
                                pulse_mesh::PulseMesh,
                                distance_to_edge_tol,
@@ -99,20 +104,24 @@ end # function solveWSModeSoft
     Q = calculateWSMatrixACA(max_l, wavenumber, pulse_mesh, octree, distance_to_edge_tol,
                              near_singular_tol, compression_distance, ACA_approximation_tol)
     eigen_Q = eigen(Q)
-    mode_vector = eigen_Q.vectors[:,mode_idx]
-    excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
-    println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
     writeWSTimeDelays(eigen_Q.values)
-    println("Solving at WS Mode ", mode_idx,"...")
-    sources_WS = solveSoftIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
-                                     wavenumber, distance_to_edge_tol, near_singular_tol,
-                                     compression_distance, ACA_approximation_tol)
+    sources_WS = Array{Array{ComplexF64, 1}, 1}(undef, length(mode_idxs))
+    for local_mode_idx = 1:length(mode_idxs)
+        mode_idx = mode_idxs[local_mode_idx]
+        mode_vector = eigen_Q.vectors[:,mode_idx]
+        excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
+        println("Solving at WS Mode ", mode_idx,"...")
+        println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
+        sources_WS[local_mode_idx] = solveSoftIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
+                                         wavenumber, distance_to_edge_tol, near_singular_tol,
+                                         compression_distance, ACA_approximation_tol)
+    end
     metrics = computeACAMetrics(pulse_mesh.num_elements, octree)
     return(sources_WS, octree, metrics)
 end # function solveWSModeSoftACA
 
 @views function solveWSModeSoftCFIEACA(max_l::Int64,
-                               mode_idx::Int64,
+                               mode_idxs::AbstractArray{Int64,1},
                                wavenumber,
                                pulse_mesh::PulseMesh,
                                distance_to_edge_tol,
@@ -127,16 +136,20 @@ end # function solveWSModeSoftACA
     Q = calculateWSMatrixACA(max_l, wavenumber, pulse_mesh, octree, distance_to_edge_tol,
                              near_singular_tol, compression_distance, ACA_approximation_tol)
     eigen_Q = eigen(Q)
-    mode_vector = eigen_Q.vectors[:,mode_idx]
-    excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
-    excitationNormalDerivWSMode(x,y,z,normal) = sphericalWaveNormalDerivWSMode(x, y, z, max_l, wavenumber, normal, mode_vector)
-    println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
     writeWSTimeDelays(eigen_Q.values)
-    println("Solving at WS Mode ", mode_idx,"...")
-    sources_WS = solveSoftCFIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
-                                  excitationNormalDerivWSMode,
-                                     wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol,
-                                     compression_distance, ACA_approximation_tol)
+    sources_WS = Array{Array{ComplexF64, 1}, 1}(undef, length(mode_idxs))
+    for local_mode_idx = 1:length(mode_idxs)
+        mode_idx = mode_idxs[local_mode_idx]
+        mode_vector = eigen_Q.vectors[:,mode_idx]
+        excitationWSMode(x,y,z) = sphericalWaveWSMode(x, y, z, max_l, wavenumber, mode_vector)
+        excitationNormalDerivWSMode(x,y,z,normal) = sphericalWaveNormalDerivWSMode(x, y, z, max_l, wavenumber, normal, mode_vector)
+        println("Solving at WS Mode ", mode_idx,"...")
+        println("Wigner-Smith Time Delay = ", eigen_Q.values[mode_idx])
+        sources_WS[local_mode_idx] = solveSoftCFIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
+                                      excitationNormalDerivWSMode,
+                                         wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol,
+                                         compression_distance, ACA_approximation_tol)
+    end
     metrics = computeACAMetrics(pulse_mesh.num_elements, octree)
     return(sources_WS, octree, metrics)
 end # function solveWSModeSoftCFIEACA
