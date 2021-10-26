@@ -366,4 +366,18 @@ include("../../src/includes.jl")
         test_wave = sphericalWaveNormalDerivWSMode(x, y, z, max_l, wavenumber, normal, mode_vector)
         @test isapprox(sol_wave, test_wave, rtol=1e-14)
     end # sphericalWaveNormalDerivWSMode tests
+    @testset "readWSMatrix tests" begin
+        test_filename = "examples/test/test_WS_matrix.txt"
+        sol = [1 4 6.5; 20 -1.3+1im -1-2.2im; 0 2im 0]
+        test_Q = readWSMatrix(test_filename)
+        @test isapprox(sol, test_Q, rtol=1e-14)
+    end # readWSMatrix tests
+    @testset "writeWSMatrix tests" begin
+        sol = randn(ComplexF64,10,10)
+        writeWSMatrix(sol)
+        test_Q = readWSMatrix("Wigner_Smith_matrix.txt")
+        @test isapprox(sol, test_Q, rtol=1e-14)
+
+        rm("Wigner_Smith_matrix.txt")
+    end # writeWSMatrix tests
 end
