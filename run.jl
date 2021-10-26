@@ -7,15 +7,16 @@ include("src/includes.jl")
 # errors in the formatting of the input files, they will likely just cause errors in
 # the code at runtime
 
-function exportSourcesBundled(mesh_filename::String, sources::AbstractArray{T, 1}) where T <: Number
+function exportSourcesBundled(mesh_filename::String, tag::String, sources::AbstractArray{T, 1}) where T <: Number
     # bundled exportSourcesGmsh calls to clean up below
-    exportSourcesGmsh(mesh_filename, "sources_real", real.(sources))
-    exportSourcesGmsh(mesh_filename, "sources_imag", imag.(sources))
-    exportSourcesGmsh(mesh_filename, "sources_mag", abs.(sources))
+    exportSourcesGmsh(mesh_filename, string("sources_real",tag), real.(sources))
+    exportSourcesGmsh(mesh_filename, string("sources_imag",tag), imag.(sources))
+    exportSourcesGmsh(mesh_filename, string("sources_mag",tag), abs.(sources))
 end
 
 if length(ARGS) == 1
     inputs_filename = ARGS[1]
+    no_tag = ""
 
     println("Parsing input parameters in: ", inputs_filename,"...")
     inputs = parseInputParams(inputs_filename)
@@ -80,7 +81,7 @@ if length(ARGS) == 1
                                   distance_to_edge_tol,
                                   near_singular_tol)
         end
-        exportSourcesBundled(mesh_filename, sources)
+        exportSourcesBundled(mesh_filename, no_tag, sources)
 
     elseif equation == "sound soft normal derivative IE"
         println("Equation: Sound Soft Normal Derivative IE")
@@ -91,7 +92,7 @@ if length(ARGS) == 1
                                              excitationFuncNormalDeriv,
                                              excitation_params.wavenumber)
         end
-        exportSourcesBundled(mesh_filename, sources)
+        exportSourcesBundled(mesh_filename, no_tag, sources)
 
     elseif equation == "sound soft CFIE"
         println("Equation: Sound Soft CFIE")
@@ -116,17 +117,17 @@ if length(ARGS) == 1
                                     near_singular_tol,
                                     inputs.CFIE_weight)
         end
-        exportSourcesBundled(mesh_filename, sources)
+        exportSourcesBundled(mesh_filename, no_tag, sources)
 
     elseif equation == "WS mode"
         println("Equation: WS Mode") # this mode only runs sound soft IE right now
         if inputs.src_quadrature_string != inputs.test_quadrature_string
-            println("When running at a WS mode, test and src quadrature rules must be identical. Change settings and rerun.")
+            println("When running at WS modes, test and src quadrature rules must be identical. Change settings and rerun.")
         else
             if ACA_params.use_ACA == true
                 println("Running with ACA...")
                 run_time = @elapsed sources, octree, metrics = solveWSModeSoftACA(WS_params.max_l,
-                                                                              WS_params.mode_idx,
+                                                                              WS_params.mode_idxs,
                                                                               WS_params.wavenumber,
                                                                               pulse_mesh,
                                                                               distance_to_edge_tol,
@@ -135,12 +136,20 @@ if length(ARGS) == 1
                                                                               ACA_params.compression_distance,
                                                                               ACA_params.approximation_tol)
                 printACAMetrics(metrics)
-                exportSourcesBundled(mesh_filename, sources)
+                for local_mode_idx = 1:length(WS_params.mode_idxs)
+                    mode_idx = WS_params.mode_idxs[local_mode_idx]
+                    mode_tag = string("_mode", mode_idx)
+                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                end
             else
-                run_time = @elapsed sources = solveWSModeSoft(WS_params.max_l, WS_params.mode_idx,
+                run_time = @elapsed sources = solveWSModeSoft(WS_params.max_l, WS_params.mode_idxs,
                                       WS_params.wavenumber, pulse_mesh,
                                       distance_to_edge_tol, near_singular_tol)
-                exportSourcesBundled(mesh_filename, sources)
+                for local_mode_idx = 1:length(WS_params.mode_idxs)
+                    mode_idx = WS_params.mode_idxs[local_mode_idx]
+                    mode_tag = string("_mode", mode_idx)
+                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                end
             end
         end
     elseif equation == "WS mode CFIE"
@@ -151,7 +160,7 @@ if length(ARGS) == 1
             if ACA_params.use_ACA == true
                 println("Running with ACA...")
                 run_time = @elapsed sources, octree, metrics = solveWSModeSoftCFIEACA(WS_params.max_l,
-                                                                              WS_params.mode_idx,
+                                                                              WS_params.mode_idxs,
                                                                               WS_params.wavenumber,
                                                                               pulse_mesh,
                                                                               distance_to_edge_tol,
@@ -161,12 +170,20 @@ if length(ARGS) == 1
                                                                               ACA_params.compression_distance,
                                                                               ACA_params.approximation_tol)
                 printACAMetrics(metrics)
-                exportSourcesBundled(mesh_filename, sources)
+                for local_mode_idx = 1:length(WS_params.mode_idxs)
+                    mode_idx = WS_params.mode_idxs[local_mode_idx]
+                    mode_tag = string("_mode", mode_idx)
+                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                end
             else
-                run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idx,
+                run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idxs,
                                       WS_params.wavenumber, pulse_mesh,
                                       distance_to_edge_tol, near_singular_tol)
-                exportSourcesBundled(mesh_filename, sources)
+                for local_mode_idx = 1:length(WS_params.mode_idxs)
+                    mode_idx = WS_params.mode_idxs[local_mode_idx]
+                    mode_tag = string("_mode", mode_idx)
+                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                end
             end
         end
     end
