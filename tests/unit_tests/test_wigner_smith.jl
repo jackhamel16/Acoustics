@@ -36,7 +36,9 @@ include("../../src/includes.jl")
         Q_sca_sca_d = im/8/wavenumber^2 * adjoint(Js)*(conj.(transpose(Vs_trans))*dVsdk_trans - conj.(transpose(dVsdk_trans))*Vs_trans)*Js
         sol_Q = Q_sca_inc+Q_inc_sca+Q_sca_sca_i+Q_sca_sca_d
 
-        test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "")
+        test_Q = calculateWSMatrix(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        writeWSMatrix(test_Q)
         @test isapprox(sol_Q, test_Q, rtol=0.8e-5)
         @test isapprox(test_Q, adjoint(test_Q), rtol=0.2e-4) # Q should be Hermitian
         test_eigen_Q = eigen(test_Q)
@@ -47,6 +49,9 @@ include("../../src/includes.jl")
         reconstructed_Q = test_eigen_Q.vectors * diagm(test_eigen_Q.values) * adjoint(test_eigen_Q.vectors)
         @test isapprox(test_Q, reconstructed_Q, rtol = 0.2e-2)
 
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "Wigner_Smith_matrix.txt")
+        read_Q = calculateWSMatrix(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        @test isapprox(sol_Q, read_Q, rtol=0.8e-5)
         ##### DONT RUN REGULARLY AS THIS IS VERY SLOW #####
         # max_l = 13
         # lambda = 1
@@ -59,7 +64,8 @@ include("../../src/includes.jl")
         # mesh_filename = "examples/test/circular_plate_fine.msh"
         # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         #
-        # test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        # WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "")
+        # test_Q = calculateWSMatrix(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         # @test isapprox(test_Q, adjoint(test_Q), rtol=0.45e-1) # Q should be Hermitian
         # test_eigen_Q = eigen(test_Q)
         # @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
@@ -80,7 +86,8 @@ include("../../src/includes.jl")
         # mesh_filename = "examples/test/rectangular_strips/rectangular_strip_fine.msh"
         # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         #
-        # test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        # WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "")
+        # test_Q = calculateWSMatrix(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         # @test isapprox(test_Q, adjoint(test_Q), rtol=0.5e-6) # Q should be Hermitian
         # test_eigen_Q = eigen(test_Q)
         # @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
@@ -166,7 +173,9 @@ include("../../src/includes.jl")
         Q_sca_sca_d = im/8/wavenumber^2 * adjoint(Js)*(conj.(transpose(Vs_trans))*dVsdk_trans - conj.(transpose(dVsdk_trans))*Vs_trans)*Js
         sol_Q = Q_sca_inc+Q_inc_sca+Q_sca_sca_i+Q_sca_sca_d
 
-        test_Q = calculateWSMatrixACA(max_l, wavenumber, pulse_mesh, octree, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "")
+        test_Q = calculateWSMatrixACA(WS_params, pulse_mesh, octree, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
+        writeWSMatrix(test_Q)
         @test isapprox(sol_Q, test_Q, rtol=0.8e-5)
         @test isapprox(test_Q, adjoint(test_Q), rtol=0.2e-4) # Q should be Hermitian
         test_eigen_Q = eigen(test_Q)
@@ -176,6 +185,11 @@ include("../../src/includes.jl")
         @test isapprox(real_values, sort(real_values), rtol=1e-14) # test eigenvalues ordered least to greatest
         reconstructed_Q = test_eigen_Q.vectors * diagm(test_eigen_Q.values) * adjoint(test_eigen_Q.vectors)
         @test isapprox(test_Q, reconstructed_Q, rtol = 0.3e-2)
+
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "Wigner_Smith_matrix.txt")
+        read_Q = calculateWSMatrixACA(WS_params, pulse_mesh, octree, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
+        @test isapprox(sol_Q, read_Q, rtol=0.8e-5)
+
 
         ##### DONT RUN REGULARLY AS THIS IS VERY SLOW #####
         # max_l = 13
@@ -189,7 +203,8 @@ include("../../src/includes.jl")
         # mesh_filename = "examples/test/circular_plate_fine.msh"
         # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         #
-        # test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        # WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "")
+        # test_Q = calculateWSMatrix(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         # @test isapprox(test_Q, adjoint(test_Q), rtol=0.45e-1) # Q should be Hermitian
         # test_eigen_Q = eigen(test_Q)
         # @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
@@ -210,7 +225,8 @@ include("../../src/includes.jl")
         # mesh_filename = "examples/test/rectangular_strips/rectangular_strip_fine.msh"
         # pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
         #
-        # test_Q = calculateWSMatrix(max_l, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        # WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "")
+        # test_Q = calculateWSMatrix(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         # @test isapprox(test_Q, adjoint(test_Q), rtol=0.5e-6) # Q should be Hermitian
         # test_eigen_Q = eigen(test_Q)
         # @test isapprox(num_harmonics, length(test_eigen_Q.values), rtol=1e-14)
@@ -258,14 +274,15 @@ include("../../src/includes.jl")
         Q_sca_sca_d = im/8/wavenumber^2 * adjoint(Js)*(conj.(transpose(Vs_trans))*dVsdk_trans - conj.(transpose(dVsdk_trans))*Vs_trans)*Js
         sol_Q = Q_sca_inc+Q_inc_sca+Q_sca_sca_i+Q_sca_sca_d
 
-        test_Q = calculateWSMatrixACA(max_l, wavenumber, pulse_mesh, octree, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, [0], "")
+        test_Q = calculateWSMatrixACA(WS_params, pulse_mesh, octree, distance_to_edge_tol, near_singular_tol, compression_distance, ACA_approximation_tol)
         @test isapprox(sol_Q, test_Q, rtol=0.27e-6)
     end # calculateWSMatrixACA tests
     @testset "solveWSModeSoft tests" begin
         # this isnt a great test as the solution is copied from the output
         # therefore it, at best, only tells me if I changed something in the code
         max_l = 2
-        mode_idx = [1]
+        mode_idxs = [1]
         lambda = 10
         wavenumber = 2*pi/lambda + 0.0im
         num_harmonics = max_l^2 + 2*max_l + 1
@@ -275,7 +292,8 @@ include("../../src/includes.jl")
         near_singular_tol = 1.0
         mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources = solveWSModeSoft(max_l, mode_idxs, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol)
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, mode_idxs, "")
+        test_sources = solveWSModeSoft(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol)
         @test isapprox(test_sources[1][1], -0.5313576866296218 - 0.21990746085878485im, rtol=1e-14)
         @test isapprox(test_sources[1][468], -0.6792050632304026 - 0.28109552129052373im, rtol=1e-14)
     end # solveWSModeSoft tests
@@ -296,7 +314,8 @@ include("../../src/includes.jl")
         ACA_approximation_tol = 1e-5
         mesh_filename = "examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources = solveWSModeSoftACA(max_l, mode_idxs, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, mode_idxs, "")
+        test_sources = solveWSModeSoftACA(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
         @test isapprox(test_sources[1][1][1], -0.5313576866296218 - 0.21990746085878485im, rtol=1e-5)
         @test isapprox(test_sources[1][1][468], -0.6792050632304026 - 0.28109552129052373im, rtol=0.8e-6)
         @test isapprox(test_sources[1][2][1], 0.1591865645374856 + 0.09173796417457694im, rtol=1e-5)
@@ -320,9 +339,10 @@ include("../../src/includes.jl")
         ACA_approximation_tol = 1e-5
         mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"#"examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources = solveWSModeSoftCFIEACA(max_l, mode_idxs, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol, softIE_weight, num_levels, compression_distance, ACA_approximation_tol)
-        pulse_mesh_IE = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources_IE = solveWSModeSoftACA(max_l, mode_idxs, wavenumber, pulse_mesh_IE, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
+        WS_params = WignerSmithParams(lambda, wavenumber, max_l, mode_idxs, "")
+        test_sources = solveWSModeSoftCFIEACA(WS_params, pulse_mesh, distance_to_edge_tol, near_singular_tol, softIE_weight, num_levels, compression_distance, ACA_approximation_tol)
+        # pulse_mesh_IE = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
+        # test_sources_IE = solveWSModeSoftACA(max_l, mode_idxs, wavenumber, pulse_mesh_IE, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
         @test_skip isapprox(test_sources[1][1][1], -0.5313576866296218 - 0.21990746085878485im, rtol=1e-5)
         @test_skip isapprox(test_sources[1][1][468], -0.6792050632304026 - 0.28109552129052373im, rtol=0.8e-6)
     end # solveWSModeSoftCFIEACA tests
@@ -377,7 +397,7 @@ include("../../src/includes.jl")
         writeWSMatrix(sol)
         test_Q = readWSMatrix("Wigner_Smith_matrix.txt")
         @test isapprox(sol, test_Q, rtol=1e-14)
-
-        rm("Wigner_Smith_matrix.txt")
     end # writeWSMatrix tests
+    rm("Wigner_Smith_matrix.txt")
+    rm("Wigner_Smith_time_delays.txt")
 end
