@@ -320,9 +320,9 @@ include("../../src/includes.jl")
         ACA_approximation_tol = 1e-5
         mesh_filename = "examples/test/spheres/sphere_1m_1266.msh"#"examples/test/circular_plate_1m.msh"
         pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources = solveWSModeSoftCFIEACA(max_l, mode_idx, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol, softIE_weight, num_levels, compression_distance, ACA_approximation_tol)
+        test_sources = solveWSModeSoftCFIEACA(max_l, mode_idxs, wavenumber, pulse_mesh, distance_to_edge_tol, near_singular_tol, softIE_weight, num_levels, compression_distance, ACA_approximation_tol)
         pulse_mesh_IE = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-        test_sources_IE = solveWSModeSoftACA(max_l, mode_idx, wavenumber, pulse_mesh_IE, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
+        test_sources_IE = solveWSModeSoftACA(max_l, mode_idxs, wavenumber, pulse_mesh_IE, distance_to_edge_tol, near_singular_tol, num_levels, compression_distance, ACA_approximation_tol)
         @test_skip isapprox(test_sources[1][1][1], -0.5313576866296218 - 0.21990746085878485im, rtol=1e-5)
         @test_skip isapprox(test_sources[1][1][468], -0.6792050632304026 - 0.28109552129052373im, rtol=0.8e-6)
     end # solveWSModeSoftCFIEACA tests
