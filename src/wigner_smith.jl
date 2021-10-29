@@ -25,9 +25,9 @@ end # function calculateWSMatrix
             max_l,
             Q_filename = WS_params
     num_harmonics = max_l^2 + 2*max_l + 1
+    Z_matrix = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
     if Q_filename == ""
         println("Filling Z Matrix...")
-        Z_matrix = calculateZMatrix(pulse_mesh, wavenumber, distance_to_edge_tol, near_singular_tol)
         pulse_mesh.Z_factors = lu(Z_matrix)
         println("Calculating Scattering Matrix...")
         S, Js = calculateScatteringMatrix(max_l, wavenumber, pulse_mesh,
@@ -38,6 +38,7 @@ end # function calculateWSMatrix
                                                    near_singular_tol)
         println("Calculating Wigner-Smith Matrix...")
         Q = calculateWSMatrix(S, dSdk)
+        writeWSMatrix(Q)
     else
         println("Using Q matrix in: ", Q_filename)
         Q = readWSMatrix(Q_filename)
@@ -57,12 +58,12 @@ end # function calculateWSMatrix
             max_l,
             Q_filename = WS_params
     num_harmonics = max_l^2 + 2*max_l + 1
+    println("Filling Z and dZ/dk matrices...")
+    fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol,
+                                  near_singular_tol, compression_distance, ACA_approximation_tol)
+    fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
+                                     compression_distance, ACA_approximation_tol)
     if Q_filename == ""
-        println("Filling Z and dZ/dk matrices...")
-        fillOctreeZMatricesSoundSoft!(pulse_mesh, octree, wavenumber, distance_to_edge_tol,
-                                      near_singular_tol, compression_distance, ACA_approximation_tol)
-        fillOctreedZdkMatricesSoundSoft!(pulse_mesh, octree, wavenumber,
-                                         compression_distance, ACA_approximation_tol)
         # mkdir("scattering_matrix_GMRES_residuals")
         println("Calculating Scattering Matrix...")
         S, Js = calculateScatteringMatrixACA(max_l, wavenumber, pulse_mesh, octree,
@@ -72,6 +73,7 @@ end # function calculateWSMatrix
                                                       pulse_mesh, Js, octree)
         println("Calculating Wigner-Smith Matrix...")
         Q = calculateWSMatrix(S, dSdk)
+        writeWSMatrix(Q)
     else
         println("Using Q matrix in: ", Q_filename)
         Q = readWSMatrix(Q_filename)
