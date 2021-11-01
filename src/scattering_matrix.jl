@@ -31,6 +31,7 @@
     harmonic_idx = 1
     for l = 0:max_l
         for m=-l:l
+            println("  Harmonic Index = ", harmonic_idx)
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
             Js[:,harmonic_idx] = Z_factors \ Vs_trans[harmonic_idx,:]
             harmonic_idx += 1
@@ -65,12 +66,13 @@ end # function calculateScatteringMatrix
     harmonic_idx = 1
     for l = 0:max_l
         for m=-l:l
+            println("  Harmonic Index = ", harmonic_idx)
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
             fullMatvecWrapped(J) = fullMatvecACA(pulse_mesh, octree, J)
             fullMatvecLinearMap = LinearMap(fullMatvecWrapped, num_elements)
             sources = zeros(ComplexF64, num_elements)
             history = gmres!(sources, fullMatvecLinearMap, Vs_trans[harmonic_idx,:], log=true)[2]
-            println("GMRES ", string(history))
+            println("  GMRES ", string(history))
             Js[:,harmonic_idx] = sources
             harmonic_idx += 1
         end
@@ -93,6 +95,7 @@ end # function calculateScatteringMatrixACA
     harmonic_idx = 1
     for l = 0:max_l
         for m=-l:l
+            println("  Harmonic Index = ", harmonic_idx)
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
             dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
             harmonic_idx += 1
@@ -123,6 +126,7 @@ end # function calculateScatteringMatrixDerivative
     harmonic_idx = 1
     for l = 0:max_l
         for m=-l:l
+            println("  Harmonic Index = ", harmonic_idx)
             Vs_trans[harmonic_idx,:] = calculateVlm(pulse_mesh, wavenumber, l, m)
             dVsdk_trans[harmonic_idx, :] = calculateVlmKDeriv(pulse_mesh, wavenumber, l, m)
             dZdk_times_Js[:,harmonic_idx] = fullMatvecACA(pulse_mesh, octree, Js[:,harmonic_idx], true)
