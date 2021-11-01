@@ -126,9 +126,7 @@ if length(ARGS) == 1
         else
             if ACA_params.use_ACA == true
                 println("Running with ACA...")
-                run_time = @elapsed sources, octree, metrics = solveWSModeSoftACA(WS_params.max_l,
-                                                                              WS_params.mode_idxs,
-                                                                              WS_params.wavenumber,
+                run_time = @elapsed sources, octree, metrics = solveWSModeSoftACA(WS_params,
                                                                               pulse_mesh,
                                                                               distance_to_edge_tol,
                                                                               near_singular_tol,
@@ -142,8 +140,7 @@ if length(ARGS) == 1
                     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
                 end
             else
-                run_time = @elapsed sources = solveWSModeSoft(WS_params.max_l, WS_params.mode_idxs,
-                                      WS_params.wavenumber, pulse_mesh,
+                run_time = @elapsed sources = solveWSModeSoft(WS_params, pulse_mesh,
                                       distance_to_edge_tol, near_singular_tol)
                 for local_mode_idx = 1:length(WS_params.mode_idxs)
                     mode_idx = WS_params.mode_idxs[local_mode_idx]
@@ -159,9 +156,7 @@ if length(ARGS) == 1
         else
             if ACA_params.use_ACA == true
                 println("Running with ACA...")
-                run_time = @elapsed sources, octree, metrics = solveWSModeSoftCFIEACA(WS_params.max_l,
-                                                                              WS_params.mode_idxs,
-                                                                              WS_params.wavenumber,
+                run_time = @elapsed sources, octree, metrics = solveWSModeSoftCFIEACA(WS_params,
                                                                               pulse_mesh,
                                                                               distance_to_edge_tol,
                                                                               near_singular_tol,
@@ -176,14 +171,14 @@ if length(ARGS) == 1
                     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
                 end
             else
-                run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idxs,
-                                      WS_params.wavenumber, pulse_mesh,
-                                      distance_to_edge_tol, near_singular_tol)
-                for local_mode_idx = 1:length(WS_params.mode_idxs)
-                    mode_idx = WS_params.mode_idxs[local_mode_idx]
-                    mode_tag = string("_mode", mode_idx)
-                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
-                end
+                println("Not Implemented")# run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idxs,
+                #                       WS_params.wavenumber, pulse_mesh,
+                #                       distance_to_edge_tol, near_singular_tol)
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
             end
         end
     end

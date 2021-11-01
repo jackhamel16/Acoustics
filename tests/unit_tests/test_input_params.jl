@@ -48,9 +48,10 @@ include("../../src/code_structures/input_params.jl")
         @test test_excitation_params.m == test_m
     end # ExcitationParams tests
     @testset "WignerSmithParams tests" begin
-        test_WS_params = WignerSmithParams(max_l=5, mode_idxs=[2,3])
+        test_WS_params = WignerSmithParams(max_l=5, mode_idxs=[2,3], Q_filename="test")
         @test isapprox(test_WS_params.max_l, 5, rtol=1e-14)
         @test isapprox(test_WS_params.mode_idxs, [2,3], rtol=1e-14)
+        @test test_WS_params.Q_filename == "test"
     end # WignerSmithParams tests
     @testset "ACAParams tests" begin
         test_use_ACA = true
@@ -130,16 +131,27 @@ include("../../src/code_structures/input_params.jl")
         @test isapprox(test_WS_params.wavenumber, 0, rtol=1e-14)
         @test isapprox(test_WS_params.max_l, 0, rtol=1e-14)
         @test isapprox(test_WS_params.mode_idxs, [0], rtol=1e-14)
+        @test test_WS_params.Q_filename == ""
 
         inputs_filename = "examples/test/test_inputs3.txt"
         file = open(inputs_filename, "r")
         file_lines = split(read(file, String), "\r")
         test_WS_params = parseWignerSmithParams(file_lines)
-        # @test test_WS_params == WignerSmithParams(1, 2*pi, 5, [3])
         @test isapprox(test_WS_params.lambda, 1, rtol=1e-14)
         @test isapprox(test_WS_params.wavenumber, 2*pi, rtol=1e-14)
         @test isapprox(test_WS_params.max_l, 5, rtol=1e-14)
         @test isapprox(test_WS_params.mode_idxs, [3, 5], rtol=1e-14)
+        @test test_WS_params.Q_filename == ""
+
+        inputs_filename = "examples/test/test_inputs5.txt"
+        file = open(inputs_filename, "r")
+        file_lines = split(read(file, String), "\r")
+        test_WS_params = parseWignerSmithParams(file_lines)
+        @test isapprox(test_WS_params.lambda, 1.2, rtol=1e-14)
+        @test isapprox(test_WS_params.wavenumber, 2*pi / 1.2, rtol=1e-14)
+        @test isapprox(test_WS_params.max_l, 3, rtol=1e-14)
+        @test isapprox(test_WS_params.mode_idxs, [6], rtol=1e-14)
+        @test test_WS_params.Q_filename == "test_filename.txt"
     end #parseACAParams
     @testset "parseInputParams tests" begin
         inputs_filename = "examples/test/test_inputs1.txt"
