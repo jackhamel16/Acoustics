@@ -18,6 +18,8 @@ if length(ARGS) == 1
     inputs_filename = ARGS[1]
     no_tag = ""
 
+    println("Julia utilizing ", Threads.nthreads(), " threads")
+
     println("Parsing input parameters in: ", inputs_filename,"...")
     inputs = parseInputParams(inputs_filename)
     src_quadrature_rule = rule_lookup_dict[inputs.src_quadrature_string]
