@@ -4,6 +4,7 @@ using Parameters
 include("../../packages/gmsh.jl")
 
 @with_kw mutable struct PulseMesh
+    mesh_filename::String = ""
     num_elements::Int64 = 0
     nodes::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
     elements::Array{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
@@ -102,7 +103,8 @@ end
         normals[ele_idx,:] = normal_non_unit ./ area2
     end
 
-    PulseMesh(num_elements,
+    PulseMesh(mesh_filename,
+              num_elements,
               nodes,
               elements,
               areas,

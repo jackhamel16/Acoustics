@@ -144,7 +144,7 @@ include("../../src/fill.jl")
         num_elements = 2
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss1rule
-        pulse_mesh = PulseMesh(num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
+        pulse_mesh = PulseMesh("", num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
                   calculateQuadraturePoints(nodes_global, elements, src_quadrature_rule[1:3,:]), src_quadrature_rule[4,:],
                   calculateQuadraturePoints(nodes_global, elements, test_quadrature_rule[1:3,:]), test_quadrature_rule[4,:],
                   lu(ones(1,1)), [0])
@@ -195,7 +195,7 @@ include("../../src/fill.jl")
         num_elements = 3
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss7rule
-        pulse_mesh = PulseMesh(num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
+        pulse_mesh = PulseMesh("", num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
                   calculateQuadraturePoints(nodes_global, elements, src_quadrature_rule[1:3,:]), src_quadrature_rule[4,:],
                   calculateQuadraturePoints(nodes_global, elements, test_quadrature_rule[1:3,:]), test_quadrature_rule[4,:],
                   lu(ones(1,1)), [0])
@@ -267,7 +267,7 @@ include("../../src/fill.jl")
         num_elements = 2
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss1rule
-        pulse_mesh = PulseMesh(num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
+        pulse_mesh = PulseMesh("", num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
                   calculateQuadraturePoints(nodes_global, elements, src_quadrature_rule[1:3,:]), src_quadrature_rule[4,:],
                   calculateQuadraturePoints(nodes_global, elements, test_quadrature_rule[1:3,:]), test_quadrature_rule[4,:],
                   lu(ones(1,1)), [0])
@@ -307,7 +307,7 @@ include("../../src/fill.jl")
         num_elements = 3
         src_quadrature_rule = gauss7rule
         test_quadrature_rule = gauss7rule
-        pulse_mesh = PulseMesh(num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
+        pulse_mesh = PulseMesh("", num_elements, nodes_global, elements, areas, normals, src_quadrature_rule, test_quadrature_rule,
                   calculateQuadraturePoints(nodes_global, elements, src_quadrature_rule[1:3,:]), src_quadrature_rule[4,:],
                   calculateQuadraturePoints(nodes_global, elements, test_quadrature_rule[1:3,:]), test_quadrature_rule[4,:],
                   lu(ones(1,1)), [0])

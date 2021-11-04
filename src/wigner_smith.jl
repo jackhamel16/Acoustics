@@ -104,7 +104,7 @@ end # function calculateWSMatrix
                                                  wavenumber,
                                                  distance_to_edge_tol,
                                                  near_singular_tol)
-        exportSourcesBundled(mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
+        exportSourcesBundled(pulse_mesh.mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
     end
     return(sources_WS)
 end # function solveWSModeSoft
@@ -136,7 +136,7 @@ end # function solveWSModeSoft
         sources_WS[local_mode_idx] = solveSoftIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
                                          wavenumber, distance_to_edge_tol, near_singular_tol,
                                          compression_distance, ACA_approximation_tol)
-        exportSourcesBundled(mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
+        exportSourcesBundled(pulse_mesh.mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
     end
     metrics = computeACAMetrics(pulse_mesh.num_elements, octree)
     return(sources_WS, octree, metrics)
@@ -172,7 +172,7 @@ end # function solveWSModeSoftACA
                                       excitationNormalDerivWSMode,
                                          wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol,
                                          compression_distance, ACA_approximation_tol)
-        exportSourcesBundled(mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
+        exportSourcesBundled(pulse_mesh.mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
     end
     metrics = computeACAMetrics(pulse_mesh.num_elements, octree)
     return(sources_WS, octree, metrics)
