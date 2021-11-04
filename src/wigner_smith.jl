@@ -104,6 +104,7 @@ end # function calculateWSMatrix
                                                  wavenumber,
                                                  distance_to_edge_tol,
                                                  near_singular_tol)
+        exportSourcesBundled(pulse_mesh.mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
     end
     return(sources_WS)
 end # function solveWSModeSoft
@@ -135,6 +136,7 @@ end # function solveWSModeSoft
         sources_WS[local_mode_idx] = solveSoftIEACA(pulse_mesh, octree, num_levels, excitationWSMode,
                                          wavenumber, distance_to_edge_tol, near_singular_tol,
                                          compression_distance, ACA_approximation_tol)
+        exportSourcesBundled(pulse_mesh.mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
     end
     metrics = computeACAMetrics(pulse_mesh.num_elements, octree)
     return(sources_WS, octree, metrics)
@@ -170,6 +172,7 @@ end # function solveWSModeSoftACA
                                       excitationNormalDerivWSMode,
                                          wavenumber, softIE_weight, distance_to_edge_tol, near_singular_tol,
                                          compression_distance, ACA_approximation_tol)
+        exportSourcesBundled(pulse_mesh.mesh_filename, string("_mode", mode_idx), sources_WS[local_mode_idx])
     end
     metrics = computeACAMetrics(pulse_mesh.num_elements, octree)
     return(sources_WS, octree, metrics)
@@ -178,30 +181,32 @@ end # function solveWSModeSoftCFIEACA
 function sphericalWaveWSMode(x, y, z, max_l::Int64, wavenumber, mode_vector::AbstractArray{T,1}) where T
     # Sums spherical incident waves weighted by eigenvector elements of the desired WS mode
     excitation_amplitude = 2 * real(wavenumber)
-    total_wave = 0
-    harmonic_idx = 1
+    # total_wave = 0
+    wave_contribs = Array{ComplexF64, 1}(undef, length(mode_vector))
+    # harmonic_idx = 1
     for l = 0:max_l
-        for m=-l:l
-            total_wave += mode_vector[harmonic_idx] * sphericalWave(excitation_amplitude, real(wavenumber), [x,y,z], l, m)
-            harmonic_idx += 1
+        Threads.@threads for m=-l:l
+            harmonic_idx = sum(2 .* [0:1:l-1;] .+ 1) + m + l + 1
+            # total_wave += mode_vector[harmonic_idx] * sphericalWave(excitation_amplitude, real(wavenumber), [x,y,z], l, m)
+            wave_contribs[harmonic_idx] = mode_vector[harmonic_idx] * sphericalWave(excitation_amplitude, real(wavenumber), [x,y,z], l, m)
+            # harmonic_idx += 1
         end
     end
-    total_wave
+    return(sum(wave_contribs))
 end # function sphericalWaveWSMode
 
 function sphericalWaveNormalDerivWSMode(x, y, z, max_l::Int64, wavenumber, normal::Array{Float64,1}, mode_vector::AbstractArray{T,1}) where T
     # sums normal derivatives of spherical incident waves weighted by eigenvector
     #   elements of the desired WS mode
     excitation_amplitude = 2 * real(wavenumber)
-    total_wave = 0
-    harmonic_idx = 1
+    wave_contribs = Array{ComplexF64, 1}(undef, length(mode_vector))
     for l = 0:max_l
-        for m=-l:l
-            total_wave += mode_vector[harmonic_idx] * sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x,y,z], l, m, normal)
-            harmonic_idx += 1
+        Threads.@threads for m=-l:l
+            harmonic_idx = sum(2 .* [0:1:l-1;] .+ 1) + m + l + 1
+            wave_contribs[harmonic_idx] = mode_vector[harmonic_idx] * sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x,y,z], l, m, normal)
         end
     end
-    total_wave
+    return(sum(wave_contribs))
 end # function sphericalWaveWSMode
 
 function writeWSTimeDelays(time_delays::AbstractArray{T, 1}) where T

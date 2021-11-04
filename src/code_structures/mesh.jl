@@ -4,6 +4,7 @@ using Parameters
 include("../../packages/gmsh.jl")
 
 @with_kw mutable struct PulseMesh
+    mesh_filename::String = ""
     num_elements::Int64 = 0
     nodes::Array{Float64, 2} = Array{Float64, 2}(undef, 0, 0)
     elements::Array{Int64, 2} = Array{Int64, 2}(undef, 0, 0)
@@ -102,7 +103,8 @@ end
         normals[ele_idx,:] = normal_non_unit ./ area2
     end
 
-    PulseMesh(num_elements,
+    PulseMesh(mesh_filename,
+              num_elements,
               nodes,
               elements,
               areas,
@@ -128,6 +130,13 @@ end
 
 @views function calculateTriangleArea(nodes::AbstractArray{Float64, 2})
     0.5*norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[1,:]))
+end
+
+function exportSourcesBundled(mesh_filename::String, tag::String, sources::AbstractArray{T, 1}) where T <: Number
+    # bundled exportSourcesGmsh calls to clean up below
+    exportSourcesGmsh(mesh_filename, string("sources_real",tag), real.(sources))
+    exportSourcesGmsh(mesh_filename, string("sources_imag",tag), imag.(sources))
+    exportSourcesGmsh(mesh_filename, string("sources_mag",tag), abs.(sources))
 end
 
 function exportSourcesGmsh(mesh_filename::String,
