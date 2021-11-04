@@ -7,13 +7,6 @@ include("src/includes.jl")
 # errors in the formatting of the input files, they will likely just cause errors in
 # the code at runtime
 
-function exportSourcesBundled(mesh_filename::String, tag::String, sources::AbstractArray{T, 1}) where T <: Number
-    # bundled exportSourcesGmsh calls to clean up below
-    exportSourcesGmsh(mesh_filename, string("sources_real",tag), real.(sources))
-    exportSourcesGmsh(mesh_filename, string("sources_imag",tag), imag.(sources))
-    exportSourcesGmsh(mesh_filename, string("sources_mag",tag), abs.(sources))
-end
-
 if length(ARGS) == 1
     inputs_filename = ARGS[1]
     no_tag = ""
@@ -136,19 +129,19 @@ if length(ARGS) == 1
                                                                               ACA_params.compression_distance,
                                                                               ACA_params.approximation_tol)
                 printACAMetrics(metrics)
-                for local_mode_idx = 1:length(WS_params.mode_idxs)
-                    mode_idx = WS_params.mode_idxs[local_mode_idx]
-                    mode_tag = string("_mode", mode_idx)
-                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
-                end
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
             else
                 run_time = @elapsed sources = solveWSModeSoft(WS_params, pulse_mesh,
                                       distance_to_edge_tol, near_singular_tol)
-                for local_mode_idx = 1:length(WS_params.mode_idxs)
-                    mode_idx = WS_params.mode_idxs[local_mode_idx]
-                    mode_tag = string("_mode", mode_idx)
-                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
-                end
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
             end
         end
     elseif equation == "WS mode CFIE"
@@ -167,11 +160,11 @@ if length(ARGS) == 1
                                                                               ACA_params.compression_distance,
                                                                               ACA_params.approximation_tol)
                 printACAMetrics(metrics)
-                for local_mode_idx = 1:length(WS_params.mode_idxs)
-                    mode_idx = WS_params.mode_idxs[local_mode_idx]
-                    mode_tag = string("_mode", mode_idx)
-                    exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
-                end
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
             else
                 println("Not Implemented")# run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idxs,
                 #                       WS_params.wavenumber, pulse_mesh,

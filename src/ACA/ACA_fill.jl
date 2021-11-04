@@ -152,9 +152,10 @@ end # function computedZdkEntrySoundSoft
     leaf_edge_length = octree.nodes[octree.leaf_node_idxs[1]].bounds[1][2] -
                        octree.nodes[octree.leaf_node_idxs[1]].bounds[1][1]
     min_separation = compression_distance * leaf_edge_length
-    for local_test_node_idx = 1:num_leaves
+    Threads.@threads for local_test_node_idx = 1:num_leaves
         global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
         test_node = octree.nodes[global_test_node_idx]
+        test_node.node2node_dZdk_matrices = Array{Any, 1}(undef, num_leaves)
         for local_src_node_idx = 1:num_leaves
             global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
             src_node = octree.nodes[global_src_node_idx]
@@ -164,13 +165,14 @@ end # function computedZdkEntrySoundSoft
                 computeMatrixEntry(test_idx, src_idx) = computedZdkEntrySoundSoft(pulse_mesh,
                                                             test_node, src_node, wavenumber,
                                                             test_idx, src_idx)
-                compressed_sub_Z = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
+                compressed_sub_dZdk = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
                                                     ACA_approximation_tol, num_rows, num_cols)
-                append!(test_node.node2node_dZdk_matrices, [compressed_sub_Z])
+                # append!(test_node.node2node_dZdk_matrices, [compressed_sub_Z])
+                test_node.node2node_dZdk_matrices[local_src_node_idx] = compressed_sub_dZdk
             else # use direct Z calculation
-                sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
-                nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftDerivTestIntegrand, sub_Z_matrix)
-                append!(test_node.node2node_dZdk_matrices, [sub_Z_matrix])
+                sub_dZdk_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
+                nodeMatrixFill!(pulse_mesh, test_node, src_node, soundSoftDerivTestIntegrand, sub_dZdk_matrix)
+                test_node.node2node_dZdk_matrices[local_src_node_idx] = sub_dZdk_matrix
             end # if-else
         end
     end
@@ -193,9 +195,10 @@ function fillOctreeZMatricesGeneral!(pulse_mesh::PulseMesh,
     leaf_edge_length = octree.nodes[octree.leaf_node_idxs[1]].bounds[1][2] -
                        octree.nodes[octree.leaf_node_idxs[1]].bounds[1][1]
     min_separation = compression_distance * leaf_edge_length
-    for local_test_node_idx = 1:num_leaves
+    Threads.@threads for local_test_node_idx = 1:num_leaves
         global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
         test_node = octree.nodes[global_test_node_idx]
+        test_node.node2node_Z_matrices = Array{Any, 1}(undef, num_leaves)
         for local_src_node_idx = 1:num_leaves
             global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
             src_node = octree.nodes[global_src_node_idx]
@@ -206,7 +209,7 @@ function fillOctreeZMatricesGeneral!(pulse_mesh::PulseMesh,
                                                                       test_idx, src_idx)
                 compressed_sub_Z = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
                                                     ACA_approximation_tol, num_rows, num_cols)
-                append!(test_node.node2node_Z_matrices, [compressed_sub_Z])
+                test_node.node2node_Z_matrices[local_src_node_idx] = compressed_sub_Z
             else # use direct Z calculation
                 # sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
                 sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
@@ -215,7 +218,7 @@ function fillOctreeZMatricesGeneral!(pulse_mesh::PulseMesh,
                 else
                     nodeMatrixNormalDerivFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z_matrix)
                 end
-                append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
+                test_node.node2node_Z_matrices[local_src_node_idx] = sub_Z_matrix
             end # if-else
         end
     end
@@ -278,6 +281,40 @@ end
                                 soundSoftCFIETestIntegrand, compression_distance,
                                 ACA_approximation_tol, use_normal)
 end
+
+@views function initializeOctreeZArray()
+    z_entry_datatype = ComplexF64
+    num_leaves = length(octree.leaf_node_idxs)
+    leaf_edge_length = octree.nodes[octree.leaf_node_idxs[1]].bounds[1][2] -
+                       octree.nodes[octree.leaf_node_idxs[1]].bounds[1][1]
+    min_separation = compression_distance * leaf_edge_length
+    for local_test_node_idx = 1:num_leaves
+        global_test_node_idx = octree.leaf_node_idxs[local_test_node_idx]
+        test_node = octree.nodes[global_test_node_idx]
+        for local_src_node_idx = 1:num_leaves
+            global_src_node_idx = octree.leaf_node_idxs[local_src_node_idx]
+            src_node = octree.nodes[global_src_node_idx]
+            if norm(src_node.centroid-test_node.centroid) > min_separation # use ACA
+                num_rows = length(test_node.element_idxs)
+                num_cols = length(src_node.element_idxs)
+                computeMatrixEntry(test_idx, src_idx) = computeZEntry(test_node, src_node,
+                                                                      test_idx, src_idx)
+                compressed_sub_Z = computeMatrixACA(Val(z_entry_datatype), computeMatrixEntry,
+                                                    ACA_approximation_tol, num_rows, num_cols)
+                append!(test_node.node2node_Z_matrices, [compressed_sub_Z])
+            else # use direct Z calculation
+                # sub_Z_matrix = zeros(ComplexF64, length(test_node.element_idxs), length(src_node.element_idxs))
+                sub_Z_matrix = Array{ComplexF64,2}(undef, length(test_node.element_idxs), length(src_node.element_idxs))
+                if use_normal == false
+                    nodeMatrixFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z_matrix)
+                else
+                    nodeMatrixNormalDerivFill!(pulse_mesh, test_node, src_node, testIntegrand, sub_Z_matrix)
+                end
+                append!(test_node.node2node_Z_matrices, [sub_Z_matrix])
+            end # if-else
+        end
+    end
+end # intializeOctreeZArray
 
 @views function nodeMatrixFill!(pulse_mesh::PulseMesh,
                         test_node::Node,

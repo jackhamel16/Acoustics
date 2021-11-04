@@ -130,6 +130,13 @@ end
     0.5*norm(cross(nodes[2,:]-nodes[1,:], nodes[3,:]-nodes[1,:]))
 end
 
+function exportSourcesBundled(mesh_filename::String, tag::String, sources::AbstractArray{T, 1}) where T <: Number
+    # bundled exportSourcesGmsh calls to clean up below
+    exportSourcesGmsh(mesh_filename, string("sources_real",tag), real.(sources))
+    exportSourcesGmsh(mesh_filename, string("sources_imag",tag), imag.(sources))
+    exportSourcesGmsh(mesh_filename, string("sources_mag",tag), abs.(sources))
+end
+
 function exportSourcesGmsh(mesh_filename::String,
                            output_filename::String,
                            sources::AbstractArray{Float64, 1})

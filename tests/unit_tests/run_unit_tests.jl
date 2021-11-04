@@ -1,3 +1,5 @@
+println("Julia utilizing ", Threads.nthreads(), " threads")
+
 include("test_ACA.jl")
 include("test_ACA_fill.jl")
 include("test_excitation.jl")
