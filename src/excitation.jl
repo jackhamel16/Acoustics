@@ -45,7 +45,6 @@ end
     transform_matrix[:,1] = position ./ r
     transform_matrix[:,2] = [x*z, y*z, -x^2-y^2] ./ (r*r_0z)
     transform_matrix[:,3] = [-y, x, 0] ./ r_0z
-    gradient_spherical_wave_cartesian = transform_matrix * gradient_spherical_wave
     return(amplitude * dot(normal, transform_matrix * gradient_spherical_wave))
 end
 
