@@ -18,7 +18,7 @@ function rhsFill!(pulse_mesh::PulseMesh,
             normals,
             test_quadrature_points,
             test_quadrature_weights = pulse_mesh
-    for element_idx in 1:num_elements
+    Threads.@threads for element_idx in 1:num_elements
         triangle_nodes = getTriangleNodes(element_idx, elements, nodes)
         triangle_area = areas[element_idx]
         rhs[element_idx] += -1 * gaussQuadrature(triangle_area,
