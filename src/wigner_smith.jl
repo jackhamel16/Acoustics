@@ -200,11 +200,24 @@ function sphericalWaveNormalDerivWSMode(x, y, z, max_l::Int64, wavenumber, norma
     # sums normal derivatives of spherical incident waves weighted by eigenvector
     #   elements of the desired WS mode
     excitation_amplitude = 2 * real(wavenumber)
+    r = sqrt(x^2 + y^2 + z^2)
+    theta, phi = acos(z / r), atan(y, x)
+    Ylm, dYlm_dtheta, dYlm_dphi, l_ind, m_ind = sphericalHarmonics(theta, phi, max_l)
+    r_0z = sqrt(x^2+y^2)
+    transform_matrix = zeros(3, 3) # spherical vector -> cartesian vector
+    transform_matrix[:,1] = [x, y, z] ./ r
+    transform_matrix[:,2] = [x*z, y*z, -x^2-y^2] ./ (r*r_0z)
+    transform_matrix[:,3] = [-y, x, 0] ./ r_0z
     total_wave = 0
     harmonic_idx = 1
     for l = 0:max_l
+        jlkr_over_r = sphericalBesselj(l,wavenumber*r)/r
         for m=-l:l
-            total_wave += mode_vector[harmonic_idx] * sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x,y,z], l, m, normal)
+            lm_idx = l + m + l^2 + 1
+            gradient_spherical_wave = [Ylm[lm_idx] * (l*jlkr_over_r - wavenumber * sphericalBesselj(l+1,wavenumber*r)),
+                                       jlkr_over_r * dYlm_dtheta[lm_idx],
+                                       jlkr_over_r * csc(theta) * dYlm_dphi[lm_idx]]
+            total_wave += mode_vector[harmonic_idx] * excitation_amplitude * dot(normal, transform_matrix * gradient_spherical_wave)
             harmonic_idx += 1
         end
     end
