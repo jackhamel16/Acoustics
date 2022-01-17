@@ -7,15 +7,11 @@ include("src/includes.jl")
 # errors in the formatting of the input files, they will likely just cause errors in
 # the code at runtime
 
-function exportSourcesBundled(mesh_filename::String, sources::AbstractArray{T, 1}) where T <: Number
-    # bundled exportSourcesGmsh calls to clean up below
-    exportSourcesGmsh(mesh_filename, "sources_real", real.(sources))
-    exportSourcesGmsh(mesh_filename, "sources_imag", imag.(sources))
-    exportSourcesGmsh(mesh_filename, "sources_mag", abs.(sources))
-end
-
 if length(ARGS) == 1
     inputs_filename = ARGS[1]
+    no_tag = ""
+
+    println("Julia utilizing ", Threads.nthreads(), " threads")
 
     println("Parsing input parameters in: ", inputs_filename,"...")
     inputs = parseInputParams(inputs_filename)
@@ -31,7 +27,7 @@ if length(ARGS) == 1
 
     println("Parsing mesh in: ", mesh_filename, "...")
     pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
-
+    println("Number of elements = ",pulse_mesh.num_elements)
     # Excitation building, skipped if running WS mode
     if excitation_params.type == "planewave"
         println("Excitation: Plavewave")
@@ -58,12 +54,13 @@ if length(ARGS) == 1
                                                                                                normal)
     end
 
+    run_time = 0.0
     # Determine which solver to run
     if equation == "sound soft IE"
         println("Equation: Sound Soft IE")
         if ACA_params.use_ACA == true
             println("Running with ACA...")
-            sources, octree, metrics = solveSoundSoftIEACA(pulse_mesh,
+            run_time = @elapsed sources, octree, metrics = solveSoftIEACA(pulse_mesh,
                                                            ACA_params.num_levels,
                                                            excitationFunc,
                                                            excitation_params.wavenumber,
@@ -73,31 +70,41 @@ if length(ARGS) == 1
                                                            ACA_params.approximation_tol)
             printACAMetrics(metrics)
         else
-            sources = solveSoftIE(pulse_mesh,
+            run_time = @elapsed sources = solveSoftIE(pulse_mesh,
                                   excitationFunc,
                                   excitation_params.wavenumber,
                                   distance_to_edge_tol,
                                   near_singular_tol)
         end
-        exportSourcesBundled(mesh_filename, sources)
+        exportSourcesBundled(mesh_filename, no_tag, sources)
 
     elseif equation == "sound soft normal derivative IE"
         println("Equation: Sound Soft Normal Derivative IE")
         if ACA_params.use_ACA == true
             println("ACA not implemented for this equation yet")
         else
-            sources = solveSoftIENormalDeriv(pulse_mesh,
+            run_time = @elapsed sources = solveSoftIENormalDeriv(pulse_mesh,
                                              excitationFuncNormalDeriv,
                                              excitation_params.wavenumber)
         end
-        exportSourcesBundled(mesh_filename, sources)
+        exportSourcesBundled(mesh_filename, no_tag, sources)
 
     elseif equation == "sound soft CFIE"
         println("Equation: Sound Soft CFIE")
         if ACA_params.use_ACA == true
-            println("ACA not implemented for this equation yet")
+            run_time = @elapsed sources, octree, metrics = solveSoftCFIEACA(pulse_mesh,
+                                                  ACA_params.num_levels,
+                                                  excitationFunc,
+                                                  excitationFuncNormalDeriv,
+                                                  excitation_params.wavenumber,
+                                                  inputs.CFIE_weight,
+                                                  distance_to_edge_tol,
+                                                  near_singular_tol,
+                                                  ACA_params.compression_distance,
+                                                  ACA_params.approximation_tol)
+        printACAMetrics(metrics)
         else
-            sources = solveSoftCFIE(pulse_mesh,
+            run_time = @elapsed sources = solveSoftCFIE(pulse_mesh,
                                     excitationFunc,
                                     excitationFuncNormalDeriv,
                                     excitation_params.wavenumber,
@@ -105,19 +112,72 @@ if length(ARGS) == 1
                                     near_singular_tol,
                                     inputs.CFIE_weight)
         end
-        exportSourcesBundled(mesh_filename, sources)
+        exportSourcesBundled(mesh_filename, no_tag, sources)
 
     elseif equation == "WS mode"
         println("Equation: WS Mode") # this mode only runs sound soft IE right now
         if inputs.src_quadrature_string != inputs.test_quadrature_string
+            println("When running at WS modes, test and src quadrature rules must be identical. Change settings and rerun.")
+        else
+            if ACA_params.use_ACA == true
+                println("Running with ACA...")
+                run_time = @elapsed sources, octree, metrics = solveWSModeSoftACA(WS_params,
+                                                                              pulse_mesh,
+                                                                              distance_to_edge_tol,
+                                                                              near_singular_tol,
+                                                                              ACA_params.num_levels,
+                                                                              ACA_params.compression_distance,
+                                                                              ACA_params.approximation_tol)
+                printACAMetrics(metrics)
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
+            else
+                run_time = @elapsed sources = solveWSModeSoft(WS_params, pulse_mesh,
+                                      distance_to_edge_tol, near_singular_tol)
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
+            end
+        end
+    elseif equation == "WS mode CFIE"
+        println("Equation: WS Mode CFIE") # this mode only runs sound soft IE right now
+        if inputs.src_quadrature_string != inputs.test_quadrature_string
             println("When running at a WS mode, test and src quadrature rules must be identical. Change settings and rerun.")
         else
-            sources = solveWSMode(WS_params.max_l, WS_params.mode_idx,
-                                  WS_params.wavenumber, pulse_mesh,
-                                  distance_to_edge_tol, near_singular_tol)
-            exportSourcesBundled(mesh_filename, sources)
+            if ACA_params.use_ACA == true
+                println("Running with ACA...")
+                run_time = @elapsed sources, octree, metrics = solveWSModeSoftCFIEACA(WS_params,
+                                                                              pulse_mesh,
+                                                                              distance_to_edge_tol,
+                                                                              near_singular_tol,
+                                                                              inputs.CFIE_weight,
+                                                                              ACA_params.num_levels,
+                                                                              ACA_params.compression_distance,
+                                                                              ACA_params.approximation_tol)
+                printACAMetrics(metrics)
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
+            else
+                println("Not Implemented")# run_time = @elapsed sources = solveWSMode(WS_params.max_l, WS_params.mode_idxs,
+                #                       WS_params.wavenumber, pulse_mesh,
+                #                       distance_to_edge_tol, near_singular_tol)
+                # for local_mode_idx = 1:length(WS_params.mode_idxs)
+                #     mode_idx = WS_params.mode_idxs[local_mode_idx]
+                #     mode_tag = string("_mode", mode_idx)
+                #     exportSourcesBundled(mesh_filename, mode_tag, sources[local_mode_idx])
+                # end
+            end
         end
     end
+    println("Total Runtime = ", run_time, " seconds")
 
 elseif length(ARGS) > 1
     println("Please provide only one input filename as argument")

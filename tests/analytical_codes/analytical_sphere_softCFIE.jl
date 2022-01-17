@@ -17,14 +17,14 @@ softIE_weight = 0.5
 radius = 1.0
 l, m = 0, 0
 
-num_elements = [1266, 3788, 8010, 19034]
+num_elements = [1266, 3788, 8010]#, 19034]
 l2errors = Array{Float64, 1}(undef, 0)
 
 sphericalWaveExcitation(x_test, y_test, z_test) = sphericalWave(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m)
 sphericalWaveExcitationNormalDeriv(x_test, y_test, z_test, normal) = sphericalWaveNormalDerivative(excitation_amplitude, real(wavenumber), [x_test,y_test,z_test], l, m, normal)
 for run_idx in 1:length(num_elements)
     println("Running ", num_elements[run_idx], " Unknowns")
-    mesh_filename = string("examples/test/sphere_1m_",num_elements[run_idx],".msh")
+    mesh_filename = string("examples/test/spheres/sphere_1m_",num_elements[run_idx],".msh")
     pulse_mesh = buildPulseMesh(mesh_filename, src_quadrature_rule, test_quadrature_rule)
 
     @time sources = solveSoftCFIE(pulse_mesh,
@@ -42,7 +42,7 @@ for run_idx in 1:length(num_elements)
     exportSourcesGmsh(mesh_filename, imag_filename, imag.(sources))
     exportSourcesGmsh(mesh_filename, mag_filename, abs.(sources))
 
-    sources_analytical = computeAnalyticalSolution(wavenumber, radius, mesh_filename)
+    sources_analytical = computeAnalyticalSolution(wavenumber, l, m, radius, mesh_filename)
 
     append!(l2errors, sqrt(sum(abs.(sources_analytical .- sources).^2)/sum(abs.(sources_analytical).^2)))
 end
@@ -64,7 +64,7 @@ savefig("sphere_convergence_results_softCFIE")
 println("Convergence rate = ", slope)
 
 #Check if convergence rate is correct
-convergence_rates = [-2.4131803618461456, -2.7143150389000463, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
+convergence_rates = [-1.089681879696656, -1.0784468082803642, -2.818042477302922] # using 2, 3, or 4 meshes, 7pnt src 1 pnt test
 expected_convergence_rate = convergence_rates[size(num_elements)[1]-1]
 convergence_error = abs((expected_convergence_rate - slope)/expected_convergence_rate)
 tolerance = 1e-6

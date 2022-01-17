@@ -1,0 +1,17 @@
+mesh filename: examples/simple/cylinders/cylinder_r1_h5_15275.msh
+equation: sound soft IE
+source quadrature rule: gauss7
+test quadrature rule: gauss1
+distance to edge tolerance: 1e-12
+near singular tolerance: 1.0
+excitation:
+  type: planewave
+  lambda: 0.6
+  amplitude: 1.0
+  wavevector: 1 0 1
+ACA:
+  use ACA: yes
+  number of levels: 5
+  compression distance: 1.5
+  approximation tolerance: 1e-5
+  

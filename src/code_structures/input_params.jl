@@ -23,7 +23,8 @@ end
     lambda::Float64 = 0.0
     wavenumber::Number = 0.0
     max_l::Int64 = 0
-    mode_idx::Int64 = 0
+    mode_idxs::AbstractArray{Int64, 1} = [0]
+    Q_filename::String = ""
 end
 
 @with_kw struct InputParams
@@ -105,11 +106,13 @@ function parseWignerSmithParams(input_file_lines::AbstractArray{T,1}) where T <:
         WS_idx = WS_idxs[1]
         lambda = parse(Float64, getAttribute(input_file_lines[WS_idx+1]))
         max_l = parse(Int64, getAttribute(input_file_lines[WS_idx+2]))
-        mode_idx = parse(Int64, getAttribute(input_file_lines[WS_idx+3]))
+        mode_idxs = parse.(Int64, strip.(split(getAttribute(input_file_lines[WS_idx+3]), ',')))
+        Q_filename = getAttribute(input_file_lines[WS_idx+4])
         return(WignerSmithParams(lambda=lambda,
                                  wavenumber = 2 * pi / lambda,
                                  max_l=max_l,
-                                 mode_idx=mode_idx))
+                                 mode_idxs=mode_idxs,
+                                 Q_filename=Q_filename))
     end
 end #parseWignerSmithParams
 
@@ -121,7 +124,7 @@ function parseInputParams(inputs_filename::String)
     line_idx = 1
     mesh_filename = getAttribute(file_lines[line_idx])
     equation = getAttribute(file_lines[line_idx+1])
-    if equation == "sound soft CFIE"
+    if (equation == "sound soft CFIE" || equation == "WS mode CFIE")
         CFIE_weight = parse(Float64, getAttribute(file_lines[line_idx+2]))
         line_idx += 1
     else

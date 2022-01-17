@@ -7,5 +7,6 @@ near singular tolerance: 1.0
 Wigner Smith:
   lambda: 1.0
   max degree: 5
-  WS mode: 3
+  WS mode: 3, 5
+  Q matrix file: 
 

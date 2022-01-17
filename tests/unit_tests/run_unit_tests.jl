@@ -1,9 +1,12 @@
+println("Julia utilizing ", Threads.nthreads(), " threads")
+
 include("test_ACA.jl")
+include("test_ACA_fill.jl")
 include("test_excitation.jl")
 include("test_fast_solve.jl")
 include("test_fill.jl")
 include("test_greens_functions.jl")
-include("input_params_tests.jl")
+include("test_input_params.jl")
 include("test_math.jl")
 include("test_mesh.jl")
 include("test_octree.jl")

@@ -1,0 +1,24 @@
+Parsing input parameters in: examples/simple/slotted_cylinder/slotted_cylinder_ACA.txt...
+Parsing mesh in: examples/simple/slotted_cylinder/big_slotted_cylinder_r1_h2_12268.msh...
+Number of elements = 11878
+Excitation: Plavewave
+Equation: Sound Soft IE
+Running with ACA...
+Filling ACA Matrix...
+Filling RHS...
+Solving with ACA...
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 16.33837689133425
+      Min = 1
+      Max = 33   
+  Matrix Metrics:     
+    Matrix Rank:     
+       Mean = 7.239849060951722 
+       Min = 1 
+       Max = 20  
+  Compression Metrics:
+    Percentage of Matrices Compressed = 98.52628711007343
+    Compression Ratio = 0.9605285421145172        
+Total Runtime = 8538.6847648 seconds           

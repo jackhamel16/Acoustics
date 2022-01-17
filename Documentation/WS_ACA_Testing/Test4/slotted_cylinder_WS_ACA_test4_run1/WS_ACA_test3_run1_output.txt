@@ -1,0 +1,79 @@
+Parsing input parameters in: Documentation/WS_ACA_testing/Test3/slotted_cylinder_WS_ACA_test3_run1.txt...
+Parsing mesh in: Documentation/WS_ACA_Testing/Test1/big_slotted_cylinder_r1_h2_3436.msh...
+Number of elements = 3224
+Equation: WS Mode
+Running with ACA...
+Filling Z and dZ/dk matrices...
+Calculating Scattering Matrix...
+GMRES Converged after 1204 iterations.
+GMRES Converged after 1516 iterations.
+GMRES Converged after 1219 iterations.
+GMRES Converged after 1319 iterations.
+GMRES Converged after 1402 iterations.
+GMRES Converged after 1373 iterations.
+GMRES Converged after 1170 iterations.
+GMRES Converged after 1520 iterations.
+GMRES Converged after 1120 iterations.
+GMRES Converged after 1756 iterations.
+GMRES Converged after 1132 iterations.
+GMRES Converged after 1386 iterations.
+GMRES Converged after 1080 iterations.
+GMRES Converged after 1416 iterations.
+GMRES Converged after 1312 iterations.
+GMRES Converged after 1580 iterations.
+GMRES Converged after 1626 iterations.
+GMRES Converged after 1225 iterations.
+GMRES Converged after 1082 iterations.
+GMRES Converged after 1379 iterations.
+GMRES Converged after 1501 iterations.
+GMRES Converged after 1535 iterations.
+GMRES Converged after 1682 iterations.
+GMRES Converged after 1403 iterations.
+GMRES Converged after 1136 iterations.
+Calculating Scattering Matrix Derivative...
+GMRES Converged after 1204 iterations.
+GMRES Converged after 1516 iterations.
+GMRES Converged after 1219 iterations.
+GMRES Converged after 1319 iterations.
+GMRES Converged after 1402 iterations.
+GMRES Converged after 1373 iterations.
+GMRES Converged after 1170 iterations.
+GMRES Converged after 1520 iterations.
+GMRES Converged after 1120 iterations.
+GMRES Converged after 1756 iterations.
+GMRES Converged after 1132 iterations.
+GMRES Converged after 1386 iterations.
+GMRES Converged after 1080 iterations.
+GMRES Converged after 1416 iterations.
+GMRES Converged after 1312 iterations.
+GMRES Converged after 1580 iterations.
+GMRES Converged after 1626 iterations.
+GMRES Converged after 1225 iterations.
+GMRES Converged after 1082 iterations.
+GMRES Converged after 1379 iterations.
+GMRES Converged after 1501 iterations.
+GMRES Converged after 1535 iterations.
+GMRES Converged after 1682 iterations.
+GMRES Converged after 1403 iterations.
+GMRES Converged after 1136 iterations.
+Calculating Wigner-Smith Matrix...
+Wigner-Smith Time Delay = -0.8162965432475489 - 0.02211335794670929im
+Solving at WS Mode 25...
+Filling RHS...
+Solving with ACA...
+GMRES Converged after 1084 iterations.
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 60.83018867924528
+      Min = 1
+      Max = 113
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 11.506352087114337
+      Min = 1
+      Max = 29
+  Compression Metrics:
+    Percentage of Matrices Compressed = 78.4620861516554
+    Compression Ratio = 0.5690484748382171
+Total Runtime = 1697.844287501 seconds

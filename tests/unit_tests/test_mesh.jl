@@ -55,7 +55,8 @@ include("../../src/quadrature.jl")
     end
     @testset "buildPulseMesh tests" begin
         default = PulseMesh()
-        @unpack num_elements,
+        @unpack mesh_filename,
+                num_elements,
                 nodes,
                 elements,
                 areas,
@@ -65,7 +66,10 @@ include("../../src/quadrature.jl")
                 src_quadrature_points,
                 src_quadrature_weights,
                 test_quadrature_points,
-                test_quadrature_weights = default
+                test_quadrature_weights,
+                Z_factors,
+                RHS = default
+        @test mesh_filename == ""
         @test num_elements == 0
         @test typeof(num_elements) == Int64
         @test nodes == Array{Float64, 2}(undef, 0, 0)
@@ -78,6 +82,8 @@ include("../../src/quadrature.jl")
         @test src_quadrature_weights == Array{Float64, 1}(undef, 0)
         @test test_quadrature_points == Array{Array{Float64, 2}}(undef, 0)
         @test test_quadrature_weights == Array{Float64, 1}(undef, 0)
+        @test Z_factors == lu(ones(1,1))
+        @test RHS == Array{ComplexF64, 1}(undef, 0)
 
         num_elements = 2
         nodes_solution = [0.0 0.0 0.0; 0.0 1.0 0.0; 1.0 1.0 0.0; 1.0 0.0 0.0]
@@ -92,7 +98,8 @@ include("../../src/quadrature.jl")
         test_mesh_filename = "examples/test/rectangle_plate.msh"
         test_pulse_mesh = buildPulseMesh(test_mesh_filename, gauss1rule, gauss1rule)
 
-        @unpack num_elements,
+        @unpack mesh_filename,
+                num_elements,
                 nodes,
                 elements,
                 areas,
@@ -103,6 +110,7 @@ include("../../src/quadrature.jl")
                 src_quadrature_weights,
                 test_quadrature_points,
                 test_quadrature_weights = test_pulse_mesh
+        @test mesh_filename == mesh_filename
         @test num_elements == num_elements
         @test nodes == nodes_solution
         @test elements == elements_solution
@@ -132,7 +140,8 @@ include("../../src/quadrature.jl")
         test_mesh_filename2 = "examples/test/rectangle_plate_8elements_symmetric.msh"
         test_pulse_mesh2 = buildPulseMesh(test_mesh_filename2, gauss7rule, gauss1rule)
 
-        @unpack num_elements,
+        @unpack mesh_filename,
+                num_elements,
                 elements,
                 areas,
                 normals,
@@ -142,6 +151,7 @@ include("../../src/quadrature.jl")
                 src_quadrature_weights,
                 test_quadrature_points,
                 test_quadrature_weights = test_pulse_mesh2
+        @test mesh_filename == test_mesh_filename2
         @test num_elements == num_elements_solution
         @test elements == elements_solution2
         @test isapprox(areas, areas_solution, rtol=1e-14)

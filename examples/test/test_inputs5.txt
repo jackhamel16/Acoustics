@@ -1,0 +1,12 @@
+mesh filename: gibberish3.msh
+equation: WS mode
+src quadrature rule: gauss7
+test quadrature rule: gauss7
+distance to edge tolerance: 1e-12
+near singular tolerance: 1.0
+Wigner Smith:
+  lambda: 1.2
+  max degree: 3
+  WS mode: 6
+  Q matrix file: test_filename.txt
+

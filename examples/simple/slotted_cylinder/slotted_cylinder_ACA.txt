@@ -1,0 +1,18 @@
+mesh filename: examples/simple/slotted_cylinder/slotted_cylinder_r1_h5_3152.msh
+equation: WS mode
+source quadrature rule: gauss7
+test quadrature rule: gauss7
+distance to edge tolerance: 1e-12
+near singular tolerance: 1.0
+excitation:
+  type: sphericalwave
+  lambda: 1.6
+  amplitude: 1.0
+  l: 1
+  m: 0
+ACA:
+  use ACA: yes
+  number of levels: 3
+  compression distance: 1.5
+  approximation tolerance: 1e-5
+  

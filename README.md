@@ -14,6 +14,10 @@ Currently, users can solve the sound-soft Integral Equation (IE), the normal der
 
 Currently, the code is only capable of using the Adaptive Cross Approximation to compress the Z matrix and accelerate the entire computation for the sound-soft IE.
 
+### Parallelism
+
+Currently, the code supports basic multi-threading in some of the easily parallelizable, computation heavy for loops. To utilize, when running julia use the `--threads N` command line argument.
+
 ## Documentation
 
 There is detailed documentation in the documentation directory about the algorithms in the code in AcousticsIE.docx (constantly a work in progress) and details on verification work and testing in the sub-directories.

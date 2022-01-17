@@ -1,0 +1,25 @@
+Parsing input parameters in: Documentation/WS_ACA_testing/Test5/slotted_cylinder_WS_ACA_test5_run1.txt...
+Parsing mesh in: Documentation/WS_ACA_Testing/Test5/slotPi_slotted_cylinder_r1_h2_10408.msh...
+Number of elements = 9936
+Excitation: Sphericalwave
+Equation: Sound Soft IE
+Running with ACA...
+Filling ACA Matrix...
+Filling RHS...
+Solving with ACA...
+GMRES Not converged after 9936 iterations.
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 187.47169811320754
+      Min = 1
+      Max = 326
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 14.170776255707763
+      Min = 1
+      Max = 38
+  Compression Metrics:
+    Percentage of Matrices Compressed = 77.96368814524742
+    Compression Ratio = 0.354245320210377
+Total Runtime = 1270.6312722 seconds

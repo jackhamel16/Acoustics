@@ -1,0 +1,23 @@
+Parsing input parameters in: examples/simple/cylinders/cylinder_ACA.txt...
+Parsing mesh in: examples/simple/cylinders/cylinder_r1_h5_15275.msh...
+Excitation: Plavewave
+Equation: Sound Soft IE
+Running with ACA...
+Filling ACA Matrix...
+Filling RHS...
+Solving with ACA...
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 75.27
+      Min = 23
+      Max = 133
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 9.299248791762976
+      Min = 4
+      Max = 23
+  Compression Metrics:
+    Percentage of Matrices Compressed = 95.17999999999999
+    Compression Ratio = 0.2975859334543202
+Total Runtime = 1167.400121001 seconds

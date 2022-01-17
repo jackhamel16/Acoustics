@@ -1,0 +1,25 @@
+Parsing input parameters in: .\Documentation\WS_ACA_Testing\Test7\circular_plate_ACA_test7_run3.txt...
+Parsing mesh in: Documentation/WS_ACA_Testing/Test7/circular_plate_1m_1965.msh...
+Number of elements = 1872
+Excitation: Sphericalwave
+Equation: Sound Soft IE
+Running with ACA...
+Filling ACA Matrix...
+Filling RHS...
+Solving with ACA...
+GMRES Converged after 81 iterations.
+Displaying ACA Metrics:
+  Octree Metrics:
+    Number of elements per node:
+      Mean = 117.0
+      Min = 43
+      Max = 164
+  Matrix Metrics:
+    Matrix Rank:
+      Mean = 14.679487179487179
+      Min = 9
+      Max = 20
+  Compression Metrics:
+    Percentage of Matrices Compressed = 60.9375
+    Compression Ratio = 0.5925392308605449
+Total Runtime = 26.5976749 seconds

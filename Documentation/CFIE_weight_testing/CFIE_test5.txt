@@ -1,0 +1,12 @@
+mesh filename: examples/test/rectangular_strips/rectangular_strip_2560.msh
+equation: sound soft CFIE
+CFIE weight: 0.5
+source quadrature rule: gauss7
+test quadrature rule: gauss1
+distance to edge tolerance: 1e-12
+near singular tolerance: 1.0
+excitation:
+  type: planewave
+  lambda: 1.3
+  amplitude: 10
+  wavevector: 0 1 0.5
